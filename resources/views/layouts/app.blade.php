@@ -179,7 +179,9 @@
                 </a>
                 <ul class="nav nav-treeview">
                   <li class="nav-item"><a href="{{ url('/bienestar/gym/inscripcion') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Inscripción</p></a></li>
+                  @if(Auth::check() && Auth::user()->role === 'Super Admin')
                   <li class="nav-item"><a href="{{ url('/bienestar/gym/agenda') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Agenda tu Horario</p></a></li>
+                  @endif
                 </ul>
               </li>
                 <!-- 
