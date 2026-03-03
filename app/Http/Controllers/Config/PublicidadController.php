@@ -42,7 +42,7 @@ class PublicidadController extends Controller
             if (!is_dir($folder)) mkdir($folder, 0755, true);
             $name = time() . '_' . preg_replace('/[^A-Za-z0-9\-_\\.]/', '', $file->getClientOriginalName());
             $file->move($folder, $name);
-            $data['banner'] = url('img/publicidad/'.$name);
+            $data['banner'] = 'img/publicidad/'.$name;
         }
 
         // map possible fields
@@ -94,7 +94,7 @@ class PublicidadController extends Controller
             if (!is_dir($folder)) mkdir($folder, 0755, true);
             $name = time() . '_' . preg_replace('/[^A-Za-z0-9\-_\.]/', '', $file->getClientOriginalName());
             $file->move($folder, $name);
-                $data['banner'] = url('img/publicidad/'.$name);
+                $data['banner'] = 'img/publicidad/'.$name;
         }
 
         $payload = array_filter([
@@ -120,10 +120,11 @@ class PublicidadController extends Controller
         $item = Publicidad::findOrFail($id);
         // opcional: borrar archivo físico si está en public/img/publicidad
         try {
-            $path = $item->banner;
-            if ($path && strpos($path, url('/')) !== false) {
-                // intentamos borrar si corresponde a public/img/publicidad
-                $relative = str_replace(url('/') . '/', '', $path);
+            $raw = $item->getRawOriginal('banner');
+            if ($raw) {
+                // Strip any absolute URL prefix to get relative path
+                $relative = preg_replace('#^https?://[^/]+/?#i', '', $raw);
+                $relative = ltrim($relative, '/');
                 $full = public_path($relative);
                 if (file_exists($full)) @unlink($full);
             }

@@ -602,30 +602,11 @@
 </div>
 
     @push('head')
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    @vite(['resources/css/app.css'])
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
-    <script id="tailwind-config">
-                    tailwind.config = {
-                            darkMode: "class",
-                            theme: {
-                                    extend: {
-                                            colors: {
-                                                    "primary": "#2e3b76",
-                                                    "background-light": "#f6f6f8",
-                                                    "background-dark": "#15161d",
-                                            },
-                                            fontFamily: {
-                                                    "display": ["Manrope"]
-                                            },
-                                            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
-                                    },
-                            },
-                    }
-            </script>
     @endpush
 
     <!-- Modal: Creador de Encuestas (tailwind content embedded) -->

@@ -4,14 +4,13 @@
 @section('header','Agenda tu Horario')
 
 @push('head')
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  @vite(['resources/css/app.css'])
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
-  <style type="text/tailwindcss">
+  <style>
     :root { --primary-color: #2e3a75; }
-    /* bg-hero removed to allow global site background (public/img/nuevologo.jpg) from layout */
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-    input:focus, select:focus { border-color: #2e3a75 !var(--tw-ring-color); --tw-ring-color: #2e3a75; }
+    input:focus, select:focus { border-color: #2e3a75; --tw-ring-color: #2e3a75; }
     .slot-input { position:absolute; inset:0; opacity:0; }
   </style>
 @endpush
