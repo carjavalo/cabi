@@ -54,7 +54,7 @@
         background-attachment: fixed;
       }
       /* Safety: limitar tamaño de SVGs e iconos para evitar que crezcan desproporcionadamente */
-      svg { max-width: 48px; max-height: 48px; }
+      svg:not(.swal2-icon-content svg):not([class*="w-"]):not([class*="h-"]) { max-width: 48px; max-height: 48px; }
       /* limitar icon font fallback y forzar tamaño razonable */
       .material-symbols-outlined { font-size: 1.25rem; line-height:1; }
       /* controles del carrusel e indicadores */
@@ -84,7 +84,7 @@
         background: rgba(245,247,251,0.85);
         padding: 1.25rem;
       }
-      .main-footer { position: fixed; bottom: 0; left: 250px; right: 0; z-index: 1020; }
+      .main-footer { position: fixed; bottom: 0; left: 250px; right: 0; z-index: 1020; padding-bottom: env(safe-area-inset-bottom, 0); }
       /* Responsive: on small screens make sidebar off-canvas and content use full width */
       @media (max-width: 991px) {
         .main-sidebar {
@@ -101,8 +101,13 @@
         /* When AdminLTE toggles the sidebar open it adds 'sidebar-open' on the body */
         body.sidebar-open .main-sidebar, body.sidebar-show .main-sidebar { transform: translateX(0); }
         .content-wrapper { margin-left: 0; padding: 0.75rem; }
-        .main-footer { left: 0; }
+        .main-footer { left: 0; position: relative; bottom: auto; }
         body { background-attachment: scroll; }
+      }
+      @media (max-width: 575px) {
+        .content-wrapper { padding: 0.5rem; }
+        .content-header .container-fluid h1 { font-size: 1.25rem; }
+        .main-footer { font-size: 0.75rem; padding: 0.5rem; }
       }
     </style>
 

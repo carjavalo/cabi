@@ -80,7 +80,9 @@
     }
     #tablaEncuestas tbody tr:hover {
         background: #f8f9fc;
-        transform: scale(1.01);
+    }
+    @media (min-width: 768px) {
+        #tablaEncuestas tbody tr:hover { transform: scale(1.01); }
     }
     #tablaEncuestas tbody td {
         padding: 1rem;
@@ -628,9 +630,9 @@
 
     <!-- Modal: Creador de Encuestas (tailwind content embedded) -->
     <div class="modal fade" id="createEncuestaModal" tabindex="-1" role="dialog" aria-labelledby="createEncuestaModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1200px;">
+        <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: min(1200px, 95vw); margin: 0.5rem auto;">
             <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 40px rgba(46, 58, 117, 0.2);">
-                <div class="modal-body p-0" style="max-height:85vh; overflow:auto;">
+                <div class="modal-body p-0" style="max-height:90vh; overflow:auto;">
 
     <!-- Begin embedded survey builder -->
     <div class="flex h-full flex-col overflow-hidden">

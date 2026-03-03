@@ -37,12 +37,12 @@
 
 <!-- Modal: Crear / Editar Publicidad - Diseño Moderno -->
 <div class="modal fade" id="createPublicidadModal" tabindex="-1" role="dialog" aria-labelledby="createPublicidadModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered" role="document" style="max-width: 1200px;">
+  <div class="modal-dialog modal-xl modal-dialog-centered" role="document" style="max-width: min(1200px, 95vw); margin: 0.5rem auto;">
     <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 20px 60px rgba(46, 58, 117, 0.3); overflow: hidden;">
       <!-- Header Moderno -->
-      <div class="modal-header" style="background: linear-gradient(135deg, #2e3a75 0%, #1e2a55 100%); color:#fff; border: none; padding: 1.5rem 2rem;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #2e3a75 0%, #1e2a55 100%); color:#fff; border: none; padding: 1rem 1.25rem;">
         <div class="d-flex align-items-center">
-            <div class="d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(255,255,255,0.15); border-radius: 12px; margin-right: 1rem;">
+            <div class="d-flex align-items-center justify-content-center d-none d-sm-flex" style="width: 48px; height: 48px; background: rgba(255,255,255,0.15); border-radius: 12px; margin-right: 1rem;">
                 <i class="fas fa-bullhorn" style="font-size: 24px;"></i>
             </div>
             <div>

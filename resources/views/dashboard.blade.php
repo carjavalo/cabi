@@ -42,8 +42,8 @@
 
 <div class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen">
 
-    <main class="max-w-[1200px] mx-auto p-6 lg:p-12 space-y-10">
-        <section class="relative overflow-hidden rounded-[1.25rem] h-[340px] shadow-2xl">
+    <main class="max-w-[1200px] w-full mx-auto p-4 sm:p-6 lg:p-12 space-y-8 sm:space-y-10">
+        <section class="relative overflow-hidden rounded-[1.25rem] h-[200px] sm:h-[280px] lg:h-[340px] shadow-2xl">
             <div id="bannerCarousel" class="relative h-full">
                 @if(isset($publicidad) && $publicidad->count())
                     @foreach($publicidad as $idx => $b)

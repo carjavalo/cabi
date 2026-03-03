@@ -20,15 +20,15 @@
   {{-- removed bg-hero fixed background so layout's global background is visible --}}
   <div class="w-full bg-transparent">
     <div id="agendaWrapper" class="w-full max-w-5xl mx-auto bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden border border-white/40 p-0" style="margin-top:10px;">
-      <div class="bg-corporate/5 p-8 border-b border-slate-200">
-        <h2 class="text-3xl font-extrabold text-corporate flex items-center gap-3">
-          <span class="material-symbols-outlined text-4xl">calendar_month</span>
+      <div class="bg-corporate/5 p-4 sm:p-6 md:p-8 border-b border-slate-200">
+        <h2 class="text-xl sm:text-2xl md:text-3xl font-extrabold text-corporate flex items-center gap-3">
+          <span class="material-symbols-outlined text-2xl sm:text-3xl md:text-4xl">calendar_month</span>
           Registro de Cita de Entreno HUV
         </h2>
-        <p class="text-slate-600 mt-2 font-medium">Complete los siguientes campos para programar su sesión de entrenamiento.</p>
+        <p class="text-slate-600 mt-2 font-medium text-sm sm:text-base">Complete los siguientes campos para programar su sesión de entrenamiento.</p>
       </div>
 
-      <div class="p-8 space-y-6">
+      <div class="p-4 sm:p-6 md:p-8 space-y-6">
         @if(session('success'))
           <div class="alert alert-success">{{ session('success') }}</div>
         @endif
@@ -207,13 +207,16 @@
       const wrapper = document.getElementById('agendaWrapper');
       function adjustZoom(){
         if(!wrapper) return;
-        const available = window.innerHeight - 80; // espacio para header/footer
+        const available = window.innerHeight - 80;
         const needed = wrapper.scrollHeight;
         let scale = 1;
-        if(needed > available) scale = Math.max(0.7, available / needed);
-        // Prefer zoom (Chromium) y fallback a transform
-        try{ wrapper.style.zoom = scale; wrapper.style.transform = ''; }
-        catch(e){ wrapper.style.transform = `scale(${scale})`; wrapper.style.transformOrigin = 'top center'; }
+        if(needed > available) scale = Math.max(0.75, available / needed);
+        // Use transform (cross-browser compatible: Chrome, Firefox, Safari)
+        wrapper.style.transform = scale < 1 ? `scale(${scale})` : '';
+        wrapper.style.transformOrigin = 'top center';
+        // Reserve space for scaled element so parent doesn't collapse
+        if(scale < 1) wrapper.style.marginBottom = `-${needed * (1 - scale)}px`;
+        else wrapper.style.marginBottom = '';
       }
       adjustZoom();
       window.addEventListener('resize', adjustZoom);

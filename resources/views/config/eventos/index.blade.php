@@ -84,9 +84,9 @@
 
 <!-- Modal Evento con Tailwind CSS -->
 <div class="modal fade" id="modalEvento" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1200px;">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: min(1200px, 95vw); margin: 0.5rem auto;">
         <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 40px rgba(46, 58, 117, 0.2);">
-            <div class="modal-body p-0" style="max-height:85vh; overflow:auto;">
+            <div class="modal-body p-0" style="max-height:90vh; overflow:auto;">
 
 <!-- Contenido completo del modal -->
 <div class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 h-full">
@@ -123,28 +123,28 @@ No, Mantener
 <div class="relative flex h-auto w-full flex-col group/design-root">
 <div class="layout-container flex h-full grow flex-col">
 <!-- HEADER DEL MODAL -->
-<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 px-10 py-3 sticky top-0 z-10 shadow-sm" style="background: linear-gradient(135deg, #2e3a75 0%, #3d4d8f 100%);">
-<div class="flex items-center gap-4">
-<div class="size-8 flex items-center justify-center bg-white/20 rounded-lg text-white">
+<header class="flex items-center justify-between flex-wrap gap-3 border-b border-solid border-slate-200 dark:border-slate-800 px-4 sm:px-6 md:px-10 py-3 sticky top-0 z-10 shadow-sm" style="background: linear-gradient(135deg, #2e3a75 0%, #3d4d8f 100%);">
+<div class="flex items-center gap-3 min-w-0">
+<div class="size-8 flex-shrink-0 flex items-center justify-center bg-white/20 rounded-lg text-white">
 <span class="material-symbols-outlined">local_hospital</span>
 </div>
-<div class="flex flex-col">
-<h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Hospital Universitario del Valle</h2>
+<div class="flex flex-col min-w-0">
+<h2 class="text-white text-sm sm:text-lg font-bold leading-tight tracking-[-0.015em] truncate">Hospital Universitario del Valle</h2>
 <span class="text-[10px] uppercase tracking-wider font-bold text-slate-200">Panel Administrativo</span>
 </div>
 </div>
-<div class="flex flex-1 justify-end gap-8">
-<nav class="flex items-center gap-9 hidden md:flex">
+<div class="flex items-center gap-2 sm:gap-4 ml-auto">
+<nav class="items-center gap-4 lg:gap-9 hidden lg:flex">
 <a class="text-slate-200 text-sm font-medium hover:text-white transition-colors" href="#">Dashboard</a>
 <a class="text-slate-200 text-sm font-medium hover:text-white transition-colors" href="#">Capacitaciones</a>
 <a class="text-white text-sm font-bold border-b-2 border-white py-1" href="#">Horarios</a>
 <a class="text-slate-200 text-sm font-medium hover:text-white transition-colors" href="#">Reportes</a>
 </nav>
-<div class="flex gap-2 border-l border-slate-400 pl-6">
-<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-white/10 text-white hover:bg-white/20 transition-all">
+<div class="flex gap-2 lg:border-l lg:border-slate-400 lg:pl-4">
+<button class="hidden sm:flex items-center justify-center rounded-lg h-10 w-10 bg-white/10 text-white hover:bg-white/20 transition-all">
 <span class="material-symbols-outlined">notifications</span>
 </button>
-<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-white/10 text-white hover:bg-white/20 transition-all">
+<button class="hidden sm:flex items-center justify-center rounded-lg h-10 w-10 bg-white/10 text-white hover:bg-white/20 transition-all">
 <span class="material-symbols-outlined">settings</span>
 </button>
 <!-- Botón Cerrar Modal -->
@@ -152,7 +152,7 @@ No, Mantener
     <span class="material-symbols-outlined">close</span>
 </button>
 </div>
-<div class="flex items-center gap-3">
+<div class="flex items-center gap-3 hidden md:flex">
 <div class="text-right hidden sm:block">
 <p class="text-xs font-bold text-white">Admin HUV</p>
 <p class="text-[10px] text-slate-300">Superusuario</p>
@@ -356,33 +356,33 @@ Guardar Evento
 
 <!-- SECCION USUARIOS INSCRITOS -->
 <section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-<div class="p-6 border-b border-slate-200 dark:border-slate-800 flex flex-col gap-6">
-<div class="flex items-center justify-between flex-wrap gap-4">
+<div class="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800 flex flex-col gap-4 sm:gap-6">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 <div class="flex items-center gap-3">
-<div class="bg-primary/10 p-2 rounded-lg text-primary">
+<div class="bg-primary/10 p-2 rounded-lg text-primary flex-shrink-0">
 <span class="material-symbols-outlined">group</span>
 </div>
 <div>
-<h2 class="text-slate-900 dark:text-slate-50 text-xl font-bold leading-tight">Usuarios Inscritos</h2>
-<p class="text-slate-500 text-sm">Visualización y control de asistencia por jornada</p>
+<h2 class="text-slate-900 dark:text-slate-50 text-lg sm:text-xl font-bold leading-tight">Usuarios Inscritos</h2>
+<p class="text-slate-500 text-xs sm:text-sm">Visualización y control de asistencia por jornada</p>
 </div>
 </div>
-<div class="flex items-center gap-3 ml-auto">
-<div class="relative">
+<div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+<div class="relative w-full sm:w-auto">
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
-<input class="pl-10 pr-4 py-2 w-64 md:w-80 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-primary focus:border-primary transition-all" placeholder="Buscar por Nombre o ID..." type="text"/>
+<input class="pl-10 pr-4 py-2 w-full sm:w-56 md:w-72 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-primary focus:border-primary transition-all" placeholder="Buscar por Nombre o ID..." type="text"/>
 </div>
-        <button type="button" onclick="refreshInscritos()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-all shadow-sm">
+        <button type="button" onclick="refreshInscritos()" class="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-all shadow-sm text-sm">
             <span class="material-symbols-outlined text-lg">refresh</span>
-            Actualizar
+            <span class="hidden sm:inline">Actualizar</span>
         </button>
-        <button type="button" id="btnEliminarSeleccionados" onclick="eliminarInscritosSeleccionados()" class="hidden items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-all shadow-sm whitespace-nowrap">
+        <button type="button" id="btnEliminarSeleccionados" onclick="eliminarInscritosSeleccionados()" class="hidden items-center gap-2 px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-all shadow-sm whitespace-nowrap text-sm">
             <span class="material-symbols-outlined text-lg">delete</span>
-            Eliminar seleccionados (<span id="countSeleccionados">0</span>)
+            <span class="hidden sm:inline">Eliminar</span> (<span id="countSeleccionados">0</span>)
         </button>
-        <button class="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition-all shadow-sm">
+        <button class="flex items-center gap-2 px-3 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition-all shadow-sm text-sm">
 <span class="material-symbols-outlined text-lg">download</span>
-Export to Excel
+<span class="hidden sm:inline">Export to Excel</span>
 </button>
 </div>
 </div>
@@ -453,7 +453,7 @@ Export to Excel
     </form>
 </main>
 
-<footer class="mt-auto py-8 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-10">
+<footer class="mt-auto py-6 sm:py-8 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 sm:px-6 md:px-10">
 <div class="flex flex-col md:flex-row justify-between items-center gap-4 max-w-[1024px] mx-auto">
 <div class="flex items-center gap-3">
 <div class="size-6 bg-slate-200 dark:bg-slate-700 rounded flex items-center justify-center">
@@ -690,20 +690,20 @@ document.addEventListener('DOMContentLoaded', function() {
     function crearFranjaHtml(horaInicio, horaFin, capacidad) {
         const franjaId = Date.now() + Math.random();
         return `
-            <div class="franja-item grid grid-cols-12 gap-4 items-end bg-slate-50 dark:bg-slate-800/30 p-4 rounded-lg border border-slate-100 dark:border-slate-800" data-franja-id="${franjaId}">
-                <div class="col-span-3">
-                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Hora Inicio</label>
+            <div class="franja-item grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 md:gap-4 items-end bg-slate-50 dark:bg-slate-800/30 p-3 sm:p-4 rounded-lg border border-slate-100 dark:border-slate-800" data-franja-id="${franjaId}">
+                <div class="sm:col-span-1 md:col-span-3">
+                    <label class="block text-xs font-bold text-slate-500 mb-1 sm:mb-2 uppercase tracking-wide">Hora Inicio</label>
                     <input class="franja-inicio w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-primary focus:border-primary" type="time" value="${horaInicio || ''}" required/>
                 </div>
-                <div class="col-span-3">
-                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Hora Fin</label>
+                <div class="sm:col-span-1 md:col-span-3">
+                    <label class="block text-xs font-bold text-slate-500 mb-1 sm:mb-2 uppercase tracking-wide">Hora Fin</label>
                     <input class="franja-fin w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-primary focus:border-primary" type="time" value="${horaFin || ''}" required/>
                 </div>
-                <div class="col-span-4">
-                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Capacidad Máxima</label>
+                <div class="sm:col-span-1 md:col-span-4">
+                    <label class="block text-xs font-bold text-slate-500 mb-1 sm:mb-2 uppercase tracking-wide">Capacidad Máxima</label>
                     <input class="franja-capacidad w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-primary focus:border-primary" type="number" value="${capacidad || ''}" min="1" required/>
                 </div>
-                <div class="col-span-2 flex justify-end">
+                <div class="sm:col-span-1 md:col-span-2 flex sm:justify-end">
                     <button type="button" class="btn-eliminar-franja flex items-center justify-center rounded-lg h-10 w-10 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all">
                         <span class="material-symbols-outlined pointer-events-none">delete</span>
                     </button>

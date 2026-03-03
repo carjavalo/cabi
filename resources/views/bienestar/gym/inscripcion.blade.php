@@ -83,7 +83,7 @@
                 <span class="material-symbols-outlined text-primary">person_add</span>
                 <h3 class="text-xl font-bold text-slate-800">Información del Solicitante</h3>
             </div>
-            <form method="POST" action="{{ route('inscripcion.store') }}" class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+            <form method="POST" action="{{ route('inscripcion.store') }}" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 lg:gap-x-10 gap-y-5 sm:gap-y-6">
                 @csrf
                 <!-- Column 1: Personal Info -->
                 <div class="space-y-6">
