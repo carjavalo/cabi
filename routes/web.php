@@ -11,8 +11,7 @@ Route::get('/', function () {
     $publicidad = [];
     try {
         $now = now();
-        $publicidad = DB::table('publicidad')
-            ->where('activo', 1)
+        $publicidad = \App\Models\Publicidad::where('activo', 1)
             ->where(function($query) use ($now) {
                 $query->where(function($q) use ($now) {
                     // Si tiene fecha_inicio, debe ser menor o igual a ahora
