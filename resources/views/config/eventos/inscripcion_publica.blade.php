@@ -464,10 +464,10 @@ document.getElementById('identificacion').addEventListener('change', function() 
                     msgEl.className = 'form-text mt-1 text-danger small font-weight-bold';
                     if (data.error_msg) {
                         msgEl.innerHTML = '<i class="fas fa-ban mr-1"></i> ' + data.error_msg;
-                        document.getElementById('btnSubmit').disabled = true;
+                        document.getElementById('btnConfirmar').disabled = true;
                     } else {
                         msgEl.innerHTML = '<i class="fas fa-exclamation-circle mr-1"></i> No se encontraron datos para esta identificación';
-                        document.getElementById('btnSubmit').disabled = false;
+                        document.getElementById('btnConfirmar').disabled = false;
                     }
                 }
             })
