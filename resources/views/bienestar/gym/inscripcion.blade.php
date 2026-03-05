@@ -217,13 +217,28 @@
 
         <!-- Body con DataTable -->
         <div class="p-6 overflow-y-auto flex-1">
-            <div class="mb-4 flex items-center justify-between">
+            <div class="mb-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
                 <input type="text" id="buscarInscritos" placeholder="Buscar por Nombre / Identificación..." class="px-4 py-2 border-slate-200 rounded-lg text-sm w-full md:w-1/3 focus:border-primary focus:ring-primary">
+                
+                <div class="flex items-center gap-2 w-full md:w-auto">
+                    <select id="accionMasiva" class="px-3 py-2 border-slate-200 rounded-lg text-sm focus:border-primary focus:ring-primary h-[42px]">
+                        <option value="">Seleccione una acción</option>
+                        <option value="1">Autorizar seleccionados</option>
+                        <option value="0">Revocar seleccionados</option>
+                    </select>
+                    <button onclick="aplicarAccionMasiva()" class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-2 h-[42px]">
+                        <span class="material-symbols-outlined text-[18px]">published_with_changes</span>
+                        Cambiar Estado
+                    </button>
+                </div>
             </div>
             <div class="border border-slate-200 rounded-lg overflow-x-auto">
                 <table class="w-full text-left border-collapse" id="tablaInscritos">
                     <thead>
                         <tr class="bg-slate-50 text-slate-500 text-xs font-bold uppercase">
+                            <th class="px-4 py-3 border-b border-slate-200 text-center w-12">
+                                <input type="checkbox" id="checkTodosInscritos" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" onclick="toggleTodosInscritos()">
+                            </th>
                             <th class="px-4 py-3 border-b border-slate-200">Identificación</th>
                             <th class="px-4 py-3 border-b border-slate-200">Nombres</th>
                             <th class="px-4 py-3 border-b border-slate-200">Servicio</th>
@@ -282,8 +297,11 @@
         const tbody = document.getElementById('tbodyInscritos');
         tbody.innerHTML = '';
         
+        // Reset checkbox master
+        document.getElementById('checkTodosInscritos').checked = false;
+
         if(inscritos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-slate-500">No hay registros encontrados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-slate-500">No hay registros encontrados.</td></tr>';
             return;
         }
 
@@ -304,6 +322,9 @@
             const linkActivo = i.autorizado == 1 ? `<a href="${urlAcesso}" target="_blank" class="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Ir al evento"><span class="material-symbols-outlined text-sm">link</span></a>` : '';
 
             tr.innerHTML = `
+                <td class="px-4 py-3 text-center">
+                    <input type="checkbox" class="check-inscrito-auth h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" value="${i.id}">
+                </td>
                 <td class="px-4 py-3 font-semibold text-slate-700">${i.identificacion || 'N/A'}</td>
                 <td class="px-4 py-3">${i.nombres || ''} ${i.primer_apellido || ''} ${i.segundo_apellido || ''}</td>
                 <td class="px-4 py-3 text-slate-500">${i.servicio_unidad || 'N/A'}</td>
@@ -320,6 +341,80 @@
             `;
             tbody.appendChild(tr);
         });
+    }
+
+    function toggleTodosInscritos() {
+        const master = document.getElementById('checkTodosInscritos');
+        const checkboxes = document.querySelectorAll('.check-inscrito-auth');
+        checkboxes.forEach(chk => chk.checked = master.checked);
+    }
+
+    async function aplicarAccionMasiva() {
+        const accion = document.getElementById('accionMasiva').value;
+        if (accion === '') {
+            alert('Por favor seleccione una acción a realizar.');
+            return;
+        }
+
+        const checkboxes = document.querySelectorAll('.check-inscrito-auth:checked');
+        if (checkboxes.length === 0) {
+            alert('Por favor seleccione al menos un usuario de la lista.');
+            return;
+        }
+
+        const accionNum = parseInt(accion);
+        const accionTexto = accionNum === 1 ? 'autorizar' : 'revocar autorización a';
+
+        if (!confirm(`¿Está seguro que desea ${accionTexto} los ${checkboxes.length} usuarios seleccionados?`)) {
+            return;
+        }
+
+        const btnStatus = document.querySelector('button[onclick="aplicarAccionMasiva()"]');
+        const originalText = btnStatus.innerHTML;
+        btnStatus.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">refresh</span> Procesando...';
+        btnStatus.disabled = true;
+
+        let promesas = [];
+        
+        for (let chk of checkboxes) {
+            const id = parseInt(chk.value);
+            const obj = todosInscritos.find(i => parseInt(i.id) === id);
+            
+            // Solo procesamos si el estado actual es diferente al deseado
+            if (obj && parseInt(obj.autorizado) !== accionNum) {
+                const req = fetch(`{{ url('/api/inscritos') }}/${id}/autorizar`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                }).then(res => res.json()).then(data => {
+                    if (data.success) {
+                        obj.autorizado = data.autorizado ? 1 : 0;
+                    }
+                }).catch(err => console.error('Error en inscrito ' + id, err));
+                promesas.push(req);
+            }
+        }
+
+        await Promise.all(promesas);
+
+        btnStatus.innerHTML = originalText;
+        btnStatus.disabled = false;
+        document.getElementById('accionMasiva').value = '';
+        // Refrescar tabla con los datos actualizados en memoria
+        const textoBusqueda = document.getElementById('buscarInscritos').value.toLowerCase();
+        if (textoBusqueda) {
+            const filtrados = todosInscritos.filter(i => 
+                (i.identificacion && i.identificacion.toLowerCase().includes(textoBusqueda)) || 
+                (i.nombres && i.nombres.toLowerCase().includes(textoBusqueda)) || 
+                (i.primer_apellido && i.primer_apellido.toLowerCase().includes(textoBusqueda))
+            );
+            renderizarTabla(filtrados);
+        } else {
+            renderizarTabla(todosInscritos);
+        }
     }
 
     function toggleAutorizacion(id) {
