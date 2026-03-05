@@ -90,7 +90,7 @@ class EventoController extends Controller
 
     public function show($id)
     {
-        $evento = Evento::with(['eventoDias', 'eventoFranjas.inscripciones', 'eventoInscripciones'])->findOrFail($id);
+        $evento = Evento::with(['eventoDias', 'eventoFranjas.inscripciones', 'eventoInscripciones.franja'])->findOrFail($id);
         return response()->json($evento);
     }
 

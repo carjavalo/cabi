@@ -394,7 +394,7 @@ Guardar Evento
 <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Identificación</th>
 <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Servicio</th>
 <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha de Registro</th>
-<th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Asistencia</th>
+<th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Franja Horaria</th>
 <th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Acciones</th>
 </tr>
 </thead>
@@ -1451,6 +1451,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const dateStr = new Date(ins.created_at).toLocaleString("es-CO");
             if(ins.asistencia) checked++;
             
+            // Format franja horaria if available
+            let franjaStr = "Sin franja";
+            if(ins.franja) {
+                const hIni = ins.franja.hora_inicio ? ins.franja.hora_inicio.substring(0,5) : '';
+                const hFin = ins.franja.hora_fin ? ins.franja.hora_fin.substring(0,5) : '';
+                // Optional: mapping dia_semana to text
+                const dias = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+                const diaText = ins.franja.dia_semana !== null && dias[ins.franja.dia_semana] ? dias[ins.franja.dia_semana] + " " : "";
+                franjaStr = `${diaText}${hIni} - ${hFin}`;
+            }
+            
             tbody.innerHTML += `
                 <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors inscrito-row" data-inscrito-id="${ins.id}">
                     <td class="px-6 py-4">
@@ -1465,8 +1476,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">${ins.identificacion}</td>
                     <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">N/A</td>
                     <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">${dateStr}</td>
-                    <td class="px-6 py-4 text-center">
-                        <input type="checkbox" ${ins.asistencia ? "checked" : ""} class="h-5 w-5 rounded border-slate-300 text-primary focus:ring-primary" disabled/>
+                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                        <span class="inline-flex items-center px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-xs font-medium">${franjaStr}</span>
                     </td>
                     <td class="px-6 py-4 text-center">
                         <button type="button" onclick="eliminarInscritoIndividual(${ins.id}, '${ins.nombre_completo.replace(/'/g, "\\'")}')"
