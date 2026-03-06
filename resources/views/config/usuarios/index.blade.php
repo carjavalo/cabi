@@ -47,6 +47,44 @@
         </div>
     @endif
 
+    <!-- Search Form -->
+    <div class="card mb-4 border-0 shadow-sm" style="max-width: 800px;">
+        <div class="card-body">
+            <form method="GET" action="{{ route('config.usuarios.index') }}" class="row g-2 align-items-end">
+                <div class="col-md-5">
+                    <label for="search" class="form-label text-muted small fw-bold mb-1">Buscar por nombre, identificación...</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" class="form-control form-control-sm" id="search" name="search" value="{{ request('search') }}" placeholder="Ej: Juan, 12345678">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label for="role_filter" class="form-label text-muted small fw-bold mb-1">Filtrar por Rol</label>
+                    <select id="role_filter" name="role_filter" class="form-select form-select-sm text-secondary">
+                        <option value="">Todos los roles</option>
+                        @if(Auth::check() && Auth::user()->role == 'Super Admin')
+                        <option value="Super Admin" {{ request('role_filter') == 'Super Admin' ? 'selected' : '' }}>Super Admin</option>
+                        @endif
+                        @if(Auth::check() && in_array(Auth::user()->role, ['Super Admin','Administrador']))
+                        <option value="Administrador" {{ request('role_filter') == 'Administrador' ? 'selected' : '' }}>Administrador</option>
+                        @endif
+                        <option value="Operador" {{ request('role_filter') == 'Operador' ? 'selected' : '' }}>Operador</option>
+                        <option value="Instructor GYM" {{ request('role_filter') == 'Instructor GYM' ? 'selected' : '' }}>Instructor GYM</option>
+                        <option value="Usuario" {{ request('role_filter') == 'Usuario' ? 'selected' : '' }}>Usuario</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-sm btn-primary shadow-sm hover-scale me-1">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                    <a href="{{ route('config.usuarios.index') }}" class="btn btn-sm btn-light border shadow-sm hover-scale">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Table Card -->
     <div class="card border-0 shadow-lg rounded-3">
         <div class="card-body p-0">

@@ -12,27 +12,45 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $query = User::query();
+
         // Show rules:
         // - Super Admin sees all
         // - Administrador sees all except users with role 'Super Admin'
         // - Operador sees users except 'Super Admin' and 'Administrador'
         if (!Auth::check()) {
-            $users = User::whereNotIn('role',['Super Admin','Administrador'])->orderBy('id','desc')->paginate(15);
+            $query->whereNotIn('role', ['Super Admin', 'Administrador']);
         } else {
             $current = Auth::user()->role;
-            if ($current === 'Super Admin') {
-                $users = User::orderBy('id','desc')->paginate(15);
-            } elseif ($current === 'Administrador') {
-                $users = User::where('role','!=','Super Admin')->orderBy('id','desc')->paginate(15);
-            } elseif ($current === 'Operador') {
-                $users = User::whereNotIn('role',['Super Admin','Administrador'])->orderBy('id','desc')->paginate(15);
-            } else {
-                // default: hide super admin and administrador
-                $users = User::whereNotIn('role',['Super Admin','Administrador'])->orderBy('id','desc')->paginate(15);
+            if ($current === 'Administrador') {
+                $query->where('role', '!=', 'Super Admin');
+            } elseif ($current !== 'Super Admin') {
+                // Para Operador, Instructor GYM, Usuario y otros
+                $query->whereNotIn('role', ['Super Admin', 'Administrador']);
             }
         }
+
+        // Búsqueda por texto (nombre, apellidos, email, identificacion)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('apellido1', 'like', "%{$search}%")
+                  ->orWhere('apellido2', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('identificacion', 'like', "%{$search}%");
+            });
+        }
+
+        // Filtro por rol
+        if ($request->filled('role_filter')) {
+            $query->where('role', $request->role_filter);
+        }
+
+        $users = $query->orderBy('id', 'desc')->paginate(15)->appends($request->all());
+
         return view('config.usuarios.index', compact('users'));
     }
 
