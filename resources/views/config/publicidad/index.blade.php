@@ -210,7 +210,7 @@
 document.addEventListener('DOMContentLoaded', function(){
     const apiDataUrl = "{{ route('config.publicidad.data') }}";
     const storeUrl = "{{ route('config.publicidad.store') }}";
-    const baseUrl = "{{ url('config/publicidad') }}";
+    const baseUrl = "{{ url('configuracion/publicidad') }}";
 
     const tbody = document.querySelector('#tablaPublicidad tbody');
     const search = document.getElementById('searchPublicidad');

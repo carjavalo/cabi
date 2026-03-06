@@ -12,6 +12,11 @@ class BienestarListadoController extends Controller
 {
     public function index(Request $request)
     {
+        // Permitir acceso únicamente a roles específicos
+        if (!\Illuminate\Support\Facades\Auth::check() || !in_array(\Illuminate\Support\Facades\Auth::user()->role, ['Super Admin','Administrador','Operador','Instructor GYM'])) {
+            return redirect('/')->with('error', 'Acceso denegado. No tiene permisos para ver los Listados de Bienestar.');
+        }
+
         $query = DB::table('evento_inscripciones')
             ->leftJoin('evento_franjas', 'evento_inscripciones.evento_franja_id', '=', 'evento_franjas.id')
             ->leftJoin('eventos', 'evento_inscripciones.evento_id', '=', 'eventos.id')

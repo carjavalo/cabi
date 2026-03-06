@@ -503,7 +503,7 @@ Guardar Evento
 document.addEventListener('DOMContentLoaded', function() {
     const apiDataUrl = "{{ route('config.eventos.data') }}";
     const storeUrl = "{{ route('config.eventos.store') }}";
-    const baseUrl = "{{ url('config/eventos') }}";
+    const baseUrl = "{{ url('configuracion/eventos') }}";
     const token = document.querySelector('meta[name=csrf-token]').getAttribute('content');
     
     const tbody = document.querySelector('#tablaEventos tbody');
