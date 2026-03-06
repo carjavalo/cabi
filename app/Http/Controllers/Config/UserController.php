@@ -52,7 +52,7 @@ class UserController extends Controller
             'identificacion' => ['nullable','string','max:100'],
             'servicio_id' => ['nullable','integer','exists:servicios,id'],
             'tipo_vinculacion_id' => ['nullable','integer','exists:vinculaciones,id'],
-            'role' => ['required','string','in:Super Admin,Administrador,Operador,Usuario'],
+            'role' => ['required','string','in:Super Admin,Administrador,Operador,Usuario,Instructor GYM'],
             'email' => ['required','email','max:255','unique:'.User::class],
             'password' => ['required','confirmed','min:6'],
         ]);
@@ -121,7 +121,7 @@ class UserController extends Controller
             'identificacion' => ['nullable','string','max:100'],
             'servicio_id' => ['nullable','integer','exists:servicios,id'],
             'tipo_vinculacion_id' => ['nullable','integer','exists:vinculaciones,id'],
-            'role' => ['required','string','in:Super Admin,Administrador,Operador,Usuario'],
+            'role' => ['required','string','in:Super Admin,Administrador,Operador,Usuario,Instructor GYM'],
             'email' => ['required','email','max:255','unique:users,email,'.$user->id],
             'password' => ['nullable','confirmed','min:6'],
         ]);
