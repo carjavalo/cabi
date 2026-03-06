@@ -954,7 +954,7 @@ const CustomModal = {
 document.addEventListener('DOMContentLoaded', function(){
     const apiDataUrl = "{{ route('config.encuestas.data') }}";
     const storeUrl = "{{ route('config.encuestas.store') }}";
-    const showUrl = "{{ url('config/encuestas') }}"; // Base URL para show
+    const showUrl = "{{ url('configuracion/encuestas') }}"; // Base URL para show
     const tablaBody = document.querySelector('#tablaEncuestas tbody');
     const search = document.getElementById('searchEncuesta');
     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
