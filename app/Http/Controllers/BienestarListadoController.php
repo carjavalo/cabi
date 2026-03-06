@@ -12,10 +12,6 @@ class BienestarListadoController extends Controller
 {
     public function index(Request $request)
     {
-        if (!Auth::check() || !in_array(Auth::user()->role, ['Super Admin', 'Administrador', 'Operador', 'Instructor GYM'])) {
-            return redirect('/')->with('error', 'No tiene permisos para acceder a esta sección.');
-        }
-
         $query = DB::table('evento_inscripciones')
             ->leftJoin('evento_franjas', 'evento_inscripciones.evento_franja_id', '=', 'evento_franjas.id')
             ->leftJoin('eventos', 'evento_inscripciones.evento_id', '=', 'eventos.id')
@@ -68,10 +64,6 @@ class BienestarListadoController extends Controller
 
     public function getObservaciones($identificacion)
     {
-        if (!Auth::check() || !in_array(Auth::user()->role, ['Super Admin', 'Administrador', 'Operador', 'Instructor GYM'])) {
-            return response()->json(['error' => 'No autorizado'], 403);
-        }
-
         $observaciones = Observacion::where('identificacion', $identificacion)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -81,10 +73,6 @@ class BienestarListadoController extends Controller
 
     public function storeObservacion(Request $request)
     {
-        if (!Auth::check() || !in_array(Auth::user()->role, ['Super Admin', 'Administrador', 'Operador', 'Instructor GYM'])) {
-            return response()->json(['error' => 'No autorizado'], 403);
-        }
-
         $request->validate([
             'identificacion' => 'required|string',
             'observacion' => 'required|string'

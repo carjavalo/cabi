@@ -45,9 +45,9 @@ Route::get('/bienestar/gym/inscripcion', function () {
 });
 // Bienestar - Listados (placeholder view)
 use App\Http\Controllers\BienestarListadoController;
-Route::get('/bienestar/listados', [BienestarListadoController::class, 'index'])->name('bienestar.listados')->middleware('auth');
-Route::get('/bienestar/observaciones/{identificacion}', [BienestarListadoController::class, 'getObservaciones'])->name('bienestar.observaciones.get')->middleware('auth');
-Route::post('/bienestar/observaciones', [BienestarListadoController::class, 'storeObservacion'])->name('bienestar.observaciones.store')->middleware('auth');
+Route::get('/bienestar/listados', [BienestarListadoController::class, 'index'])->name('bienestar.listados');
+Route::get('/bienestar/observaciones/{identificacion}', [BienestarListadoController::class, 'getObservaciones'])->name('bienestar.observaciones.get');
+Route::post('/bienestar/observaciones', [BienestarListadoController::class, 'storeObservacion'])->name('bienestar.observaciones.store');
 Route::post('/bienestar/gym/inscripcion', [AgendaHorarioController::class, 'storeInscription'])->name('inscripcion.store');
 
 // Agenda - usar controlador para mostrar y guardar
