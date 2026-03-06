@@ -42,10 +42,16 @@
         @endif
 
         <!-- Not-found suggestion (hidden by default) -->
-        <div id="inscripNotFound" class="hidden p-4 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800">
+        <div id="inscripNotFound" class="hidden mb-4 p-4 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800">
           <strong>No se encontró inscripción previa.</strong>
           <span class="ml-2">Si no está registrado, por favor complete la inscripción antes de agendar.</span>
           <a href="{{ url('/bienestar/gym/inscripcion') }}" class="ml-3 font-bold underline text-yellow-900">Ir a Inscripción</a>
+        </div>
+
+        <!-- Not authorized suggestion (hidden by default) -->
+        <div id="inscripNotAuthorized" class="hidden mb-4 p-4 rounded-lg bg-red-50 border border-red-200 text-red-800">
+          <strong>No está autorizado.</strong>
+          <span class="ml-2">Usted no cuenta con autorización para agendar en este momento. Por favor contacte a Bienestar.</span>
         </div>
 
         <form method="POST" action="{{ route('agenda.horario.store') }}">
@@ -225,18 +231,31 @@
       const apiBase = '{{ url('/bienestar/gym/inscrip-by-id') }}';
       if (idInput) {
         const notFoundDiv = document.getElementById('inscripNotFound');
+        const notAuthDiv = document.getElementById('inscripNotAuthorized');
         idInput.addEventListener('blur', function(){
           const val = this.value && this.value.trim();
-          if (!val) { if(notFoundDiv) notFoundDiv.classList.add('hidden'); return; }
+          if (!val) { 
+            if(notFoundDiv) notFoundDiv.classList.add('hidden'); 
+            if(notAuthDiv) notAuthDiv.classList.add('hidden'); 
+            return; 
+          }
           const url = apiBase + '/' + encodeURIComponent(val);
           fetch(url, { credentials: 'same-origin' })
             .then(r => r.json())
             .then(json => {
-              if (!json || !json.found) {
+              if(notFoundDiv) notFoundDiv.classList.add('hidden');
+              if(notAuthDiv) notAuthDiv.classList.add('hidden');
+
+              if (!json || json.found === false) {
                 if(notFoundDiv) notFoundDiv.classList.remove('hidden');
                 return;
               }
-              if(notFoundDiv) notFoundDiv.classList.add('hidden');
+
+              if (json.authorized === false) {
+                if(notAuthDiv) notAuthDiv.classList.remove('hidden');
+                return;
+              }
+
               const d = json.data;
               console.log('Datos recibidos de inscripgym:', d);
               console.log('Teléfono (celular):', d.telefono);

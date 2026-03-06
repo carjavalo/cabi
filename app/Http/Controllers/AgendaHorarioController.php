@@ -45,6 +45,20 @@ class AgendaHorarioController extends Controller
         // Try to fetch the personal data from inscripgym using identificacion
         $inscrip = DB::table('inscripgym')->where('identificacion', $data['identificacion'])->first();
 
+        // Check if they exist in inscripgym
+        if (!$inscrip) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['identificacion' => 'No se encuentra registrado en el sistema. Por favor inscríbase primero.']);
+        }
+
+        // Check authorization (Must be 1 to allow scheduling)
+        if (!$inscrip->autorizado) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['identificacion' => 'No está autorizado para agendar. Por favor complete su proceso de autorización en Bienestar.']);
+        }
+
         // Prevent duplicate horariosgim for the same identificacion (business validation)
         if (DB::table('horariosgim')->where('identificacion', $data['identificacion'])->exists()) {
             return redirect()->back()
@@ -111,6 +125,14 @@ class AgendaHorarioController extends Controller
             return response()->json(['found' => false]);
         }
 
+        if (!$record->autorizado) {
+            return response()->json([
+                'found' => true,
+                'authorized' => false,
+                'message' => 'No está autorizado para agendar.'
+            ]);
+        }
+
         // Map DB columns to form field names (inscripgym uses 'nombres' and 'celular')
         $mapped = [
             'nombre' => $record->nombres ?? ($record->nombre ?? null),
@@ -132,13 +154,16 @@ class AgendaHorarioController extends Controller
             'nombres' => 'required|string|max:255',
             'primer_apellido' => 'required|string|max:255',
             'segundo_apellido' => 'nullable|string|max:255',
-            'identificacion' => 'required|string|max:100',
+            'identificacion' => 'required|string|max:100|unique:inscripgym,identificacion',
             'edad' => 'nullable|integer',
             'celular' => 'nullable|string|max:50',
             'tipo_vinculacion_id' => 'nullable|integer|exists:vinculaciones,id',
             'servicio_id' => 'nullable|integer|exists:servicios,id',
             'contacto_emergencia' => 'nullable|string|max:255',
-            'correolec' => 'nullable|email|max:150',
+            'correolec' => 'nullable|email|max:150|unique:inscripgym,correolec',
+        ], [
+            'identificacion.unique' => 'Esta identificación ya se encuentra registrada en el sistema.',
+            'correolec.unique' => 'Este correo institucional ya se encuentra registrado en el sistema.'
         ]);
 
         // Ensure identificacion column exists before attempting updateOrInsert
@@ -164,21 +189,20 @@ class AgendaHorarioController extends Controller
             $servicioNombre = $s->nombre ?? null;
         }
 
-        \Illuminate\Support\Facades\DB::table('inscripgym')->updateOrInsert(
-            ['identificacion' => $data['identificacion']],
-            [
-                'nombres' => $data['nombres'],
-                'primer_apellido' => $data['primer_apellido'],
-                'segundo_apellido' => $data['segundo_apellido'] ?? '',
-                'identificacion' => $data['identificacion'],
-                'edad' => $data['edad'] ?? null,
-                'celular' => $data['celular'] ?? null,
-                'tipo_vinculacion' => $tipoNombre ?? '',
-                'servicio_unidad' => $servicioNombre ?? '',
-                'contacto_emergencia' => $data['contacto_emergencia'] ?? '',
-                'correolec' => $data['correolec'] ?? null,
-            ]
-        );
+        \Illuminate\Support\Facades\DB::table('inscripgym')->insert([
+            'nombres' => $data['nombres'],
+            'primer_apellido' => $data['primer_apellido'],
+            'segundo_apellido' => $data['segundo_apellido'] ?? '',
+            'identificacion' => $data['identificacion'],
+            'edad' => $data['edad'] ?? null,
+            'celular' => $data['celular'] ?? null,
+            'tipo_vinculacion' => $tipoNombre ?? '',
+            'servicio_unidad' => $servicioNombre ?? '',
+            'contacto_emergencia' => $data['contacto_emergencia'] ?? '',
+            'correolec' => $data['correolec'] ?? null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         // Volver al formulario de inscripción en lugar de ir a la agenda
         return redirect('/bienestar/gym/inscripcion')->with('success', 'Inscripción guardada correctamente.');
