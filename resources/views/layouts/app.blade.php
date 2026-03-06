@@ -187,9 +187,9 @@
                   @if(Auth::check() && Auth::user()->role === 'Super Admin')
                   <li class="nav-item"><a href="{{ url('/bienestar/gym/agenda') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Agenda tu Horario</p></a></li>
                   @endif
+                  <li class="nav-item"><a href="{{ url('/bienestar/listados') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Listado</p></a></li>
                 </ul>
               </li>
-              <li class="nav-item"><a href="{{ url('/bienestar/listados') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Listados</p></a></li>
                 <!-- 
               <li class="nav-item"><a href="#" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Item 2</p></a></li> -->
             </ul>
