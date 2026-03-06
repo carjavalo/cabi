@@ -37,11 +37,13 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'apellido1' => ['nullable','string','max:255'],
             'apellido2' => ['nullable','string','max:255'],
-            'identificacion' => ['nullable','string','max:100'],
+            'identificacion' => ['nullable','string','max:100', 'unique:'.User::class],
             'servicio_id' => ['nullable','integer','exists:servicios,id'],
             'tipo_vinculacion_id' => ['nullable','integer','exists:vinculaciones,id'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ], [
+            'identificacion.unique' => 'Esta identificación ya se encuentra registrada por otro usuario en el sistema.',
         ]);
         $servicioNombre = null;
         $tipoNombre = null;
