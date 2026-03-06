@@ -183,7 +183,9 @@
                   <p>GYM <i class="right fas fa-angle-left"></i></p>
                 </a>
                 <ul class="nav nav-treeview">
+                  @if(!Auth::check() || Auth::user()->role !== 'Instructor GYM')
                   <li class="nav-item"><a href="{{ url('/bienestar/gym/inscripcion') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Inscripción</p></a></li>
+                  @endif
                   @if(Auth::check() && Auth::user()->role === 'Super Admin')
                   <li class="nav-item"><a href="{{ url('/bienestar/gym/agenda') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Agenda tu Horario</p></a></li>
                   @endif
