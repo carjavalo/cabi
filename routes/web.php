@@ -65,17 +65,17 @@ Route::post('/api/inscritos/{id}/autorizar', [InscritoController::class, 'toggle
 require __DIR__.'/auth.php';
 
 // Configuración - rutas placeholder para gestión
-Route::get('/config/usuarios', function () { return view('config.usuarios'); });
-Route::get('/config/servicios', function () { return view('config.servicios'); });
-Route::get('/config/vinculaciones', function () { return view('config.vinculaciones'); });
-Route::get('/config/cursos', function () { return view('config.cursos'); });
+Route::get('/configuracion/usuarios', function () { return view('config.usuarios'); });
+Route::get('/configuracion/servicios', function () { return view('config.servicios'); });
+Route::get('/configuracion/vinculaciones', function () { return view('config.vinculaciones'); });
+Route::get('/configuracion/cursos', function () { return view('config.cursos'); });
 // Route handled by resource controller for eventos and encuestas
 
 // Gestión de Usuarios (CRUD básico)
 use App\Http\Controllers\Config\UserController;
 use App\Http\Controllers\Config\ServicioController;
 use App\Http\Controllers\Config\VinculacionController;
-Route::prefix('config')->name('config.')->group(function () {
+Route::prefix('configuracion')->name('config.')->group(function () {
     Route::resource('usuarios', UserController::class)->except(['show']);
     Route::resource('servicios', ServicioController::class)->except(['show']);
     Route::resource('vinculaciones', VinculacionController::class)->except(['show']);
