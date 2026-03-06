@@ -100,6 +100,9 @@
                                     } elseif(trim($u->role) == 'Operador') {
                                         $roleClass = 'bg-info';
                                         $roleIcon = 'user-tie';
+                                    } elseif(trim($u->role) == 'Instructor GYM') {
+                                        $roleClass = 'bg-success';
+                                        $roleIcon = 'dumbbell';
                                     }
                                 @endphp
                                 <span class="badge {{ $roleClass }} badge-modern">
