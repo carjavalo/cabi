@@ -15,7 +15,9 @@ class BienestarListadoController extends Controller
         $query = DB::table('evento_inscripciones')
             ->leftJoin('evento_franjas', 'evento_inscripciones.evento_franja_id', '=', 'evento_franjas.id')
             ->leftJoin('eventos', 'evento_inscripciones.evento_id', '=', 'eventos.id')
-            ->leftJoin('inscripgym', 'evento_inscripciones.identificacion', '=', 'inscripgym.identificacion')
+            ->leftJoin('inscripgym', function($join) {
+                $join->on(DB::raw('evento_inscripciones.identificacion COLLATE utf8mb4_unicode_ci'), '=', DB::raw('inscripgym.identificacion COLLATE utf8mb4_unicode_ci'));
+            })
             ->select(
                 'evento_inscripciones.id',
                 'evento_inscripciones.identificacion',
