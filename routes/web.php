@@ -43,6 +43,10 @@ Route::get('/bienestar/gym/inscripcion', function () {
     $vinculaciones = Vinculacion::orderBy('nombre')->get();
     return view('bienestar.gym.inscripcion', compact('servicios','vinculaciones'));
 });
+// Bienestar - Listados (placeholder view)
+Route::get('/bienestar/listados', function () {
+    return view('bienestar.listados');
+})->name('bienestar.listados');
 Route::post('/bienestar/gym/inscripcion', [AgendaHorarioController::class, 'storeInscription'])->name('inscripcion.store');
 
 // Agenda - usar controlador para mostrar y guardar

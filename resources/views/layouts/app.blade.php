@@ -189,6 +189,7 @@
                   @endif
                 </ul>
               </li>
+              <li class="nav-item"><a href="{{ url('/bienestar/listados') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Listados</p></a></li>
                 <!-- 
               <li class="nav-item"><a href="#" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Item 2</p></a></li> -->
             </ul>
