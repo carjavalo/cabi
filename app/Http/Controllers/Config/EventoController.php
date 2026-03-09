@@ -337,6 +337,25 @@ class EventoController extends Controller
         return response()->json(['success' => true, 'deleted' => $count, 'message' => "Se eliminaron {$count} inscripción(es)."]);
     }
 
+    public function actualizarInscripcion(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer|exists:evento_inscripciones,id',
+            'fecha_reserva' => 'required|date',
+            'evento_franja_id' => 'required|integer|exists:evento_franjas,id',
+        ]);
+
+        $inscripcion = EventoInscripcion::find($request->id);
+        if ($inscripcion) {
+            $inscripcion->fecha_reserva = $request->fecha_reserva;
+            $inscripcion->evento_franja_id = $request->evento_franja_id;
+            $inscripcion->save();
+            return response()->json(['success' => true, 'message' => 'Inscripción actualizada correctamente.']);
+        }
+
+        return response()->json(['success' => false, 'message' => 'No se encontró la inscripción.']);
+    }
+
     public function consultarUsuario($identificacion)
     {
         // Consultar en la tabla inscripgym (tiene nombres, apellidos, servicio_unidad)

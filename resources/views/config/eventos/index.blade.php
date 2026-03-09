@@ -1458,7 +1458,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         inscripciones.forEach(ins => {
             const initials = ins.nombre_completo.substring(0,2).toUpperCase();
-            const dateStr = new Date(ins.created_at).toLocaleString("es-CO");
+            const dateStr = ins.fecha_reserva ? new Date(ins.fecha_reserva + 'T00:00:00').toLocaleDateString("es-CO") : new Date(ins.created_at).toLocaleString("es-CO");
             if(ins.asistencia) checked++;
             
             // Resolver franja horaria: primero desde la relación cargada, después por lookup
@@ -1492,15 +1492,37 @@ document.addEventListener('DOMContentLoaded', function() {
                     </td>
                     <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">${ins.identificacion}</td>
                     <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">N/A</td>
-                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">${dateStr}</td>
                     <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
-                        <span class="inline-flex items-center px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-xs font-medium">${franjaStr}</span>
+                        <span class="view-mode-fecha" id="view-fecha-${ins.id}">${dateStr}</span>
+                        <input type="date" class="edit-mode-fecha hidden w-full rounded-lg border-slate-200 dark:border-slate-700 text-sm p-1" id="edit-fecha-${ins.id}" value="${ins.fecha_reserva ? ins.fecha_reserva.substring(0,10) : (ins.created_at ? ins.created_at.substring(0,10) : '')}"/>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                        <span class="view-mode-franja inline-flex items-center px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-xs font-medium" id="view-franja-${ins.id}">${franjaStr}</span>
+                        <select class="edit-mode-franja hidden w-full rounded-lg border-slate-200 dark:border-slate-700 text-sm p-1" id="edit-franja-${ins.id}">
+                            ${allFranjas.map(f => {
+                                const fi = f.hora_inicio ? f.hora_inicio.substring(0,5) : '';
+                                const ff = f.hora_fin ? f.hora_fin.substring(0,5) : '';
+                                const ds = f.dia_semana !== null ? ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"][f.dia_semana] : '';
+                                const sel = ins.evento_franja_id == f.id ? 'selected' : '';
+                                return `<option value="${f.id}" ${sel}>${ds} ${fi}-${ff}</option>`;
+                            }).join('')}
+                        </select>
                     </td>
                     <td class="px-6 py-4 text-center">
-                        <button type="button" onclick="eliminarInscritoIndividual(${ins.id}, '${ins.nombre_completo.replace(/'/g, "\\'")}')"
-                            class="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Eliminar inscripción">
-                            <span class="material-symbols-outlined text-base">delete</span>
-                        </button>
+                        <div class="flex items-center justify-center gap-2">
+                            <button type="button" onclick="editarInscrito(${ins.id})" id="btn-edit-${ins.id}"
+                                class="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="Editar inscripción">
+                                <span class="material-symbols-outlined text-base">edit</span>
+                            </button>
+                            <button type="button" onclick="guardarEdicion(${ins.id})" id="btn-save-${ins.id}"
+                                class="hidden inline-flex items-center gap-1 px-2 py-1 text-xs font-bold text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors" title="Guardar cambios">
+                                <span class="material-symbols-outlined text-base">save</span>
+                            </button>
+                            <button type="button" onclick="eliminarInscritoIndividual(${ins.id}, '${ins.nombre_completo.replace(/'/g, "\\'")}')"
+                                class="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Eliminar inscripción">
+                                <span class="material-symbols-outlined text-base">delete</span>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -1591,6 +1613,50 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!result.isConfirmed) return;
 
         ejecutarEliminacion({ evento_id: parseInt(eventoId), ids: ids });
+    }
+
+    // Funciones de Edición de Inscrito
+    window.editarInscrito = function(id) {
+        document.getElementById(`view-fecha-${id}`).classList.add('hidden');
+        document.getElementById(`edit-fecha-${id}`).classList.remove('hidden');
+        
+        document.getElementById(`view-franja-${id}`).classList.add('hidden');
+        document.getElementById(`edit-franja-${id}`).classList.remove('hidden');
+        
+        document.getElementById(`btn-edit-${id}`).classList.add('hidden');
+        document.getElementById(`btn-save-${id}`).classList.remove('hidden');
+    }
+
+    window.guardarEdicion = async function(id) {
+        const btnSave = document.getElementById(`btn-save-${id}`);
+        btnSave.innerHTML = '<span class="material-symbols-outlined text-base animate-spin">sync</span>';
+        
+        const fecha = document.getElementById(`edit-fecha-${id}`).value;
+        const franja = document.getElementById(`edit-franja-${id}`).value;
+        
+        try {
+            const res = await fetch("{{ route('eventos.inscripciones.actualizar') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ id: id, fecha_reserva: fecha, evento_franja_id: franja })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'success');
+                await refreshInscritos(); // recarga la tabla
+            } else {
+                showToast(data.message || 'Error al guardar.', 'error');
+                btnSave.innerHTML = '<span class="material-symbols-outlined text-base">save</span>';
+            }
+        } catch(e) {
+            console.error(e);
+            showToast('Error de conexión al guardar.', 'error');
+            btnSave.innerHTML = '<span class="material-symbols-outlined text-base">save</span>';
+        }
     }
 
     // Eliminar una inscripción individual (botón de cada fila)

@@ -101,3 +101,4 @@ Route::get('/eventos/inscripcion/{id}', [App\Http\Controllers\Config\EventoContr
 Route::get('/eventos/api/usuario/{identificacion}', [App\Http\Controllers\Config\EventoController::class, 'consultarUsuario'])->name('eventos.api.usuario');
 Route::post('/eventos/inscripcion/{id}', [App\Http\Controllers\Config\EventoController::class, 'guardarInscripcion'])->name('eventos.inscripcion.guardar');
 Route::post('/eventos/inscripciones/eliminar', [App\Http\Controllers\Config\EventoController::class, 'eliminarInscripciones'])->name('eventos.inscripciones.eliminar')->middleware('auth');
+Route::post('/eventos/inscripciones/actualizar', [App\Http\Controllers\Config\EventoController::class, 'actualizarInscripcion'])->name('eventos.inscripciones.actualizar')->middleware('auth');
