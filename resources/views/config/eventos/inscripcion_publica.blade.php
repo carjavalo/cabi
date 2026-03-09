@@ -112,23 +112,23 @@
 <div class="row justify-content-center">
     <div class="col-lg-8 col-xl-7">
 
-{{-- ============ ALERTAS FLASH ============ --}}
+{{-- ============ ALERTAS FLASH EN DOM (Ocultas si usaremos SweetAlert, pero de respaldo) ============ --}}
 @if(session('success'))
-<div class="alert alert-success alert-dismissible fade show" role="alert">
+<div class="alert alert-success alert-dismissible fade show" role="alert" id="flash-success" style="display:none;">
     <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 </div>
 @endif
 
 @if(session('error'))
-<div class="alert alert-danger alert-dismissible fade show" role="alert">
+<div class="alert alert-danger alert-dismissible fade show" role="alert" id="flash-error" style="display:none;">
     <i class="fas fa-exclamation-triangle mr-1"></i> {{ session('error') }}
     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 </div>
 @endif
 
 @if($errors->any())
-<div class="alert alert-danger alert-dismissible fade show" role="alert">
+<div class="alert alert-danger alert-dismissible fade show" role="alert" id="flash-validation" style="display:none;">
     <strong><i class="fas fa-exclamation-triangle mr-1"></i> Por favor corrija los siguientes errores:</strong>
     <ul class="mb-0 mt-1">
         @foreach($errors->all() as $error)
@@ -365,7 +365,47 @@
 @endsection
 
 @push('scripts')
+{{-- SweetAlert2 for beautiful alerts --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+// Manejo de alertas con SweetAlert2 al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: '¡Inscripción Exitosa!',
+            text: "{{ session('success') }}",
+            confirmButtonColor: '#2e3a75',
+            confirmButtonText: 'Entendido'
+        });
+    @endif
+
+    @if(session('error'))
+        Swal.fire({
+            icon: 'warning',
+            title: 'No se pudo realizar el agendamiento',
+            html: `{{ session('error') }}`,
+            confirmButtonColor: '#2e3a75',
+            confirmButtonText: 'Volver a intentar'
+        });
+    @endif
+
+    @if($errors->any())
+        Swal.fire({
+            icon: 'error',
+            title: 'Errores en el formulario',
+            html: `
+                <ul style="text-align: left; margin: 0; padding-left: 1.2rem;">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            `,
+            confirmButtonColor: '#2e3a75'
+        });
+    @endif
+});
+
 function seleccionarFranja(franjaId, el) {
     // Limpiar selección previa
     document.querySelectorAll('.franja-btn').forEach(function(btn) {

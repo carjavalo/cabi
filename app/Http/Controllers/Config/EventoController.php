@@ -229,7 +229,7 @@ class EventoController extends Controller
             ->count();
             
         if ($franja && $franja->capacidad_maxima > 0 && $inscritosFranja >= $franja->capacidad_maxima) {
-            return back()->with('error', 'El cupo para esta franja ya está lleno.')->withInput();
+            return back()->with('error', "Límite de Agendados.<br>La franja seleccionada superó su capacidad máxima de {$franja->capacidad_maxima} agendados. Por favor elija otro horario.")->withInput();
         }
 
         // Verificar límite diario por usuario
@@ -347,6 +347,23 @@ class EventoController extends Controller
 
         $inscripcion = EventoInscripcion::find($request->id);
         if ($inscripcion) {
+            // Verificar capacidad si se cambia la franja y no es la misma en la misma semana/día temporal
+            if ($inscripcion->evento_franja_id != $request->evento_franja_id || $inscripcion->fecha_reserva != $request->fecha_reserva) {
+                $franja = EventoFranja::find($request->evento_franja_id);
+                $inscritosFranja = EventoInscripcion::where('evento_id', $inscripcion->evento_id)
+                    ->where('evento_franja_id', $request->evento_franja_id)
+                    // ->whereDate('fecha_reserva', $request->fecha_reserva) // If we want physical limit per date. Currently events seem to check only by franja total
+                    ->count();
+
+                if ($franja && $franja->capacidad_maxima > 0 && $inscritosFranja >= $franja->capacidad_maxima) {
+                    return response()->json([
+                        'success' => false, 
+                        'message' => 'Límite de Agendados. La franja seleccionada alcanzó su capacidad máxima (' . $franja->capacidad_maxima . ' personas).',
+                        'capacity_full' => true
+                    ]);
+                }
+            }
+
             $inscripcion->fecha_reserva = $request->fecha_reserva;
             $inscripcion->evento_franja_id = $request->evento_franja_id;
             $inscripcion->save();

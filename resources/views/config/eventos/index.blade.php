@@ -1649,7 +1649,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 showToast(data.message, 'success');
                 await refreshInscritos(); // recarga la tabla
             } else {
-                showToast(data.message || 'Error al guardar.', 'error');
+                if (data.capacity_full) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Franja sin cupos disponibles',
+                        text: data.message,
+                        confirmButtonColor: '#2e3a75',
+                        confirmButtonText: 'Entendido',
+                        customClass: {
+                            popup: 'dark:bg-slate-800 dark:text-slate-100',
+                            title: 'dark:text-slate-50',
+                        }
+                    });
+                } else {
+                    showToast(data.message || 'Error al guardar.', 'error');
+                }
                 btnSave.innerHTML = '<span class="material-symbols-outlined text-base">save</span>';
             }
         } catch(e) {
