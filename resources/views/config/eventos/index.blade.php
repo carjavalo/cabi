@@ -362,7 +362,7 @@ Guardar Evento
             <span class="material-symbols-outlined text-lg">delete</span>
             <span class="hidden sm:inline">Eliminar</span> (<span id="countSeleccionados">0</span>)
         </button>
-        <button class="flex items-center gap-2 px-3 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition-all shadow-sm text-sm">
+        <button type="button" onclick="abrirModalExportExcel()" class="flex items-center gap-2 px-3 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition-all shadow-sm text-sm">
 <span class="material-symbols-outlined text-lg">download</span>
 <span class="hidden sm:inline">Export to Excel</span>
 </button>
@@ -410,6 +410,58 @@ Guardar Evento
 </div>
 </div>
 </section>
+
+<!-- MODAL PREVISUALIZACIÓN EXPORT EXCEL -->
+<div id="modalExportExcel" class="hidden fixed inset-0 z-[9999] flex items-center justify-center" style="background:rgba(0,0,0,0.5);">
+<div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-5xl mx-4 flex flex-col" style="max-height:90vh;">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-emerald-50 dark:bg-emerald-900/20 rounded-t-2xl">
+        <div class="flex items-center gap-3">
+            <div class="bg-emerald-100 dark:bg-emerald-800/40 p-2 rounded-lg">
+                <span class="material-symbols-outlined text-emerald-600">table_chart</span>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-slate-50">Previsualización de Exportación</h3>
+                <p class="text-xs text-slate-500">Revise los datos antes de descargar el archivo Excel</p>
+            </div>
+        </div>
+        <button type="button" onclick="cerrarModalExportExcel()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+    <!-- Tabla -->
+    <div class="flex-1 overflow-auto px-6 py-4">
+        <table class="w-full border-collapse text-sm">
+            <thead class="sticky top-0 z-10">
+                <tr class="bg-slate-100 dark:bg-slate-800">
+                    <th class="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">#</th>
+                    <th class="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Identificación</th>
+                    <th class="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Nombre Completo</th>
+                    <th class="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Servicio</th>
+                    <th class="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Correo</th>
+                    <th class="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Celular</th>
+                    <th class="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Contacto Emergencia</th>
+                    <th class="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Fecha Registro</th>
+                    <th class="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Día</th>
+                    <th class="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Franja Horaria</th>
+                </tr>
+            </thead>
+            <tbody id="exportExcelTbody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+        </table>
+    </div>
+    <!-- Footer -->
+    <div class="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-b-2xl">
+        <span id="exportExcelCount" class="text-sm text-slate-500 font-medium">0 registros</span>
+        <div class="flex gap-3">
+            <button type="button" onclick="cerrarModalExportExcel()" class="px-5 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-lg transition-all">Cancelar</button>
+            <button type="button" onclick="descargarExcel()" class="flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-lg shadow-emerald-600/20 transition-all text-sm">
+                <span class="material-symbols-outlined text-lg">download</span>
+                Descargar Excel
+            </button>
+        </div>
+    </div>
+</div>
+</div>
 
 <!-- SECCION ESTADISTICAS -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
@@ -1825,6 +1877,149 @@ document.addEventListener('DOMContentLoaded', function() {
                 icon: type === 'error' ? 'error' : (type === 'info' ? 'info' : 'success'),
                 title: msg
             });
+        }
+    }
+
+    // ========== EXPORT EXCEL - Modal y Descarga ==========
+    let exportExcelData = []; // datos preparados para exportar
+
+    window.abrirModalExportExcel = function() {
+        const tbody = document.getElementById('exportExcelTbody');
+        const countEl = document.getElementById('exportExcelCount');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        exportExcelData = [];
+
+        const inscripciones = allInscripciones || [];
+        if (inscripciones.length === 0) {
+            Swal.fire({ icon: 'info', title: 'Sin datos', text: 'No hay usuarios inscritos para exportar.', confirmButtonColor: '#2e3a75' });
+            return;
+        }
+
+        const diasNombres = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+        inscripciones.forEach((ins, idx) => {
+            // Servicio, correo, celular, contacto emergencia desde inscripgym
+            const gym = ins.inscribir_gym || {};
+            const servicio = gym.servicio_unidad || 'N/A';
+            const correo = gym.correolec || 'N/A';
+            const celular = gym.celular || 'N/A';
+            const contactoEmergencia = gym.contacto_emergencia || 'N/A';
+
+            // Fecha registro
+            const fechaStr = ins.fecha_reserva
+                ? new Date(ins.fecha_reserva + 'T00:00:00').toLocaleDateString('es-CO')
+                : (ins.created_at ? new Date(ins.created_at).toLocaleDateString('es-CO') : 'N/A');
+
+            // Día de la semana
+            let diaStr = 'N/A';
+            if (ins.fecha_reserva) {
+                const d = new Date(ins.fecha_reserva + 'T12:00:00');
+                diaStr = diasNombres[d.getDay()] || 'N/A';
+            }
+
+            // Franja horaria
+            let franjaStr = 'Sin franja';
+            let franjaObj = ins.franja || null;
+            if (!franjaObj && ins.evento_franja_id && allFranjas && allFranjas.length > 0) {
+                franjaObj = allFranjas.find(f => parseInt(f.id) === parseInt(ins.evento_franja_id)) || null;
+            }
+            if (franjaObj) {
+                const hIni = franjaObj.hora_inicio ? franjaObj.hora_inicio.substring(0, 5) : '';
+                const hFin = franjaObj.hora_fin ? franjaObj.hora_fin.substring(0, 5) : '';
+                franjaStr = `${hIni} - ${hFin}`;
+            }
+
+            // Guardar fila para exportar
+            exportExcelData.push({
+                '#': idx + 1,
+                'Identificación': ins.identificacion || '',
+                'Nombre Completo': ins.nombre_completo || '',
+                'Servicio': servicio,
+                'Correo': correo,
+                'Celular': celular,
+                'Contacto Emergencia': contactoEmergencia,
+                'Fecha Registro': fechaStr,
+                'Día': diaStr,
+                'Franja Horaria': franjaStr
+            });
+
+            tbody.innerHTML += `
+                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/20">
+                    <td class="px-3 py-2 text-slate-500">${idx + 1}</td>
+                    <td class="px-3 py-2 font-medium text-slate-700 dark:text-slate-300">${ins.identificacion || ''}</td>
+                    <td class="px-3 py-2 font-semibold text-slate-800 dark:text-slate-200">${ins.nombre_completo || ''}</td>
+                    <td class="px-3 py-2 text-slate-600">${servicio}</td>
+                    <td class="px-3 py-2 text-slate-600">${correo}</td>
+                    <td class="px-3 py-2 text-slate-600">${celular}</td>
+                    <td class="px-3 py-2 text-slate-600">${contactoEmergencia}</td>
+                    <td class="px-3 py-2 text-slate-600">${fechaStr}</td>
+                    <td class="px-3 py-2 text-slate-600">${diaStr}</td>
+                    <td class="px-3 py-2"><span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-xs font-medium">${franjaStr}</span></td>
+                </tr>
+            `;
+        });
+
+        if (countEl) countEl.textContent = inscripciones.length + ' registros';
+        document.getElementById('modalExportExcel').classList.remove('hidden');
+    }
+
+    window.cerrarModalExportExcel = function() {
+        document.getElementById('modalExportExcel').classList.add('hidden');
+    }
+
+    window.descargarExcel = function() {
+        if (!exportExcelData || exportExcelData.length === 0) {
+            Swal.fire({ icon: 'info', title: 'Sin datos', text: 'No hay datos para exportar.', confirmButtonColor: '#2e3a75' });
+            return;
+        }
+
+        // Generar Excel usando SheetJS (xlsx)
+        if (typeof XLSX === 'undefined') {
+            // Cargar SheetJS dinámicamente si no está cargado
+            const script = document.createElement('script');
+            script.src = 'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js';
+            script.onload = function() { generarArchivoExcel(); };
+            script.onerror = function() {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cargar la librería de Excel. Intente nuevamente.', confirmButtonColor: '#2e3a75' });
+            };
+            document.head.appendChild(script);
+        } else {
+            generarArchivoExcel();
+        }
+    }
+
+    function generarArchivoExcel() {
+        try {
+            const ws = XLSX.utils.json_to_sheet(exportExcelData);
+
+            // Ajustar anchos de columna
+            ws['!cols'] = [
+                { wch: 5 },   // #
+                { wch: 16 },  // Identificación
+                { wch: 30 },  // Nombre Completo
+                { wch: 25 },  // Servicio
+                { wch: 30 },  // Correo
+                { wch: 14 },  // Celular
+                { wch: 18 },  // Contacto Emergencia
+                { wch: 14 },  // Fecha Registro
+                { wch: 12 },  // Día
+                { wch: 16 },  // Franja Horaria
+            ];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Inscritos');
+
+            const tituloEvento = (document.getElementById('evento_titulo').value || 'Evento').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]/g, '').substring(0, 40);
+            const fecha = new Date().toISOString().slice(0, 10);
+            const fileName = `Inscritos_${tituloEvento}_${fecha}.xlsx`;
+
+            XLSX.writeFile(wb, fileName);
+
+            showToast('Archivo Excel descargado correctamente', 'success');
+        } catch(e) {
+            console.error('Error generando Excel:', e);
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Error al generar el archivo Excel.', confirmButtonColor: '#2e3a75' });
         }
     }
 
