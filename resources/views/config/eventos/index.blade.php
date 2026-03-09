@@ -401,11 +401,12 @@ Guardar Evento
 <tbody class="divide-y divide-slate-100 dark:divide-slate-800" id="inscritosTbody"></tbody>
 </table>
 </div>
-<div class="p-4 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center text-xs text-slate-500 font-medium border-t border-slate-200 dark:border-slate-800">
-<span>Mostrando 2 de 15 usuarios registrados</span>
-<div class="flex gap-2">
-<button class="px-3 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded hover:bg-slate-50 transition-colors">Anterior</button>
-<button class="px-3 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded hover:bg-slate-50 transition-colors">Siguiente</button>
+<div class="p-4 bg-slate-50 dark:bg-slate-800/50 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-slate-500 font-medium border-t border-slate-200 dark:border-slate-800">
+<span id="paginacionInscritosInfo">Mostrando 0 de 0 usuarios registrados</span>
+<div class="flex items-center gap-1">
+<button type="button" id="btnInscritosAnterior" onclick="inscritosPaginaAnterior()" class="px-3 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded hover:bg-slate-50 transition-colors">Anterior</button>
+<div id="paginacionInscritosNumeros" class="flex gap-1"></div>
+<button type="button" id="btnInscritosSiguiente" onclick="inscritosPaginaSiguiente()" class="px-3 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded hover:bg-slate-50 transition-colors">Siguiente</button>
 </div>
 </div>
 </section>
@@ -1284,6 +1285,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedDiaFilter = null; // Día seleccionado para filtrar (fecha_reserva)
     let selectedFranjaFilter = ''; // Franja seleccionada para filtrar
 
+    // ===== PAGINACIÓN DE INSCRITOS =====
+    const INSCRITOS_PER_PAGE = 15;
+    let inscritosCurrentPage = 1;
+    let inscritosFilteredData = []; // datos filtrados actuales para paginar
+
     // Días de la semana ordenados Lunes→Domingo con su número JS (getDay: 0=Dom,1=Lun...)
     const diasSemana = [
         { dow: 1, nombre: 'Lunes' },
@@ -1401,7 +1407,93 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        renderUsuariosInscritos(filtered);
+        // Guardar datos filtrados y reiniciar página al filtrar
+        inscritosFilteredData = filtered;
+        inscritosCurrentPage = 1;
+        renderPaginatedInscritos();
+    }
+
+    // Renderizar la página actual de inscritos
+    function renderPaginatedInscritos() {
+        const totalItems = inscritosFilteredData.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / INSCRITOS_PER_PAGE));
+        if (inscritosCurrentPage > totalPages) inscritosCurrentPage = totalPages;
+        if (inscritosCurrentPage < 1) inscritosCurrentPage = 1;
+
+        const startIdx = (inscritosCurrentPage - 1) * INSCRITOS_PER_PAGE;
+        const endIdx = Math.min(startIdx + INSCRITOS_PER_PAGE, totalItems);
+        const pageData = inscritosFilteredData.slice(startIdx, endIdx);
+
+        // Renderizar solo los registros de la página actual
+        renderUsuariosInscritos(pageData, totalItems);
+
+        // Actualizar controles de paginación
+        actualizarPaginacionInscritos(totalItems, totalPages, startIdx, endIdx);
+    }
+
+    // Actualizar la barra de paginación
+    function actualizarPaginacionInscritos(totalItems, totalPages, startIdx, endIdx) {
+        const paginacionInfo = document.getElementById('paginacionInscritosInfo');
+        const btnAnterior = document.getElementById('btnInscritosAnterior');
+        const btnSiguiente = document.getElementById('btnInscritosSiguiente');
+        const paginacionNumeros = document.getElementById('paginacionInscritosNumeros');
+
+        if (paginacionInfo) {
+            if (totalItems === 0) {
+                paginacionInfo.textContent = 'Sin registros';
+            } else {
+                paginacionInfo.textContent = `Mostrando ${startIdx + 1} - ${endIdx} de ${totalItems} usuarios registrados`;
+            }
+        }
+
+        if (btnAnterior) {
+            btnAnterior.disabled = inscritosCurrentPage <= 1;
+            btnAnterior.classList.toggle('opacity-50', inscritosCurrentPage <= 1);
+            btnAnterior.classList.toggle('cursor-not-allowed', inscritosCurrentPage <= 1);
+        }
+        if (btnSiguiente) {
+            btnSiguiente.disabled = inscritosCurrentPage >= totalPages;
+            btnSiguiente.classList.toggle('opacity-50', inscritosCurrentPage >= totalPages);
+            btnSiguiente.classList.toggle('cursor-not-allowed', inscritosCurrentPage >= totalPages);
+        }
+
+        // Números de página
+        if (paginacionNumeros) {
+            paginacionNumeros.innerHTML = '';
+            const maxVisible = 5;
+            let startPage = Math.max(1, inscritosCurrentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            if (endPage - startPage + 1 < maxVisible) startPage = Math.max(1, endPage - maxVisible + 1);
+
+            for (let p = startPage; p <= endPage; p++) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = p;
+                btn.className = p === inscritosCurrentPage
+                    ? 'px-3 py-1 text-sm font-bold rounded bg-primary text-white shadow-sm'
+                    : 'px-3 py-1 text-sm font-medium rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 hover:bg-slate-50 transition-colors';
+                btn.onclick = function() {
+                    inscritosCurrentPage = p;
+                    renderPaginatedInscritos();
+                };
+                paginacionNumeros.appendChild(btn);
+            }
+        }
+    }
+
+    // Navegación de paginación
+    window.inscritosPaginaAnterior = function() {
+        if (inscritosCurrentPage > 1) {
+            inscritosCurrentPage--;
+            renderPaginatedInscritos();
+        }
+    }
+    window.inscritosPaginaSiguiente = function() {
+        const totalPages = Math.max(1, Math.ceil(inscritosFilteredData.length / INSCRITOS_PER_PAGE));
+        if (inscritosCurrentPage < totalPages) {
+            inscritosCurrentPage++;
+            renderPaginatedInscritos();
+        }
     }
 
     window.refreshInscritos = async function() {
@@ -1424,18 +1516,20 @@ document.addEventListener('DOMContentLoaded', function() {
         allInscripciones = evento.evento_inscripciones || [];
         selectedDiaFilter = null;
         selectedFranjaFilter = '';
+        inscritosCurrentPage = 1;
         poblarDiasInscritos(evento);
         poblarFranjasInscritos(evento);
-        renderUsuariosInscritos(allInscripciones);
+        inscritosFilteredData = [...allInscripciones];
+        renderPaginatedInscritos();
     }
 
-    function renderUsuariosInscritos(inscripciones) {
+    function renderUsuariosInscritos(inscripciones, totalGeneral) {
         const tbody = document.getElementById("inscritosTbody");
         if(!tbody) return;
         tbody.innerHTML = "";
         
         let checked = 0;
-        let total = inscripciones ? inscripciones.length : 0;
+        let total = typeof totalGeneral === 'number' ? totalGeneral : (inscripciones ? inscripciones.length : 0);
         
         const statCap = document.getElementById("statCapacidad");
         const statAsist = document.getElementById("statAsistencia");
