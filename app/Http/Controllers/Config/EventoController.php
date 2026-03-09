@@ -142,18 +142,35 @@ class EventoController extends Controller
             }
         }
 
-        // Actualizar franjas relacionadas (con dia_semana)
-        $evento->eventoFranjas()->delete();
+        // Actualizar franjas relacionadas sin borrarlas todas
         if (isset($data['franjas_horarias']) && is_array($data['franjas_horarias'])) {
-            foreach ($data['franjas_horarias'] as $franja) {
-                EventoFranja::create([
-                    'evento_id' => $evento->id,
-                    'dia_semana' => $franja['dia_semana'] ?? null,
-                    'hora_inicio' => $franja['hora_inicio'],
-                    'hora_fin' => $franja['hora_fin'],
-                    'capacidad_maxima' => $franja['capacidad_maxima'] ?? 0
-                ]);
+            $existingFranjas = $evento->eventoFranjas()->get();
+            $newFranjaIds = [];
+            foreach ($data['franjas_horarias'] as $franjaData) {
+                // Find existing or create new based on dia_semana, hora_inicio, hora_fin
+                $franja = $evento->eventoFranjas()->firstOrCreate(
+                    [
+                        'dia_semana' => $franjaData['dia_semana'] ?? null,
+                        'hora_inicio' => $franjaData['hora_inicio'],
+                        'hora_fin' => $franjaData['hora_fin'],
+                    ],
+                    [
+                        'capacidad_maxima' => $franjaData['capacidad_maxima'] ?? 0
+                    ]
+                );
+                
+                // If it existed, we might still want to update its capacity
+                if (!$franja->wasRecentlyCreated) {
+                    $franja->update([
+                        'capacidad_maxima' => $franjaData['capacidad_maxima'] ?? 0
+                    ]);
+                }
+                
+                $newFranjaIds[] = $franja->id;
             }
+            
+            // Eliminar solo las franjas que ya no existen en la nueva configuracion
+            $evento->eventoFranjas()->whereNotIn('id', $newFranjaIds)->delete();
         }
 
         return response()->json(['success' => true, 'evento' => $evento]);
