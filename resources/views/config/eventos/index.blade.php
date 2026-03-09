@@ -352,7 +352,7 @@ Guardar Evento
 <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
 <div class="relative w-full sm:w-auto">
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
-<input class="pl-10 pr-4 py-2 w-full sm:w-56 md:w-72 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-primary focus:border-primary transition-all" placeholder="Buscar por Nombre o ID..." type="text"/>
+<input id="inputBuscarInscritos" oninput="filtrarYRenderInscritos()" class="pl-10 pr-4 py-2 w-full sm:w-56 md:w-72 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-primary focus:border-primary transition-all" placeholder="Buscar por Nombre o ID..." type="text"/>
 </div>
         <button type="button" onclick="refreshInscritos()" class="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-all shadow-sm text-sm">
             <span class="material-symbols-outlined text-lg">refresh</span>
@@ -1389,6 +1389,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (selectedFranjaFilter) {
             const franjaId = parseInt(selectedFranjaFilter);
             filtered = filtered.filter(ins => ins.evento_franja_id === franjaId);
+        }
+
+        const inputBs = document.getElementById('inputBuscarInscritos');
+        if (inputBs && inputBs.value.trim() !== '') {
+            const q = inputBs.value.toLowerCase().trim();
+            filtered = filtered.filter(ins => {
+                const doc = ins.identificacion ? ins.identificacion.toLowerCase() : '';
+                const nom = ins.nombre_completo ? ins.nombre_completo.toLowerCase() : '';
+                return doc.includes(q) || nom.includes(q);
+            });
         }
 
         renderUsuariosInscritos(filtered);
