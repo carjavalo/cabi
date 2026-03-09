@@ -1362,7 +1362,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const opt = document.createElement('option');
             opt.value = franja.id;
             // Contar inscritos de esta franja
-            const count = allInscripciones.filter(i => i.evento_franja_id === franja.id).length;
+            const count = allInscripciones.filter(i => parseInt(i.evento_franja_id) === parseInt(franja.id)).length;
             opt.textContent = `${franja.hora_inicio} - ${franja.hora_fin} (${count} inscritos)`;
             select.appendChild(opt);
         });
@@ -1388,7 +1388,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (selectedFranjaFilter) {
             const franjaId = parseInt(selectedFranjaFilter);
-            filtered = filtered.filter(ins => ins.evento_franja_id === franjaId);
+            filtered = filtered.filter(ins => parseInt(ins.evento_franja_id) === franjaId);
         }
 
         const inputBs = document.getElementById('inputBuscarInscritos');
@@ -1461,14 +1461,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const dateStr = new Date(ins.created_at).toLocaleString("es-CO");
             if(ins.asistencia) checked++;
             
-            // Format franja horaria if available
+            // Resolver franja horaria: primero desde la relación cargada, después por lookup
+            let franjaObj = ins.franja || null;
+            
+            // Fallback: si no tiene relación cargada pero sí tiene evento_franja_id, buscar en allFranjas
+            if (!franjaObj && ins.evento_franja_id && allFranjas && allFranjas.length > 0) {
+                const fid = parseInt(ins.evento_franja_id);
+                franjaObj = allFranjas.find(f => parseInt(f.id) === fid) || null;
+            }
+            
             let franjaStr = "Sin franja";
-            if(ins.franja) {
-                const hIni = ins.franja.hora_inicio ? ins.franja.hora_inicio.substring(0,5) : '';
-                const hFin = ins.franja.hora_fin ? ins.franja.hora_fin.substring(0,5) : '';
-                // Optional: mapping dia_semana to text
+            if(franjaObj) {
+                const hIni = franjaObj.hora_inicio ? franjaObj.hora_inicio.substring(0,5) : '';
+                const hFin = franjaObj.hora_fin ? franjaObj.hora_fin.substring(0,5) : '';
                 const dias = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
-                const diaText = ins.franja.dia_semana !== null && dias[ins.franja.dia_semana] ? dias[ins.franja.dia_semana] + " " : "";
+                const diaText = franjaObj.dia_semana !== null && franjaObj.dia_semana !== undefined && dias[franjaObj.dia_semana] ? dias[franjaObj.dia_semana] + " " : "";
                 franjaStr = `${diaText}${hIni} - ${hFin}`;
             }
             
