@@ -1491,7 +1491,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </td>
                     <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">${ins.identificacion}</td>
-                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">N/A</td>
+                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">${ins.inscribir_gym && ins.inscribir_gym.servicio_unidad ? ins.inscribir_gym.servicio_unidad : 'N/A'}</td>
                     <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
                         <span class="view-mode-fecha" id="view-fecha-${ins.id}">${dateStr}</span>
                         <input type="date" class="edit-mode-fecha hidden w-full rounded-lg border-slate-200 dark:border-slate-700 text-sm p-1" id="edit-fecha-${ins.id}" value="${ins.fecha_reserva ? ins.fecha_reserva.substring(0,10) : (ins.created_at ? ins.created_at.substring(0,10) : '')}"/>

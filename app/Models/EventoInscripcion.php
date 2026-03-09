@@ -27,4 +27,9 @@ class EventoInscripcion extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function inscribirGym()
+    {
+        return $this->belongsTo(Inscripgym::class, 'identificacion', 'identificacion');
+    }
 }
