@@ -71,21 +71,21 @@
                 <div class="space-y-6">
                     <div class="flex flex-col gap-2">
                         <label class="text-sm font-bold text-slate-700">Nombres</label>
-                        <input name="nombres" class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all" placeholder="Ej. Juan Andrés" type="text"/>
+                        <input name="nombres" required class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all" placeholder="Ej. Juan Andrés" type="text"/>
                     </div>
                     <div class="flex flex-col gap-2">
                         <label class="text-sm font-bold text-slate-700">Primer Apellido</label>
-                        <input name="primer_apellido" class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all" placeholder="Ej. Rodríguez" type="text"/>
+                        <input name="primer_apellido" required class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all" placeholder="Ej. Rodríguez" type="text"/>
                     </div>
                     <div class="flex flex-col gap-2">
                         <label class="text-sm font-bold text-slate-700">Segundo Apellido</label>
-                        <input name="segundo_apellido" class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all" placeholder="Ej. Gómez" type="text"/>
+                        <input name="segundo_apellido" required class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all" placeholder="Ej. Gómez" type="text"/>
                     </div>
                     <div class="flex flex-col gap-2">
                         <label class="text-sm font-bold text-slate-700">No. Documento</label>
                         <div class="relative">
                             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">badge</span>
-                            <input name="identificacion" class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 pl-12 pr-4 text-slate-900 transition-all" placeholder="1.234.567.890" type="text"/>
+                            <input name="identificacion" required class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 pl-12 pr-4 text-slate-900 transition-all" placeholder="1.234.567.890" type="text"/>
                         </div>
                     </div>
                 </div>
@@ -94,16 +94,16 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div class="flex flex-col gap-2">
                             <label class="text-sm font-bold text-slate-700">Edad</label>
-                            <input name="edad" class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all" placeholder="25" type="number"/>
+                            <input name="edad" required class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all" placeholder="25" type="number"/>
                         </div>
                         <div class="flex flex-col gap-2">
                             <label class="text-sm font-bold text-slate-700">Celular</label>
-                            <input name="celular" class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all" placeholder="300 123 4567" type="tel"/>
+                            <input name="celular" required class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all" placeholder="300 123 4567" type="tel"/>
                         </div>
                     </div>
                     <div class="flex flex-col gap-2">
                         <label class="text-sm font-bold text-slate-700">Tipo de Vinculación</label>
-                        <select name="tipo_vinculacion_id" class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all appearance-none">
+                        <select name="tipo_vinculacion_id" required class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all appearance-none">
                             <option value="">Seleccione vinculación</option>
                             @if(isset($vinculaciones) && $vinculaciones->count())
                                 @foreach($vinculaciones as $v)
@@ -114,7 +114,7 @@
                     </div>
                     <div class="flex flex-col gap-2">
                         <label class="text-sm font-bold text-slate-700">Servicio / Unidad</label>
-                        <select name="servicio_id" class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all appearance-none">
+                        <select name="servicio_id" required class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all appearance-none">
                             <option value="">Seleccione servicio</option>
                             @if(isset($servicios) && $servicios->count())
                                 @foreach($servicios as $s)
@@ -127,12 +127,12 @@
                         <label class="text-sm font-bold text-slate-700">Contacto de Emergencia</label>
                         <div class="relative">
                             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">emergency</span>
-                            <input name="contacto_emergencia" class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 pl-12 pr-4 text-slate-900 transition-all" placeholder="Nombre y Teléfono" type="text"/>
+                            <input name="contacto_emergencia" required class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 pl-12 pr-4 text-slate-900 transition-all" placeholder="Nombre y Teléfono" type="text"/>
                         </div>
                     </div>
                     <div class="flex flex-col gap-2">
                         <label class="text-sm font-bold text-slate-700">Correo (lectura)</label>
-                        <input name="correolec" class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all" placeholder="correo.lectura@ejemplo.com" type="email"/>
+                        <input name="correolec" required class="w-full rounded-lg border-slate-200 bg-white/50 focus:border-primary focus:ring-primary h-10 px-4 text-slate-900 transition-all" placeholder="correo.lectura@ejemplo.com" type="email"/>
                     </div>
                 </div>
                 <!-- Action Button Row -->

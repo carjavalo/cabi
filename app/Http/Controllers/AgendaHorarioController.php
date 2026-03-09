@@ -153,14 +153,14 @@ class AgendaHorarioController extends Controller
         $data = $request->validate([
             'nombres' => 'required|string|max:255',
             'primer_apellido' => 'required|string|max:255',
-            'segundo_apellido' => 'nullable|string|max:255',
+            'segundo_apellido' => 'required|string|max:255',
             'identificacion' => 'required|string|max:100|unique:inscripgym,identificacion',
-            'edad' => 'nullable|integer',
-            'celular' => 'nullable|string|max:50',
-            'tipo_vinculacion_id' => 'nullable|integer|exists:vinculaciones,id',
-            'servicio_id' => 'nullable|integer|exists:servicios,id',
-            'contacto_emergencia' => 'nullable|string|max:255',
-            'correolec' => 'nullable|email|max:150|unique:inscripgym,correolec',
+            'edad' => 'required|integer',
+            'celular' => 'required|string|max:50',
+            'tipo_vinculacion_id' => 'required|integer|exists:vinculaciones,id',
+            'servicio_id' => 'required|integer|exists:servicios,id',
+            'contacto_emergencia' => 'required|string|max:255',
+            'correolec' => 'required|email|max:150|unique:inscripgym,correolec',
         ], [
             'identificacion.unique' => 'Esta identificación ya se encuentra registrada en el sistema.',
             'correolec.unique' => 'Este correo institucional ya se encuentra registrado en el sistema.'
