@@ -200,8 +200,6 @@ class AgendaHorarioController extends Controller
             'servicio_unidad' => $servicioNombre ?? '',
             'contacto_emergencia' => $data['contacto_emergencia'] ?? '',
             'correolec' => $data['correolec'] ?? null,
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
 
         // Volver al formulario de inscripción en lugar de ir a la agenda
