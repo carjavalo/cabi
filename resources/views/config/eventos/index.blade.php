@@ -1202,8 +1202,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (deleteBtn) {
             const result = await Swal.fire({
-                title: '¿Está seguro?',
-                text: '¿Está seguro de eliminar este evento? Esta acción no se puede deshacer.',
+                title: '¿Está seguro de eliminar este evento?',
+                text: 'Esta es la primera confirmación. Se eliminará el evento.',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
@@ -1213,6 +1213,20 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             if (!result.isConfirmed) return;
+
+            const secondResult = await Swal.fire({
+                title: '¿Completamente seguro?',
+                text: 'Esta acción es irreversible y eliminará todos los datos asociados al evento.',
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#2e3a75',
+                confirmButtonText: 'Sí, estoy totalmente seguro',
+                cancelButtonText: 'Cancelar acción'
+            });
+
+            if (!secondResult.isConfirmed) return;
+
             const id = deleteBtn.dataset.id;
             
             try {
