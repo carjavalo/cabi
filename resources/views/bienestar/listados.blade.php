@@ -30,7 +30,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label class="small font-weight-bold text-muted text-uppercase">Franja Horaria</label>
                         <select name="franja" class="form-control">
                             <option value="">Todas las franjas</option>
@@ -41,8 +41,8 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <button type="submit" class="btn text-white w-100 font-weight-bold" style="background-color: var(--brand);">
+                    <div class="col-md-2 mb-3 d-flex align-items-end justify-content-start">
+                        <button type="submit" class="btn btn-sm text-white font-weight-bold px-3" style="background-color: var(--brand);">
                             <i class="fas fa-search mr-2"></i>Buscar
                         </button>
                     </div>
