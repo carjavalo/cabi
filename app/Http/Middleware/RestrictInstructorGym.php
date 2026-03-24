@@ -21,6 +21,9 @@ class RestrictInstructorGym
                 'bienestar.listados',
                 'bienestar.observaciones.get',
                 'bienestar.observaciones.store',
+                'bienestar.asistencia.cargar',
+                'bienestar.asistencia.guardar',
+                'bienestar.asistencia.consultar',
                 'logout'
             ];
             
@@ -31,7 +34,7 @@ class RestrictInstructorGym
             
             // Allow direct home '/' maybe? Better strictly restrict
             if (!in_array($request->route()->getName(), $allowedRoutes)) {
-                return redirect()->route('bienestar.listados')->with('error', 'Acceso denegado. Su rol sólo permite visualizar los Listados de GYM.');
+                return redirect()->route('bienestar.listados');
             }
         }
         
