@@ -134,9 +134,14 @@ class BienestarListadoController extends Controller
             ->get();
 
         // Obtener la asistencia actual para este fecha y franja
-        $asistencias = AsistenciaGym::where('fecha', $fecha)
-                                    ->where('franja', $franja)
-                                    ->pluck('asistio', 'identificacion')->toArray();
+        $asistencias = [];
+        try {
+            $asistencias = AsistenciaGym::where('fecha', $fecha)
+                                        ->where('franja', $franja)
+                                        ->pluck('asistio', 'identificacion')->toArray();
+        } catch (\Throwable $e) {
+            // La tabla puede no existir aún en producción
+        }
 
         // Combinar datos
         $datos = clone $users;
@@ -162,11 +167,15 @@ class BienestarListadoController extends Controller
             return response()->json(['success' => false, 'message' => 'Faltan parámetros de fecha o franja.']);
         }
 
-        foreach ($asistencias as $identificacion => $asistio) {
-            AsistenciaGym::updateOrCreate(
-                ['identificacion' => $identificacion, 'fecha' => $fecha, 'franja' => $franja],
-                ['asistio' => $asistio]
-            );
+        try {
+            foreach ($asistencias as $identificacion => $asistio) {
+                AsistenciaGym::updateOrCreate(
+                    ['identificacion' => $identificacion, 'fecha' => $fecha, 'franja' => $franja],
+                    ['asistio' => $asistio]
+                );
+            }
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => 'Error al guardar: la tabla de asistencias puede no estar creada. Ejecute: php artisan migrate']);
         }
 
         return response()->json(['success' => true, 'message' => 'Asistencia guardada correctamente.']);
@@ -187,7 +196,8 @@ class BienestarListadoController extends Controller
             return response()->json(['error' => 'Debe indicar rango de fechas.'], 400);
         }
 
-        $query = AsistenciaGym::whereBetween('fecha', [$fechaDesde, $fechaHasta]);
+        try {
+            $query = AsistenciaGym::whereBetween('fecha', [$fechaDesde, $fechaHasta]);
 
         if ($franja) {
             $query->where('franja', $franja);
@@ -232,5 +242,13 @@ class BienestarListadoController extends Controller
                 'porcentaje' => $total > 0 ? round(($asistieron / $total) * 100, 1) : 0
             ]
         ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+                'resumen' => ['total' => 0, 'asistieron' => 0, 'no_asistieron' => 0, 'porcentaje' => 0],
+                'warning' => 'La tabla de asistencias no existe aún. Ejecute: php artisan migrate'
+            ]);
+        }
     }
 }
