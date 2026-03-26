@@ -65,6 +65,8 @@ Route::get('/bienestar/gym/inscrip-by-id/{identificacion}', [AgendaHorarioContro
 use App\Http\Controllers\Api\InscritoController;
 Route::get('/api/inscritos', [InscritoController::class, 'getInscritos'])->name('api.inscritos.lista');
 Route::post('/api/inscritos/{id}/autorizar', [InscritoController::class, 'toggleAutorizacion'])->name('api.inscritos.autorizar');
+Route::put('/api/inscritos/{id}', [InscritoController::class, 'updateInscrito'])->name('api.inscritos.update');
+Route::delete('/api/inscritos/{id}', [InscritoController::class, 'deleteInscrito'])->name('api.inscritos.delete');
 
 // Load authentication routes (login, register, password reset)
 require __DIR__.'/auth.php';
