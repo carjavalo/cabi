@@ -21,6 +21,7 @@ class InscritoController extends Controller
             'correolec',
             'contacto_emergencia',
             'servicio_unidad',
+            'tipo_vinculacion',
             'autorizado'
         )->get();
         return response()->json(['data' => $inscritos]);

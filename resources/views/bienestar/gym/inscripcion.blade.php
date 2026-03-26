@@ -284,6 +284,7 @@
                             <th class="px-3 py-3 border-b border-slate-200">Correo</th>
                             <th class="px-3 py-3 border-b border-slate-200">Emergencia</th>
                             <th class="px-3 py-3 border-b border-slate-200">Servicio</th>
+                            <th class="px-3 py-3 border-b border-slate-200">Vinculación</th>
                             <th class="px-3 py-3 border-b border-slate-200 text-center">Acciones</th>
                         </tr>
                     </thead>
@@ -573,7 +574,7 @@
     const porPagina = 10;
 
     function cargarListadoInscritos() {
-        document.getElementById('tbodyListado').innerHTML = '<tr><td colspan="7" class="text-center py-4 text-slate-500">Cargando datos...</td></tr>';
+        document.getElementById('tbodyListado').innerHTML = '<tr><td colspan="8" class="text-center py-4 text-slate-500">Cargando datos...</td></tr>';
 
         fetch('{{ route("api.inscritos.lista") }}')
             .then(res => res.json())
@@ -584,7 +585,7 @@
                 renderizarListado();
             })
             .catch(() => {
-                document.getElementById('tbodyListado').innerHTML = '<tr><td colspan="7" class="text-center py-4 text-red-500">Error cargando datos</td></tr>';
+                document.getElementById('tbodyListado').innerHTML = '<tr><td colspan="8" class="text-center py-4 text-red-500">Error cargando datos</td></tr>';
             });
     }
 
@@ -597,7 +598,8 @@
             (i.identificacion && i.identificacion.toLowerCase().includes(texto)) ||
             (i.correolec && i.correolec.toLowerCase().includes(texto)) ||
             (i.celular && i.celular.toLowerCase().includes(texto)) ||
-            (i.servicio_unidad && i.servicio_unidad.toLowerCase().includes(texto))
+            (i.servicio_unidad && i.servicio_unidad.toLowerCase().includes(texto)) ||
+            (i.tipo_vinculacion && i.tipo_vinculacion.toLowerCase().includes(texto))
         );
         paginaActual = 1;
         renderizarListado();
@@ -614,7 +616,7 @@
         const paginados = listadoFiltrado.slice(inicio, fin);
 
         if (paginados.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-slate-500">No hay registros encontrados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-slate-500">No hay registros encontrados.</td></tr>';
             document.getElementById('infoListado').textContent = '';
             document.getElementById('btnsPaginacion').innerHTML = '';
             return;
@@ -638,6 +640,7 @@
                 <td class="px-3 py-3 text-slate-500 text-xs">${escapeHtml(i.correolec) || '<span class="text-slate-300">—</span>'}</td>
                 <td class="px-3 py-3 text-slate-500 text-xs">${escapeHtml(i.contacto_emergencia) || '<span class="text-slate-300">—</span>'}</td>
                 <td class="px-3 py-3 text-slate-500">${escapeHtml(i.servicio_unidad) || '<span class="text-slate-300">—</span>'}</td>
+                <td class="px-3 py-3 text-slate-500">${escapeHtml(i.tipo_vinculacion) || '<span class="text-slate-300">—</span>'}</td>
                 <td class="px-3 py-3 text-center">
                     <div class="flex justify-center items-center gap-1">
                         <button onclick="abrirModalEditar(${i.id})" class="p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors" title="Editar">
@@ -799,7 +802,7 @@
 
         // Construir CSV con BOM para Excel
         const BOM = '\uFEFF';
-        const headers = ['Nombre', 'Primer Apellido', 'Segundo Apellido', 'Celular', 'Correo', 'Contacto Emergencia', 'Servicio'];
+        const headers = ['Nombre', 'Primer Apellido', 'Segundo Apellido', 'Celular', 'Correo', 'Contacto Emergencia', 'Servicio', 'Vinculación'];
         const filas = datos.map(i => [
             (i.nombres || '').replace(/"/g, '""'),
             (i.primer_apellido || '').replace(/"/g, '""'),
@@ -807,7 +810,8 @@
             (i.celular || '').replace(/"/g, '""'),
             (i.correolec || '').replace(/"/g, '""'),
             (i.contacto_emergencia || '').replace(/"/g, '""'),
-            (i.servicio_unidad || '').replace(/"/g, '""')
+            (i.servicio_unidad || '').replace(/"/g, '""'),
+            (i.tipo_vinculacion || '').replace(/"/g, '""')
         ].map(v => `"${v}"`).join(','));
 
         const csv = BOM + headers.join(',') + '\n' + filas.join('\n');
