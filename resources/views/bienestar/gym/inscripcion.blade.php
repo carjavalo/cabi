@@ -354,6 +354,7 @@
     </div>
 </div>
 
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script>
     // ====== TAB SWITCHING ======
     function cambiarTab(tab) {
@@ -792,7 +793,7 @@
         });
     }
 
-    // ====== EXPORTAR A EXCEL ======
+    // ====== EXPORTAR A EXCEL (.xlsx) ======
     function exportarExcel() {
         const datos = listadoFiltrado.length > 0 ? listadoFiltrado : datosListado;
         if (datos.length === 0) {
@@ -800,30 +801,29 @@
             return;
         }
 
-        // Construir CSV con BOM para Excel
-        const BOM = '\uFEFF';
         const headers = ['Nombre', 'Primer Apellido', 'Segundo Apellido', 'Celular', 'Correo', 'Contacto Emergencia', 'Servicio', 'Vinculación'];
         const filas = datos.map(i => [
-            (i.nombres || '').replace(/"/g, '""'),
-            (i.primer_apellido || '').replace(/"/g, '""'),
-            (i.segundo_apellido || '').replace(/"/g, '""'),
-            (i.celular || '').replace(/"/g, '""'),
-            (i.correolec || '').replace(/"/g, '""'),
-            (i.contacto_emergencia || '').replace(/"/g, '""'),
-            (i.servicio_unidad || '').replace(/"/g, '""'),
-            (i.tipo_vinculacion || '').replace(/"/g, '""')
-        ].map(v => `"${v}"`).join(','));
+            i.nombres || '',
+            i.primer_apellido || '',
+            i.segundo_apellido || '',
+            i.celular || '',
+            i.correolec || '',
+            i.contacto_emergencia || '',
+            i.servicio_unidad || '',
+            i.tipo_vinculacion || ''
+        ]);
 
-        const csv = BOM + headers.join(',') + '\n' + filas.join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'listado_inscritos_gym_' + new Date().toISOString().slice(0, 10) + '.csv';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        const wsData = [headers, ...filas];
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        // Ajustar ancho de columnas
+        ws['!cols'] = headers.map((_, idx) => ({
+            wch: Math.max(headers[idx].length, ...filas.map(f => (f[idx] || '').length)) + 2
+        }));
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Inscritos');
+        XLSX.writeFile(wb, 'listado_inscritos_gym_' + new Date().toISOString().slice(0, 10) + '.xlsx');
     }
 </script>
 @endif
