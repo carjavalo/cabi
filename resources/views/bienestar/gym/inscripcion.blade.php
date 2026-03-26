@@ -819,9 +819,9 @@
         const wsData = [headers, ...filas];
         const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-        // Ajustar ancho de columnas
+        // Ajustar ancho de columnas (mínimo 10 caracteres)
         ws['!cols'] = headers.map((_, idx) => ({
-            wch: Math.max(headers[idx].length, ...filas.map(f => (f[idx] || '').length)) + 2
+            wch: Math.max(10, headers[idx].length, ...filas.map(f => String(f[idx] || '').length)) + 2
         }));
 
         const wb = XLSX.utils.book_new();
