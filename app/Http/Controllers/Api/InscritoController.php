@@ -17,6 +17,7 @@ class InscritoController extends Controller
             'nombres', 
             'primer_apellido', 
             'segundo_apellido', 
+            'edad',
             'celular',
             'correolec',
             'contacto_emergencia',

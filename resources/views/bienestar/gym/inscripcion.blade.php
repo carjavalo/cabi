@@ -280,6 +280,7 @@
                         <tr class="bg-slate-50 text-slate-500 text-xs font-bold uppercase">
                             <th class="px-3 py-3 border-b border-slate-200">Nombre</th>
                             <th class="px-3 py-3 border-b border-slate-200">Apellidos</th>
+                            <th class="px-3 py-3 border-b border-slate-200">Edad</th>
                             <th class="px-3 py-3 border-b border-slate-200">Contacto</th>
                             <th class="px-3 py-3 border-b border-slate-200">Correo</th>
                             <th class="px-3 py-3 border-b border-slate-200">Emergencia</th>
@@ -575,7 +576,7 @@
     const porPagina = 10;
 
     function cargarListadoInscritos() {
-        document.getElementById('tbodyListado').innerHTML = '<tr><td colspan="8" class="text-center py-4 text-slate-500">Cargando datos...</td></tr>';
+        document.getElementById('tbodyListado').innerHTML = '<tr><td colspan="9" class="text-center py-4 text-slate-500">Cargando datos...</td></tr>';
 
         fetch('{{ route("api.inscritos.lista") }}')
             .then(res => res.json())
@@ -586,7 +587,7 @@
                 renderizarListado();
             })
             .catch(() => {
-                document.getElementById('tbodyListado').innerHTML = '<tr><td colspan="8" class="text-center py-4 text-red-500">Error cargando datos</td></tr>';
+                document.getElementById('tbodyListado').innerHTML = '<tr><td colspan="9" class="text-center py-4 text-red-500">Error cargando datos</td></tr>';
             });
     }
 
@@ -617,7 +618,7 @@
         const paginados = listadoFiltrado.slice(inicio, fin);
 
         if (paginados.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-slate-500">No hay registros encontrados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-slate-500">No hay registros encontrados.</td></tr>';
             document.getElementById('infoListado').textContent = '';
             document.getElementById('btnsPaginacion').innerHTML = '';
             return;
@@ -637,6 +638,7 @@
             tr.innerHTML = `
                 <td class="px-3 py-3 font-semibold text-slate-700">${escapeHtml(i.nombres)}</td>
                 <td class="px-3 py-3 text-slate-600">${escapeHtml(i.primer_apellido)} ${escapeHtml(i.segundo_apellido)}</td>
+                <td class="px-3 py-3 text-slate-500 text-center">${i.edad != null ? i.edad : '<span class="text-slate-300">—</span>'}</td>
                 <td class="px-3 py-3 text-slate-500">${escapeHtml(i.celular) || '<span class="text-slate-300">—</span>'}</td>
                 <td class="px-3 py-3 text-slate-500 text-xs">${escapeHtml(i.correolec) || '<span class="text-slate-300">—</span>'}</td>
                 <td class="px-3 py-3 text-slate-500 text-xs">${escapeHtml(i.contacto_emergencia) || '<span class="text-slate-300">—</span>'}</td>
@@ -801,11 +803,12 @@
             return;
         }
 
-        const headers = ['Nombre', 'Primer Apellido', 'Segundo Apellido', 'Celular', 'Correo', 'Contacto Emergencia', 'Servicio', 'Vinculación'];
+        const headers = ['Nombre', 'Primer Apellido', 'Segundo Apellido', 'Edad', 'Celular', 'Correo', 'Contacto Emergencia', 'Servicio', 'Vinculación'];
         const filas = datos.map(i => [
             i.nombres || '',
             i.primer_apellido || '',
             i.segundo_apellido || '',
+            i.edad != null ? i.edad : '',
             i.celular || '',
             i.correolec || '',
             i.contacto_emergencia || '',
