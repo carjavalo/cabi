@@ -55,7 +55,7 @@
 
             <div class="form-row">
                 <div class="form-group col-md-6">
-                    <label for="tipo_vinculacion_id">Tipo de vinculaciÃ³n</label>   
+                    <label for="tipo_vinculacion_id">Tipo de vinculación</label>   
                     <select id="tipo_vinculacion_id" name="tipo_vinculacion_id" class="form-control">
                         <option value="">Seleccione</option>
                         @if(isset($vinculaciones) && $vinculaciones->count())       

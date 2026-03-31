@@ -97,7 +97,7 @@
                             <th class="px-4 py-3 text-muted fw-bold small">Apellidos</th>
                             <th class="px-4 py-3 text-muted fw-bold small">Email</th>
                             <th class="px-4 py-3 text-muted fw-bold small">Servicio</th>
-                            <th class="px-4 py-3 text-muted fw-bold small">VinculaciÃ³n</th>
+                            <th class="px-4 py-3 text-muted fw-bold small">Vinculación</th>
                             <th class="px-4 py-3 text-muted fw-bold small">Cargo</th>
                             <th class="px-4 py-3 text-muted fw-bold small">Rol</th>
                             <th class="px-4 py-3 text-muted fw-bold small text-center">Acciones</th>

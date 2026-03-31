@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Vinculacion;
 use App\Models\Servicio;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -58,6 +59,23 @@ class UserController extends Controller
     {
         $vinculaciones = Vinculacion::orderBy('nombre')->get();
         $servicios = Servicio::orderBy('nombre')->get();
+
+        // Auto-crear tabla cargos si no existe
+        if (!Schema::hasTable('cargos')) {
+            Schema::create('cargos', function ($table) {
+                $table->id();
+                $table->string('nombre', 80);
+                $table->string('descripcion', 200)->nullable();
+                $table->timestamps();
+            });
+        }
+        // Auto-crear columna cargo en users si no existe
+        if (!Schema::hasColumn('users', 'cargo')) {
+            Schema::table('users', function ($table) {
+                $table->string('cargo', 100)->default('')->after('password');
+            });
+        }
+
         $cargos = \App\Models\Cargo::orderBy('nombre')->get();
         return view('config.usuarios.create', compact('vinculaciones','servicios','cargos'));
     }
@@ -87,7 +105,7 @@ class UserController extends Controller
             return redirect()->back()->withInput()->with('error', 'No autorizado para asignar un rol superior.');
         }
 
-        $user = User::create([
+        $userdata = [
             'name'=>$data['name'],
             'apellido1'=>$data['apellido1'] ?? null,
             'apellido2'=>$data['apellido2'] ?? null,
@@ -96,11 +114,16 @@ class UserController extends Controller
             'servicio'=> isset($data['servicio_id']) ? Servicio::find($data['servicio_id'])->nombre ?? null : null,
             'tipo_vinculacion_id'=>$data['tipo_vinculacion_id'] ?? null,
             'tipo_vinculacion'=> isset($data['tipo_vinculacion_id']) ? Vinculacion::find($data['tipo_vinculacion_id'])->nombre ?? null : null,
-            'cargo' => $data['cargo'] ?? '',
             'email'=>$data['email'],
             'password'=>Hash::make($data['password']),
             'role'=>$data['role'] ?? 'Usuario',
-        ]);
+        ];
+
+        if (Schema::hasColumn('users', 'cargo')) {
+            $userdata['cargo'] = $data['cargo'] ?? '';
+        }
+
+        $user = User::create($userdata);
 
         return redirect()->route('config.usuarios.index')->with('success','Usuario creado correctamente.');
     }
@@ -118,7 +141,13 @@ class UserController extends Controller
         }
         $vinculaciones = Vinculacion::orderBy('nombre')->get();
         $servicios = Servicio::orderBy('nombre')->get();
-        $cargos = \App\Models\Cargo::orderBy('nombre')->get();
+
+        try {
+            $cargos = \App\Models\Cargo::orderBy('nombre')->get();
+        } catch (\Exception $e) {
+            $cargos = collect();
+        }
+
         return view('config.usuarios.edit', compact('user','vinculaciones','servicios', 'cargos'));
     }
 
@@ -157,7 +186,9 @@ class UserController extends Controller
         $user->servicio = isset($data['servicio_id']) ? Servicio::find($data['servicio_id'])->nombre ?? null : null;
         $user->tipo_vinculacion_id = $data['tipo_vinculacion_id'] ?? null;
         $user->tipo_vinculacion = isset($data['tipo_vinculacion_id']) ? Vinculacion::find($data['tipo_vinculacion_id'])->nombre ?? null : null;
-        $user->cargo = $data['cargo'] ?? '';
+        if (Schema::hasColumn('users', 'cargo')) {
+            $user->cargo = $data['cargo'] ?? '';
+        }
         $user->email = $data['email'];
         if (!empty($data['password'])) {
             $user->password = Hash::make($data['password']);
