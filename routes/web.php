@@ -82,10 +82,13 @@ Route::get('/configuracion/cursos', function () { return view('config.cursos'); 
 use App\Http\Controllers\Config\UserController;
 use App\Http\Controllers\Config\ServicioController;
 use App\Http\Controllers\Config\VinculacionController;
+use App\Http\Controllers\Config\CargoController;
 Route::prefix('configuracion')->name('config.')->group(function () {
     Route::resource('usuarios', UserController::class)->except(['show']);
     Route::resource('servicios', ServicioController::class)->except(['show']);
     Route::resource('vinculaciones', VinculacionController::class)->except(['show']);
+    Route::get('cargos/export', [CargoController::class, 'exportExcel'])->name('cargos.export');
+    Route::resource('cargos', CargoController::class);
     Route::get('encuestas/data', [EncuestaController::class, 'data'])->name('encuestas.data');
     Route::get('encuestas/{id}/edit-data', [EncuestaController::class, 'show'])->name('encuestas.show');
     Route::get('encuestas/{id}/respuestas', [EncuestaController::class, 'getRespuestas'])->name('encuestas.respuestas');

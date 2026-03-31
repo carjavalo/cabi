@@ -23,7 +23,8 @@ class RegisteredUserController extends Controller
     {
         $servicios = Servicio::orderBy('nombre')->get();
         $vinculaciones = Vinculacion::orderBy('nombre')->get();
-        return view('auth.register', compact('servicios','vinculaciones'));
+        $cargos = \App\Models\Cargo::orderBy('nombre')->get();
+        return view('auth.register', compact('servicios','vinculaciones','cargos'));
     }
 
     /**
@@ -40,6 +41,7 @@ class RegisteredUserController extends Controller
             'identificacion' => ['nullable','string','max:100'],
             'servicio_id' => ['nullable','integer','exists:servicios,id'],
             'tipo_vinculacion_id' => ['nullable','integer','exists:vinculaciones,id'],
+            'cargo' => ['nullable','string','max:100'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
@@ -63,6 +65,7 @@ class RegisteredUserController extends Controller
             'servicio' => $servicioNombre,
             'tipo_vinculacion_id' => $request->tipo_vinculacion_id ?? null,
             'tipo_vinculacion' => $tipoNombre,
+            'cargo' => $request->cargo ?? '',
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => 'Usuario',
