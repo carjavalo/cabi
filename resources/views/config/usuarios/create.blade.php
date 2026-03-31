@@ -51,16 +51,29 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label for="tipo_vinculacion_id">Tipo de vinculación</label>
-                <select id="tipo_vinculacion_id" name="tipo_vinculacion_id" class="form-control">
-                    <option value="">Seleccione</option>
-                    @if(isset($vinculaciones) && $vinculaciones->count())
-                        @foreach($vinculaciones as $v)
-                            <option value="{{ $v->id }}" {{ old('tipo_vinculacion_id')==$v->id ? 'selected' : '' }}>{{ $v->nombre }}</option>
-                        @endforeach
-                    @endif
-                </select>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="tipo_vinculacion_id">Tipo de vinculación</label>
+                    <select id="tipo_vinculacion_id" name="tipo_vinculacion_id" class="form-control">
+                        <option value="">Seleccione</option>
+                        @if(isset($vinculaciones) && $vinculaciones->count())
+                            @foreach($vinculaciones as $v)
+                                <option value="{{ $v->id }}" {{ old('tipo_vinculacion_id')==$v->id ? 'selected' : '' }}>{{ $v->nombre }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="cargo">Cargo</label>
+                    <select id="cargo" name="cargo" class="form-control">
+                        <option value="">Seleccione cargo</option>
+                        @if(isset($cargos) && $cargos->count())
+                            @foreach($cargos as $c)
+                                <option value="{{ $c->nombre }}" {{ old('cargo') == $c->nombre ? 'selected' : '' }}>{{ $c->nombre }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
             </div>
 
             <div class="form-row">

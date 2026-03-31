@@ -58,7 +58,8 @@ class UserController extends Controller
     {
         $vinculaciones = Vinculacion::orderBy('nombre')->get();
         $servicios = Servicio::orderBy('nombre')->get();
-        return view('config.usuarios.create', compact('vinculaciones','servicios'));
+        $cargos = \App\Models\Cargo::orderBy('nombre')->get();
+        return view('config.usuarios.create', compact('vinculaciones','servicios','cargos'));
     }
 
     public function store(Request $request)
@@ -70,6 +71,7 @@ class UserController extends Controller
             'identificacion' => ['nullable','string','max:100'],
             'servicio_id' => ['nullable','integer','exists:servicios,id'],
             'tipo_vinculacion_id' => ['nullable','integer','exists:vinculaciones,id'],
+            'cargo' => ['nullable', 'string', 'max:100'],
             'role' => ['required','string','in:Super Admin,Administrador,Operador,Usuario,Instructor GYM'],
             'email' => ['required','email','max:255','unique:'.User::class],
             'password' => ['required','confirmed','min:6'],
@@ -94,6 +96,7 @@ class UserController extends Controller
             'servicio'=> isset($data['servicio_id']) ? Servicio::find($data['servicio_id'])->nombre ?? null : null,
             'tipo_vinculacion_id'=>$data['tipo_vinculacion_id'] ?? null,
             'tipo_vinculacion'=> isset($data['tipo_vinculacion_id']) ? Vinculacion::find($data['tipo_vinculacion_id'])->nombre ?? null : null,
+            'cargo' => $data['cargo'] ?? '',
             'email'=>$data['email'],
             'password'=>Hash::make($data['password']),
             'role'=>$data['role'] ?? 'Usuario',
@@ -115,7 +118,8 @@ class UserController extends Controller
         }
         $vinculaciones = Vinculacion::orderBy('nombre')->get();
         $servicios = Servicio::orderBy('nombre')->get();
-        return view('config.usuarios.edit', compact('user','vinculaciones','servicios'));
+        $cargos = \App\Models\Cargo::orderBy('nombre')->get();
+        return view('config.usuarios.edit', compact('user','vinculaciones','servicios', 'cargos'));
     }
 
     public function update(Request $request, $id)
@@ -139,6 +143,7 @@ class UserController extends Controller
             'identificacion' => ['nullable','string','max:100'],
             'servicio_id' => ['nullable','integer','exists:servicios,id'],
             'tipo_vinculacion_id' => ['nullable','integer','exists:vinculaciones,id'],
+            'cargo' => ['nullable', 'string', 'max:100'],
             'role' => ['required','string','in:Super Admin,Administrador,Operador,Usuario,Instructor GYM'],
             'email' => ['required','email','max:255','unique:users,email,'.$user->id],
             'password' => ['nullable','confirmed','min:6'],
@@ -152,7 +157,7 @@ class UserController extends Controller
         $user->servicio = isset($data['servicio_id']) ? Servicio::find($data['servicio_id'])->nombre ?? null : null;
         $user->tipo_vinculacion_id = $data['tipo_vinculacion_id'] ?? null;
         $user->tipo_vinculacion = isset($data['tipo_vinculacion_id']) ? Vinculacion::find($data['tipo_vinculacion_id'])->nombre ?? null : null;
-        $user->tipo_vinculacion = $data['tipo_vinculacion'] ?? null;
+        $user->cargo = $data['cargo'] ?? '';
         $user->email = $data['email'];
         if (!empty($data['password'])) {
             $user->password = Hash::make($data['password']);
