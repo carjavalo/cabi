@@ -11,11 +11,29 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
+    private function ensureCargosTableExists(): void
+    {
+        if (!Schema::hasTable('cargos')) {
+            DB::statement("
+                CREATE TABLE `cargos` (
+                    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                    `nombre` varchar(80) NOT NULL,
+                    `descripcion` varchar(200) DEFAULT NULL,
+                    `created_at` timestamp NULL DEFAULT NULL,
+                    `updated_at` timestamp NULL DEFAULT NULL,
+                    PRIMARY KEY (`id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        }
+    }
+
     /**
      * Display the registration view.
      */
@@ -23,11 +41,8 @@ class RegisteredUserController extends Controller
     {
         $servicios = Servicio::orderBy('nombre')->get();
         $vinculaciones = Vinculacion::orderBy('nombre')->get();
-        try {
-            $cargos = \App\Models\Cargo::orderBy('nombre')->get();
-        } catch (\Exception $e) {
-            $cargos = collect();
-        }
+        $this->ensureCargosTableExists();
+        $cargos = \App\Models\Cargo::orderBy('nombre')->get();
         return view('auth.register', compact('servicios','vinculaciones','cargos'));
     }
 
@@ -38,6 +53,13 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $this->ensureCargosTableExists();
+
+        // Asegurar que la columna cargo exista en users
+        if (!Schema::hasColumn('users', 'cargo')) {
+            DB::statement("ALTER TABLE `users` ADD COLUMN `cargo` varchar(100) NOT NULL DEFAULT '' AFTER `password`");
+        }
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'apellido1' => ['nullable','string','max:255'],

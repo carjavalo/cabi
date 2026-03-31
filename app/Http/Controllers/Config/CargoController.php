@@ -5,16 +5,30 @@ namespace App\Http\Controllers\Config;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 use App\Models\Cargo;
 
 class CargoController extends Controller
 {
-    public function index(Request $request)
+    private function ensureTableExists(): void
     {
         if (!Schema::hasTable('cargos')) {
-            $cargos = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 12);
-            return view('config.cargos.index', compact('cargos'));
+            DB::statement("
+                CREATE TABLE `cargos` (
+                    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                    `nombre` varchar(80) NOT NULL,
+                    `descripcion` varchar(200) DEFAULT NULL,
+                    `created_at` timestamp NULL DEFAULT NULL,
+                    `updated_at` timestamp NULL DEFAULT NULL,
+                    PRIMARY KEY (`id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
         }
+    }
+
+    public function index(Request $request)
+    {
+        $this->ensureTableExists();
 
         $query = Cargo::query();
 
