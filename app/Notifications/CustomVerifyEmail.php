@@ -4,9 +4,7 @@ namespace App\Notifications;
 
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Log;
 
 class CustomVerifyEmail extends VerifyEmail
 {
@@ -16,6 +14,9 @@ class CustomVerifyEmail extends VerifyEmail
     public function toMail($notifiable): MailMessage
     {
         $verificationUrl = $this->verificationUrl($notifiable);
+
+        Log::info('CustomVerifyEmail: Enviando correo de verificación a ' . $notifiable->email);
+        Log::info('CustomVerifyEmail: URL de verificación generada: ' . $verificationUrl);
 
         return (new MailMessage)
             ->subject('Verificación de Correo Electrónico - CABI HUV')

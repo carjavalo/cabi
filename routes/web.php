@@ -115,3 +115,50 @@ Route::get('/eventos/api/usuario/{identificacion}', [App\Http\Controllers\Config
 Route::post('/eventos/inscripcion/{id}', [App\Http\Controllers\Config\EventoController::class, 'guardarInscripcion'])->name('eventos.inscripcion.guardar');
 Route::post('/eventos/inscripciones/eliminar', [App\Http\Controllers\Config\EventoController::class, 'eliminarInscripciones'])->name('eventos.inscripciones.eliminar')->middleware(['auth', 'verified']);
 Route::post('/eventos/inscripciones/actualizar', [App\Http\Controllers\Config\EventoController::class, 'actualizarInscripcion'])->name('eventos.inscripciones.actualizar')->middleware(['auth', 'verified']);
+
+// ─── Ruta de diagnóstico de correo (TEMPORAL - eliminar después de verificar) ───
+Route::get('/test-email-diagnostico', function () {
+    if (!auth()->check() || auth()->user()->role !== 'Super Admin') {
+        abort(403, 'Solo Super Admin puede acceder a esta ruta.');
+    }
+
+    $diagnostico = [];
+
+    // 1. Verificar configuración SMTP
+    $diagnostico['config'] = [
+        'MAIL_MAILER' => config('mail.default'),
+        'MAIL_HOST' => config('mail.mailers.smtp.host'),
+        'MAIL_PORT' => config('mail.mailers.smtp.port'),
+        'MAIL_SCHEME' => config('mail.mailers.smtp.scheme'),
+        'MAIL_USERNAME' => config('mail.mailers.smtp.username'),
+        'MAIL_PASSWORD' => config('mail.mailers.smtp.password') ? '***CONFIGURADA***' : '***VACÍA***',
+        'MAIL_FROM_ADDRESS' => config('mail.from.address'),
+        'MAIL_FROM_NAME' => config('mail.from.name'),
+    ];
+
+    // 2. Verificar imagen del logo
+    $logoPath = public_path('img/logocorreo.jpeg');
+    $diagnostico['logo'] = [
+        'ruta' => $logoPath,
+        'existe' => file_exists($logoPath) ? 'SÍ' : 'NO',
+    ];
+
+    // 3. Verificar APP_URL
+    $diagnostico['app_url'] = config('app.url');
+
+    // 4. Intentar enviar correo de prueba
+    try {
+        \Illuminate\Support\Facades\Mail::raw(
+            'Este es un correo de prueba del sistema CABI. Si lo recibes, la configuración SMTP es correcta.',
+            function ($message) {
+                $message->to(auth()->user()->email)
+                        ->subject('CABI - Prueba de correo SMTP');
+            }
+        );
+        $diagnostico['envio_prueba'] = 'ÉXITO - Correo enviado a ' . auth()->user()->email;
+    } catch (\Exception $e) {
+        $diagnostico['envio_prueba'] = 'ERROR: ' . $e->getMessage();
+    }
+
+    return response()->json($diagnostico, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+})->middleware('auth')->name('test.email.diagnostico');

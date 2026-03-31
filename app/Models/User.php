@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Notifications\CustomVerifyEmail;
+use Illuminate\Support\Facades\Log;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -18,7 +19,12 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function sendEmailVerificationNotification(): void
     {
-        $this->notify(new CustomVerifyEmail);
+        try {
+            $this->notify(new CustomVerifyEmail);
+            Log::info('Correo de verificación enviado exitosamente a: ' . $this->email);
+        } catch (\Exception $e) {
+            Log::error('Error al enviar correo de verificación a ' . $this->email . ': ' . $e->getMessage());
+        }
     }
 
     /**
