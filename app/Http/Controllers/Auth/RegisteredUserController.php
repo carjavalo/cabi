@@ -23,7 +23,11 @@ class RegisteredUserController extends Controller
     {
         $servicios = Servicio::orderBy('nombre')->get();
         $vinculaciones = Vinculacion::orderBy('nombre')->get();
-        $cargos = \App\Models\Cargo::orderBy('nombre')->get();
+        try {
+            $cargos = \App\Models\Cargo::orderBy('nombre')->get();
+        } catch (\Exception $e) {
+            $cargos = collect();
+        }
         return view('auth.register', compact('servicios','vinculaciones','cargos'));
     }
 
