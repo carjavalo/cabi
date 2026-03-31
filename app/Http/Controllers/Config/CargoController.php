@@ -4,12 +4,18 @@ namespace App\Http\Controllers\Config;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Cargo;
 
 class CargoController extends Controller
 {
     public function index(Request $request)
     {
+        if (!Schema::hasTable('cargos')) {
+            $cargos = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 12);
+            return view('config.cargos.index', compact('cargos'));
+        }
+
         $query = Cargo::query();
 
         if ($search = $request->get('search')) {
