@@ -47,6 +47,20 @@
         </div>
     @endif
 
+    @if(session('info'))
+        <div class="alert alert-info alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-info-circle me-2"></i>{{ session('info') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>{{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     <!-- Search Form -->
     <div class="card mb-4 border-0 shadow-sm" style="max-width: 800px;">
         <div class="card-body">
@@ -159,6 +173,26 @@
                                        title="Editar usuario">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    @if(Auth::check() && Auth::user()->role === 'Super Admin' && !$u->hasVerifiedEmail())
+                                    <form action="{{ route('config.usuarios.verify-email', $u->id) }}" 
+                                          method="POST" 
+                                          style="display:inline-block" 
+                                          onsubmit="return confirm('¿Aprobar verificación de correo para {{ $u->name }}?');">
+                                        @csrf
+                                        <button class="btn btn-sm btn-outline-success" 
+                                                data-bs-toggle="tooltip" 
+                                                title="Aprobar verificación de correo">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                    </form>
+                                    @endif
+                                    @if(Auth::check() && Auth::user()->role === 'Super Admin' && $u->hasVerifiedEmail())
+                                    <span class="btn btn-sm btn-success disabled" 
+                                          data-bs-toggle="tooltip" 
+                                          title="Correo verificado">
+                                        <i class="fas fa-envelope-open-text"></i>
+                                    </span>
+                                    @endif
                                     @if(!(Auth::check() && Auth::user()->role == 'Operador'))
                                     <form action="{{ route('config.usuarios.destroy',$u->id) }}" 
                                           method="POST" 

@@ -225,4 +225,25 @@ class UserController extends Controller
         $user->delete();
         return redirect()->route('config.usuarios.index')->with('success','Usuario eliminado.');
     }
+
+    /**
+     * Verificar manualmente el email de un usuario (solo Super Admin).
+     */
+    public function verifyEmail($id)
+    {
+        if (!Auth::check() || Auth::user()->role !== 'Super Admin') {
+            return redirect()->route('config.usuarios.index')->with('error', 'No autorizado para realizar esta acción.');
+        }
+
+        $user = User::findOrFail($id);
+
+        if ($user->hasVerifiedEmail()) {
+            return redirect()->route('config.usuarios.index')->with('info', 'El usuario ya tiene el correo verificado.');
+        }
+
+        $user->email_verified_at = now();
+        $user->save();
+
+        return redirect()->route('config.usuarios.index')->with('success', 'Correo del usuario "'.$user->name.'" verificado exitosamente.');
+    }
 }
