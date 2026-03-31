@@ -124,40 +124,88 @@ Route::get('/test-email-diagnostico', function () {
 
     $diagnostico = [];
 
-    // 1. Verificar configuración SMTP
-    $diagnostico['config'] = [
+    // 1. Verificar configuración SMTP actual
+    $diagnostico['config_actual'] = [
         'MAIL_MAILER' => config('mail.default'),
         'MAIL_HOST' => config('mail.mailers.smtp.host'),
         'MAIL_PORT' => config('mail.mailers.smtp.port'),
-        'MAIL_SCHEME' => config('mail.mailers.smtp.scheme'),
+        'MAIL_SCHEME' => config('mail.mailers.smtp.scheme') ?: '(vacío/null - correcto para puerto 587)',
         'MAIL_USERNAME' => config('mail.mailers.smtp.username'),
-        'MAIL_PASSWORD' => config('mail.mailers.smtp.password') ? '***CONFIGURADA***' : '***VACÍA***',
-        'MAIL_FROM_ADDRESS' => config('mail.from.address'),
-        'MAIL_FROM_NAME' => config('mail.from.name'),
+        'MAIL_PASSWORD' => config('mail.mailers.smtp.password') ? '***SET***' : '***VACÍA***',
+        'MAIL_FROM' => config('mail.from.address'),
+        'APP_URL' => config('app.url'),
     ];
 
-    // 2. Verificar imagen del logo
+    // 2. Verificar conectividad al puerto 587
+    $diagnostico['test_puerto_587'] = 'Probando...';
+    $conn587 = @fsockopen('smtp.gmail.com', 587, $errno, $errstr, 10);
+    if ($conn587) {
+        $diagnostico['test_puerto_587'] = 'CONECTADO - Puerto 587 abierto';
+        fclose($conn587);
+    } else {
+        $diagnostico['test_puerto_587'] = "BLOQUEADO - Error $errno: $errstr";
+    }
+
+    // 3. Verificar conectividad al puerto 465
+    $conn465 = @fsockopen('smtp.gmail.com', 465, $errno2, $errstr2, 10);
+    if ($conn465) {
+        $diagnostico['test_puerto_465'] = 'CONECTADO - Puerto 465 abierto';
+        fclose($conn465);
+    } else {
+        $diagnostico['test_puerto_465'] = "BLOQUEADO - Error $errno2: $errstr2";
+    }
+
+    // 4. Verificar extensiones PHP
+    $diagnostico['php_extensions'] = [
+        'openssl' => extension_loaded('openssl') ? 'OK' : 'FALTA',
+        'sockets' => extension_loaded('sockets') ? 'OK' : 'FALTA',
+        'php_version' => PHP_VERSION,
+    ];
+
+    // 5. Verificar logo
     $logoPath = public_path('img/logocorreo.jpeg');
     $diagnostico['logo'] = [
-        'ruta' => $logoPath,
+        'public_path' => $logoPath,
         'existe' => file_exists($logoPath) ? 'SÍ' : 'NO',
+        'url_logo' => rtrim(config('app.url'), '/') . '/img/logocorreo.jpeg',
     ];
 
-    // 3. Verificar APP_URL
-    $diagnostico['app_url'] = config('app.url');
-
-    // 4. Intentar enviar correo de prueba
+    // 6. Intentar enviar correo con configuración actual
     try {
         \Illuminate\Support\Facades\Mail::raw(
-            'Este es un correo de prueba del sistema CABI. Si lo recibes, la configuración SMTP es correcta.',
+            'Prueba SMTP desde CABI. Fecha: ' . now()->toDateTimeString(),
             function ($message) {
                 $message->to(auth()->user()->email)
-                        ->subject('CABI - Prueba de correo SMTP');
+                        ->subject('CABI - Test SMTP ' . now()->format('H:i:s'));
             }
         );
-        $diagnostico['envio_prueba'] = 'ÉXITO - Correo enviado a ' . auth()->user()->email;
+        $diagnostico['envio_config_actual'] = 'ÉXITO - Correo enviado a ' . auth()->user()->email;
     } catch (\Exception $e) {
-        $diagnostico['envio_prueba'] = 'ERROR: ' . $e->getMessage();
+        $diagnostico['envio_config_actual'] = 'ERROR: ' . $e->getMessage();
+
+        // 7. Si falla con puerto 587, intentar con puerto 465 + smtps
+        $diagnostico['intento_puerto_465'] = 'Probando con puerto 465 (SSL)...';
+        try {
+            config([
+                'mail.mailers.smtp.host' => 'smtp.gmail.com',
+                'mail.mailers.smtp.port' => 465,
+                'mail.mailers.smtp.scheme' => 'smtps',
+            ]);
+
+            // Purgar mailer cacheado
+            app()->forgetInstance('mail.manager');
+
+            \Illuminate\Support\Facades\Mail::raw(
+                'Prueba SMTP puerto 465 desde CABI. Fecha: ' . now()->toDateTimeString(),
+                function ($message) {
+                    $message->to(auth()->user()->email)
+                            ->subject('CABI - Test SMTP 465 ' . now()->format('H:i:s'));
+                }
+            );
+            $diagnostico['intento_puerto_465'] = 'ÉXITO CON PUERTO 465 - Debes cambiar tu .env a MAIL_PORT=465 y agregar MAIL_SCHEME=smtps';
+        } catch (\Exception $e2) {
+            $diagnostico['intento_puerto_465'] = 'TAMBIÉN FALLÓ: ' . $e2->getMessage();
+        }
     }
 
     return response()->json($diagnostico, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

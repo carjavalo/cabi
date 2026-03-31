@@ -20,10 +20,18 @@ class User extends Authenticatable implements MustVerifyEmail
     public function sendEmailVerificationNotification(): void
     {
         try {
+            Log::info('User::sendEmailVerification - Iniciando envío para: ' . $this->email);
+            Log::info('User::sendEmailVerification - SMTP Config: ' . json_encode([
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'scheme' => config('mail.mailers.smtp.scheme'),
+                'from' => config('mail.from.address'),
+            ]));
             $this->notify(new CustomVerifyEmail);
-            Log::info('Correo de verificación enviado exitosamente a: ' . $this->email);
+            Log::info('User::sendEmailVerification - Correo enviado exitosamente a: ' . $this->email);
         } catch (\Exception $e) {
-            Log::error('Error al enviar correo de verificación a ' . $this->email . ': ' . $e->getMessage());
+            Log::error('User::sendEmailVerification - FALLÓ para ' . $this->email . ': ' . $e->getMessage());
+            Log::error('User::sendEmailVerification - Trace: ' . $e->getTraceAsString());
         }
     }
 

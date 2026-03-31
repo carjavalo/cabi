@@ -15,22 +15,9 @@
                     <tr>
                         <td style="background-color: #eef1f6; padding: 20px 30px; text-align: center; border-bottom: 3px solid #2e3a75;">
                             @php
-                                $logoPath = public_path('img/logocorreo.jpeg');
-                                $logoSrc = '';
-                                if (file_exists($logoPath)) {
-                                    try {
-                                        $logoSrc = $message->embed($logoPath);
-                                    } catch (\Exception $e) {
-                                        $logoSrc = '';
-                                    }
-                                }
+                                $logoUrl = rtrim(config('app.url'), '/') . '/img/logocorreo.jpeg';
                             @endphp
-                            @if($logoSrc)
-                                <img src="{{ $logoSrc }}" alt="Hospital Universitario del Valle" style="max-width: 100%; height: auto; max-height: 90px;">
-                            @else
-                                <h2 style="margin: 0; color: #2e3a75; font-size: 20px; font-weight: 700;">Hospital Universitario del Valle</h2>
-                                <p style="margin: 4px 0 0; color: #555; font-size: 13px;">Evaristo García E.S.E.</p>
-                            @endif
+                            <img src="{{ $logoUrl }}" alt="Hospital Universitario del Valle" style="max-width: 100%; height: auto; max-height: 90px;" onerror="this.style.display='none'">
                         </td>
                     </tr>
 
