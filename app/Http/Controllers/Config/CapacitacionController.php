@@ -17,7 +17,10 @@ class CapacitacionController extends Controller
             $q->where('asistio', true);
         }])->orderBy('fecha', 'desc')->paginate(15);
 
-        return view('config.capacitaciones.index', compact('capacitaciones'));
+        $activas = Capacitacion::where('activo', true)->where('fecha', '>=', now()->toDateString())->count();
+        $totalAsistieron = CapacitacionAsistencia::where('asistio', true)->count();
+
+        return view('config.capacitaciones.index', compact('capacitaciones', 'activas', 'totalAsistieron'));
     }
 
     public function create()
