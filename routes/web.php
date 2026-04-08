@@ -103,6 +103,11 @@ Route::prefix('configuracion')->name('config.')->middleware(['auth', 'verified']
     // Eventos CRUD
     Route::get('eventos/data', [App\Http\Controllers\Config\EventoController::class, 'data'])->name('eventos.data');
     Route::resource('eventos', App\Http\Controllers\Config\EventoController::class);
+    // Capacitaciones CRUD
+    Route::resource('capacitaciones', App\Http\Controllers\Config\CapacitacionController::class);
+    Route::post('capacitaciones/toggle-asistencia', [App\Http\Controllers\Config\CapacitacionController::class, 'toggleAsistencia'])->name('capacitaciones.toggle-asistencia');
+    Route::post('capacitaciones/agregar-usuario', [App\Http\Controllers\Config\CapacitacionController::class, 'agregarUsuario'])->name('capacitaciones.agregar-usuario');
+    Route::post('capacitaciones/remover-usuario', [App\Http\Controllers\Config\CapacitacionController::class, 'removerUsuario'])->name('capacitaciones.remover-usuario');
     Route::resource('publicidad', App\Http\Controllers\Config\PublicidadController::class);
 });
 

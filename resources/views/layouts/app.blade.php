@@ -212,6 +212,7 @@
               <li class="nav-item"><a href="{{ url('/configuracion/cursos') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión Cursos</p></a></li>
               <li class="nav-item"><a href="{{ url('/configuracion/encuestas') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión Encuestas</p></a></li>
               <li class="nav-item"><a href="{{ url('/configuracion/eventos') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión de Eventos</p></a></li>
+              <li class="nav-item"><a href="{{ url('/configuracion/capacitaciones') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Capacitaciones</p></a></li>
             </ul>
           </li>
           @endif

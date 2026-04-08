@@ -118,7 +118,7 @@ No, Mantener
 <div class="flex items-center gap-2 sm:gap-4 ml-auto">
 <nav class="items-center gap-4 lg:gap-9 hidden lg:flex">
 <a class="text-slate-200 text-sm font-medium hover:text-white transition-colors" href="#">Dashboard</a>
-<a class="text-slate-200 text-sm font-medium hover:text-white transition-colors" href="#">Capacitaciones</a>
+<a class="text-slate-200 text-sm font-medium hover:text-white transition-colors" href="{{ url('/configuracion/capacitaciones') }}">Capacitaciones</a>
 <a class="text-white text-sm font-bold border-b-2 border-white py-1" href="#">Horarios</a>
 <a class="text-slate-200 text-sm font-medium hover:text-white transition-colors" href="#">Reportes</a>
 </nav>
