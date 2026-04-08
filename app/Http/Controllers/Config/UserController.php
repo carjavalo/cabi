@@ -33,7 +33,7 @@ class UserController extends Controller
             }
         }
 
-        // Búsqueda por texto (nombre, apellidos, email, identificacion)
+        // Búsqueda por texto (nombre, apellidos, email, identificacion, servicio, vinculacion, cargo, rol)
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -41,7 +41,11 @@ class UserController extends Controller
                   ->orWhere('apellido1', 'like', "%{$search}%")
                   ->orWhere('apellido2', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('identificacion', 'like', "%{$search}%");
+                  ->orWhere('identificacion', 'like', "%{$search}%")
+                  ->orWhere('servicio', 'like', "%{$search}%")
+                  ->orWhere('tipo_vinculacion', 'like', "%{$search}%")
+                  ->orWhere('cargo', 'like', "%{$search}%")
+                  ->orWhere('role', 'like', "%{$search}%");
             });
         }
 

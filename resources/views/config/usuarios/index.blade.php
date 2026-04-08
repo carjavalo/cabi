@@ -66,10 +66,10 @@
         <div class="card-body">
             <form method="GET" action="{{ route('config.usuarios.index') }}" class="row g-2 align-items-end">
                 <div class="col-md-5">
-                    <label for="search" class="form-label text-muted small fw-bold mb-1">Buscar por nombre, identificación...</label>
+                    <label for="search" class="form-label text-muted small fw-bold mb-1">Buscar por nombre, identificación, servicio, vinculación, cargo...</label>
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
-                        <input type="text" class="form-control form-control-sm" id="search" name="search" value="{{ request('search') }}" placeholder="Ej: Juan, 12345678">
+                        <input type="text" class="form-control form-control-sm" id="search" name="search" value="{{ request('search') }}" placeholder="Ej: Juan, 12345678, Urgencias, Contratista">
                     </div>
                 </div>
                 <div class="col-md-4">

@@ -34,7 +34,10 @@ $action = $_GET['action'] ?? 'diagnostico';
 
 function getEnvValue(string $envContent, string $key): ?string {
     if (preg_match('/^' . preg_quote($key, '/') . '=(.*)$/m', $envContent, $matches)) {
-        return trim($matches[1], '"\'');
+        $value = trim($matches[1]);
+        $value = trim($value, "\"'");
+        $value = trim($value); // trim again after removing quotes
+        return $value;
     }
     return null;
 }
@@ -129,11 +132,12 @@ function sendTestEmail(string $basePath, string $to): array {
 // VALORES CORRECTOS PARA PRODUCCIÓN
 // ══════════════════════════════════════════════
 $correctValues = [
+    'APP_ENV' => 'production',
+    'APP_DEBUG' => 'false',
     'APP_URL' => 'https://cabi.huv.gov.co',
     'MAIL_MAILER' => 'smtp',
     'MAIL_HOST' => 'smtp.gmail.com',
     'MAIL_PORT' => '587',
-    'MAIL_SCHEME' => '',
     'MAIL_USERNAME' => 'oficinapic@correohuv.gov.co',
     'MAIL_PASSWORD' => 'ovap vyuy fkvt vaai',
     'MAIL_FROM_ADDRESS' => 'oficinapic@correohuv.gov.co',
@@ -151,8 +155,16 @@ if (!file_exists($envPath)) {
 $envContent = file_get_contents($envPath);
 
 if ($action === 'corregir') {
+    // Normalizar saltos de línea (quitar \r de Windows)
+    $envContent = str_replace("\r\n", "\n", $envContent);
+    $envContent = str_replace("\r", "\n", $envContent);
+    
+    // Eliminar línea MAIL_SCHEME si existe (no necesario para puerto 587)
+    $envContent = preg_replace('/^MAIL_SCHEME=.*\n?/m', '', $envContent);
+    
     // Aplicar correcciones
     foreach ($correctValues as $key => $value) {
+        if ($key === 'MAIL_SCHEME') continue; // ya eliminada arriba
         $envContent = setEnvValue($envContent, $key, $value);
     }
     
@@ -182,7 +194,7 @@ if ($action === 'test_email') {
 $envContent = file_get_contents($envPath); // Releer después de posibles cambios
 $diagnostico = [];
 
-$keysToCheck = ['APP_URL', 'MAIL_MAILER', 'MAIL_HOST', 'MAIL_PORT', 'MAIL_USERNAME', 'MAIL_PASSWORD', 'MAIL_SCHEME', 'MAIL_FROM_ADDRESS', 'MAIL_FROM_NAME'];
+$keysToCheck = ['APP_ENV', 'APP_DEBUG', 'APP_URL', 'MAIL_MAILER', 'MAIL_HOST', 'MAIL_PORT', 'MAIL_USERNAME', 'MAIL_PASSWORD', 'MAIL_FROM_ADDRESS', 'MAIL_FROM_NAME'];
 foreach ($keysToCheck as $key) {
     $current = getEnvValue($envContent, $key);
     $expected = $correctValues[$key] ?? null;

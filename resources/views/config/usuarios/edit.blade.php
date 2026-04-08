@@ -9,7 +9,7 @@
         <div class="card shadow-lg border-0 rounded-lg">
             <div class="card-header text-white text-center py-3" style="background: linear-gradient(135deg, #2e3a75 0%, #1a234f 100%); border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem;">
                 <h4 class="mb-0 font-weight-bold"><i class="fas fa-user-edit mr-2"></i> Editar Usuario</h4>
-                <p class="mb-0 small text-white-50">Actualice la información del usuario en el sistema</p>
+                <p class="mb-0 small text-white-50">Actualice la informaciï¿½n del usuario en el sistema</p>
             </div>
             
             <div class="card-body p-4 bg-white">
@@ -17,7 +17,7 @@
                     @csrf
                     @method('PUT')
                     
-                    <h6 class="text-secondary border-bottom pb-2 mb-3"><i class="fas fa-address-card mr-1"></i> Información Personal</h6>
+                    <h6 class="text-secondary border-bottom pb-2 mb-3"><i class="fas fa-address-card mr-1"></i> Informaciï¿½n Personal</h6>
                     
                     <div class="form-row">
                         <div class="form-group col-md-6 mb-3">
@@ -26,7 +26,7 @@
                             @error('name')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
                         </div>
                         <div class="form-group col-md-6 mb-3">
-                            <label for="identificacion" class="small text-muted font-weight-bold">Número de Identificación</label>
+                            <label for="identificacion" class="small text-muted font-weight-bold">Nï¿½mero de Identificaciï¿½n</label>
                             <input id="identificacion" name="identificacion" type="text" class="form-control bg-light" value="{{ old('identificacion',$user->identificacion) }}" placeholder="Documento de identidad" style="border: 1px solid #ced4da; border-radius: 6px;" />
                         </div>
                     </div>
@@ -42,7 +42,7 @@
                         </div>
                     </div>
 
-                    <h6 class="text-secondary border-bottom pb-2 mb-3"><i class="fas fa-briefcase mr-1"></i> Información Institucional</h6>
+                    <h6 class="text-secondary border-bottom pb-2 mb-3"><i class="fas fa-briefcase mr-1"></i> Informaciï¿½n Institucional</h6>
 
                     <div class="form-row">
                         <div class="form-group col-md-6 mb-3">
@@ -51,7 +51,7 @@
                                 <option value="">Seleccione el servicio</option>
                                 @if(isset($servicios) && $servicios->count())
                                     @foreach($servicios as $s)
-                                        <option value="{{ $s->id }}" {{ old('servicio_id',$user->servicio_id) == $s->id ? 'selected' : ' }}>{{ $s->nombre }}</option>
+                                        <option value="{{ $s->id }}" {{ old('servicio_id',$user->servicio_id) == $s->id ? 'selected' : '' }}>{{ $s->nombre }}</option>
                                     @endforeach
                                 @endif
                             </select>
@@ -61,26 +61,26 @@
                             <select id="role" name="role" class="form-control custom-select bg-light" required style="border: 1px solid #ced4da; border-radius: 6px;">
                                 <option value="">Seleccione el rol</option>
                                 @if(Auth::check() && Auth::user()->role == 'Super Admin')
-                                <option value="Super Admin" {{ old('role',$user->role)=='Super Admin' ? 'selected' : ' }}>Super Admin</option>
+                                <option value="Super Admin" {{ old('role',$user->role)=='Super Admin' ? 'selected' : '' }}>Super Admin</option>
                                 @endif
                                 @if(Auth::check() && in_array(Auth::user()->role,['Super Admin','Administrador']))
-                                <option value="Administrador" {{ old('role',$user->role)=='Administrador' ? 'selected' : ' }}>Administrador</option>
+                                <option value="Administrador" {{ old('role',$user->role)=='Administrador' ? 'selected' : '' }}>Administrador</option>
                                 @endif
-                                <option value="Instructor GYM" {{ old('role',$user->role)=='Instructor GYM' ? 'selected' : ' }}>Instructor GYM</option>
-                                <option value="Operador" {{ old('role',$user->role)=='Operador' ? 'selected' : ' }}>Operador</option>
-                                <option value="Usuario" {{ old('role',$user->role)=='Usuario' ? 'selected' : ' }}>Usuario</option>
+                                <option value="Instructor GYM" {{ old('role',$user->role)=='Instructor GYM' ? 'selected' : '' }}>Instructor GYM</option>
+                                <option value="Operador" {{ old('role',$user->role)=='Operador' ? 'selected' : '' }}>Operador</option>
+                                <option value="Usuario" {{ old('role',$user->role)=='Usuario' ? 'selected' : '' }}>Usuario</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="form-row mb-4">
                         <div class="form-group col-md-6 mb-3">
-                            <label for="tipo_vinculacion_id" class="small text-muted font-weight-bold">Tipo de vinculación</label>
+                            <label for="tipo_vinculacion_id" class="small text-muted font-weight-bold">Tipo de vinculaciï¿½n</label>
                             <select id="tipo_vinculacion_id" name="tipo_vinculacion_id" class="form-control custom-select bg-light" style="border: 1px solid #ced4da; border-radius: 6px;">
-                                <option value="">Seleccione vinculación</option>
+                                <option value="">Seleccione vinculaciï¿½n</option>
                                 @if(isset($vinculaciones) && $vinculaciones->count())   
                                     @foreach($vinculaciones as $v)
-                                        <option value="{{ $v->id }}" {{ old('tipo_vinculacion_id',$user->tipo_vinculacion_id)==$v->id ? 'selected' : ' }}>{{ $v->nombre }}</option>
+                                        <option value="{{ $v->id }}" {{ old('tipo_vinculacion_id',$user->tipo_vinculacion_id)==$v->id ? 'selected' : '' }}>{{ $v->nombre }}</option>
                                     @endforeach
                                 @endif
                             </select>
@@ -91,7 +91,7 @@
                                 <option value="">Seleccione cargo</option>
                                 @if(isset($cargos) && $cargos->count())
                                     @foreach($cargos as $c)
-                                        <option value="{{ $c->nombre }}" {{ old('cargo', $user->cargo) == $c->nombre ? 'selected' : ' }}>{{ $c->nombre }}</option>
+                                        <option value="{{ $c->nombre }}" {{ old('cargo', $user->cargo) == $c->nombre ? 'selected' : '' }}>{{ $c->nombre }}</option>
                                     @endforeach
                                 @endif
                             </select>
@@ -102,7 +102,7 @@
 
                     <div class="form-row mb-2">
                         <div class="form-group col-12 mb-3">
-                            <label for="email" class="small text-muted font-weight-bold">Correo Electrónico <span class="text-danger">*</span></label>
+                            <label for="email" class="small text-muted font-weight-bold">Correo Electrï¿½nico <span class="text-danger">*</span></label>
                             <input id="email" name="email" type="email" class="form-control bg-light @error('email') is-invalid @enderror" value="{{ old('email',$user->email) }}" required placeholder="ejemplo@correo.com" style="border: 1px solid #ced4da; border-radius: 6px;" />
                             @error('email')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
                         </div>
@@ -110,13 +110,13 @@
 
                     <div class="form-row mb-4">
                         <div class="form-group col-md-6 mb-3">
-                            <label for="password" class="small text-muted font-weight-bold">Nueva Contraseña <span class="text-info font-italic font-weight-normal">(dejar vacío para mantener)</span></label>
+                            <label for="password" class="small text-muted font-weight-bold">Nueva Contraseï¿½a <span class="text-info font-italic font-weight-normal">(dejar vacï¿½o para mantener)</span></label>
                             <input id="password" name="password" type="password" class="form-control bg-light @error('password') is-invalid @enderror" placeholder="Dejar en blanco si no cambia" style="border: 1px solid #ced4da; border-radius: 6px;" />
                             @error('password')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
                         </div>
                         <div class="form-group col-md-6 mb-3">
-                            <label for="password_confirmation" class="small text-muted font-weight-bold">Confirmar nueva contraseña</label>
-                            <input id="password_confirmation" name="password_confirmation" type="password" class="form-control bg-light" placeholder="Repita la contraseña si la cambia" style="border: 1px solid #ced4da; border-radius: 6px;" />
+                            <label for="password_confirmation" class="small text-muted font-weight-bold">Confirmar nueva contraseï¿½a</label>
+                            <input id="password_confirmation" name="password_confirmation" type="password" class="form-control bg-light" placeholder="Repita la contraseï¿½a si la cambia" style="border: 1px solid #ced4da; border-radius: 6px;" />
                         </div>
                     </div>
 
