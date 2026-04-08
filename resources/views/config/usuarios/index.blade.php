@@ -105,16 +105,26 @@
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead style="background-color: #f8f9fa;">
+                        @php
+                            $sortUrl = function($column) {
+                                $direction = (request('sort') === $column && request('direction') === 'asc') ? 'desc' : 'asc';
+                                return request()->fullUrlWithQuery(['sort' => $column, 'direction' => $direction]);
+                            };
+                            $sortIcon = function($column) {
+                                if (request('sort') !== $column) return 'fas fa-sort text-black-50 ms-1 opacity-25';
+                                return request('direction') === 'asc' ? 'fas fa-sort-up text-primary ms-1' : 'fas fa-sort-down text-primary ms-1';
+                            };
+                        @endphp
                         <tr>
-                            <th class="px-4 py-3 text-muted fw-bold small">#</th>
-                            <th class="px-4 py-3 text-muted fw-bold small">Nombre</th>
-                            <th class="px-4 py-3 text-muted fw-bold small">Apellidos</th>
-                            <th class="px-4 py-3 text-muted fw-bold small">Email</th>
-                            <th class="px-4 py-3 text-muted fw-bold small">Servicio</th>
-                            <th class="px-4 py-3 text-muted fw-bold small">Vinculación</th>
-                            <th class="px-4 py-3 text-muted fw-bold small">Cargo</th>
-                            <th class="px-4 py-3 text-muted fw-bold small">Rol</th>
-                            <th class="px-4 py-3 text-muted fw-bold small text-center">Acciones</th>
+                            <th class="px-4 py-3"><a href="{{ $sortUrl('id') }}" class="text-decoration-none text-muted fw-bold small text-nowrap"># <i class="{{ $sortIcon('id') }}"></i></a></th>
+                            <th class="px-4 py-3"><a href="{{ $sortUrl('name') }}" class="text-decoration-none text-muted fw-bold small text-nowrap">Nombre <i class="{{ $sortIcon('name') }}"></i></a></th>
+                            <th class="px-4 py-3"><a href="{{ $sortUrl('apellido1') }}" class="text-decoration-none text-muted fw-bold small text-nowrap">Apellidos <i class="{{ $sortIcon('apellido1') }}"></i></a></th>
+                            <th class="px-4 py-3"><a href="{{ $sortUrl('email') }}" class="text-decoration-none text-muted fw-bold small text-nowrap">Email <i class="{{ $sortIcon('email') }}"></i></a></th>
+                            <th class="px-4 py-3"><a href="{{ $sortUrl('servicio') }}" class="text-decoration-none text-muted fw-bold small text-nowrap">Servicio <i class="{{ $sortIcon('servicio') }}"></i></a></th>
+                            <th class="px-4 py-3"><a href="{{ $sortUrl('tipo_vinculacion') }}" class="text-decoration-none text-muted fw-bold small text-nowrap">Vinculación <i class="{{ $sortIcon('tipo_vinculacion') }}"></i></a></th>
+                            <th class="px-4 py-3"><a href="{{ $sortUrl('cargo') }}" class="text-decoration-none text-muted fw-bold small text-nowrap">Cargo <i class="{{ $sortIcon('cargo') }}"></i></a></th>
+                            <th class="px-4 py-3"><a href="{{ $sortUrl('role') }}" class="text-decoration-none text-muted fw-bold small text-nowrap">Rol <i class="{{ $sortIcon('role') }}"></i></a></th>
+                            <th class="px-4 py-3 text-muted fw-bold small text-center text-nowrap">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>

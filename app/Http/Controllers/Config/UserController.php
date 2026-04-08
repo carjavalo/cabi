@@ -54,7 +54,18 @@ class UserController extends Controller
             $query->where('role', $request->role_filter);
         }
 
-        $users = $query->orderBy('id', 'desc')->paginate(15)->appends($request->all());
+        // Ordenamiento dinámico
+        $sort = $request->get('sort', 'id');
+        $direction = $request->get('direction', 'desc');
+        
+        // Validación de columnas para seguridad
+        $allowedSorts = ['id', 'name', 'apellido1', 'email', 'servicio', 'tipo_vinculacion', 'cargo', 'role'];
+        if (!in_array($sort, $allowedSorts)) {
+            $sort = 'id';
+        }
+        $direction = strtolower($direction) === 'asc' ? 'asc' : 'desc';
+
+        $users = $query->orderBy($sort, $direction)->paginate(15)->appends($request->all());
 
         return view('config.usuarios.index', compact('users'));
     }
