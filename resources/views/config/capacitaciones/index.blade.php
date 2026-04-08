@@ -38,11 +38,6 @@
     @endif
 
     <!-- Stats Row -->
-    @php
-        $total = $capacitaciones->total();
-        $activas = \App\Models\Capacitacion::where('activo', true)->where('fecha', '>=', now()->toDateString())->count();
-        $totalAsistieron = \App\Models\CapacitacionAsistencia::where('asistio', true)->count();
-    @endphp
     <div class="row mb-4 g-3">
         <div class="col-md-4">
             <div class="stat-card bg-white shadow-sm border-0">
@@ -51,7 +46,7 @@
                         <i class="fas fa-chalkboard-teacher text-primary"></i>
                     </div>
                     <div>
-                        <div class="h3 mb-0 fw-bold">{{ $total }}</div>
+                        <div class="h3 mb-0 fw-bold">{{ $capacitaciones->total() }}</div>
                         <small class="text-muted fw-bold text-uppercase">Total Capacitaciones</small>
                     </div>
                 </div>
