@@ -28,9 +28,10 @@ class CapacitacionController extends Controller
             }])->orderBy('fecha', 'desc')->paginate(15);
 
         $activas = Capacitacion::where('activo', true)->where('fecha', '>=', now()->toDateString())->count();
+        $capIds = Capacitacion::pluck('id');
         $totalAsistieron = ($hasSesiones && Schema::hasTable('capacitacion_asistencia_registros'))
-            ? CapacitacionAsistenciaRegistro::count()
-            : CapacitacionAsistencia::where('asistio', true)->count();
+            ? CapacitacionAsistenciaRegistro::whereIn('capacitacion_id', $capIds)->count()
+            : CapacitacionAsistencia::whereIn('capacitacion_id', $capIds)->where('asistio', true)->count();
 
         return view('config.capacitaciones.index', compact('capacitaciones', 'activas', 'totalAsistieron', 'hasSesiones'));
     }
