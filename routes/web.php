@@ -108,6 +108,8 @@ Route::prefix('configuracion')->name('config.')->middleware(['auth', 'verified']
     Route::post('capacitaciones/toggle-asistencia', [App\Http\Controllers\Config\CapacitacionController::class, 'toggleAsistencia'])->name('capacitaciones.toggle-asistencia');
     Route::post('capacitaciones/agregar-usuario', [App\Http\Controllers\Config\CapacitacionController::class, 'agregarUsuario'])->name('capacitaciones.agregar-usuario');
     Route::post('capacitaciones/remover-usuario', [App\Http\Controllers\Config\CapacitacionController::class, 'removerUsuario'])->name('capacitaciones.remover-usuario');
+    Route::get('capacitaciones/{capacitacione}/informes', [App\Http\Controllers\Config\CapacitacionController::class, 'informes'])->name('capacitaciones.informes');
+    Route::get('capacitaciones/{capacitacione}/sesiones/{sesion}/excel', [App\Http\Controllers\Config\CapacitacionController::class, 'exportarSesion'])->name('capacitaciones.exportar-sesion');
     Route::resource('publicidad', App\Http\Controllers\Config\PublicidadController::class);
 });
 
@@ -116,6 +118,12 @@ Route::get('/encuestas/responder/{id}', [EncuestaController::class, 'mostrarEncu
 Route::post('/encuestas/guardar', [EncuestaController::class, 'guardarRespuesta'])->name('encuestas.guardar');
 
 Route::get('/eventos/inscripcion/{id}', [App\Http\Controllers\Config\EventoController::class, 'inscripcion'])->name('eventos.inscripcion');
+
+// Ruta pública para marcar asistencia a capacitaciones vía QR/link
+Route::get('/capacitaciones/asistencia/buscar-usuario/{identificacion}', [App\Http\Controllers\CapacitacionAsistenciaPublicaController::class, 'buscarUsuario'])->name('capacitaciones.asistencia.buscar-usuario');
+Route::get('/capacitaciones/asistencia/{token}', [App\Http\Controllers\CapacitacionAsistenciaPublicaController::class, 'mostrar'])->name('capacitaciones.asistencia.publica');
+Route::post('/capacitaciones/asistencia/{token}', [App\Http\Controllers\CapacitacionAsistenciaPublicaController::class, 'marcar'])->name('capacitaciones.asistencia.marcar');
+
 Route::get('/eventos/api/usuario/{identificacion}', [App\Http\Controllers\Config\EventoController::class, 'consultarUsuario'])->name('eventos.api.usuario');
 Route::post('/eventos/inscripcion/{id}', [App\Http\Controllers\Config\EventoController::class, 'guardarInscripcion'])->name('eventos.inscripcion.guardar');
 Route::post('/eventos/inscripciones/eliminar', [App\Http\Controllers\Config\EventoController::class, 'eliminarInscripciones'])->name('eventos.inscripciones.eliminar')->middleware(['auth', 'verified']);

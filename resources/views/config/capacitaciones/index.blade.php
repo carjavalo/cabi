@@ -10,6 +10,13 @@
     .stat-card:hover { transform: translateY(-3px); }
     .badge-activo { background: #d4edda; color: #155724; }
     .badge-finalizado { background: #f8d7da; color: #721c24; }
+    .btn-qr { font-size: 0.78rem; padding: 0.2rem 0.5rem; }
+    .informe-tab { cursor: pointer; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.8rem; font-weight: 600; border: none; background: #eee; }
+    .informe-tab.active { background: #2f4185; color: #fff; }
+    .sesion-pill { cursor: pointer; font-size: 0.78rem; padding: 0.35rem 0.8rem; border-radius: 2rem; border: 1px solid #ccc; background: #fff; margin: 0.2rem; }
+    .sesion-pill.active { background: #2f4185; color: #fff; border-color: #2f4185; }
+    .informe-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .informe-table td { font-size: 0.82rem; }
 </style>
 @endpush
 
@@ -93,6 +100,7 @@
                             <th class="px-4 py-3 text-muted fw-bold small">Horario</th>
                             <th class="px-4 py-3 text-muted fw-bold small">Ubicación</th>
                             <th class="px-4 py-3 text-muted fw-bold small">Instructor</th>
+                            <th class="px-4 py-3 text-muted fw-bold small text-center">QR Asistencia</th>
                             <th class="px-4 py-3 text-muted fw-bold small text-center">Citados</th>
                             <th class="px-4 py-3 text-muted fw-bold small text-center">Asistieron</th>
                             <th class="px-4 py-3 text-muted fw-bold small text-center">Estado</th>
@@ -115,6 +123,41 @@
                             <td class="px-4 py-3 small">{{ $cap->ubicacion ?: '—' }}</td>
                             <td class="px-4 py-3 small">{{ $cap->instructor ?: '—' }}</td>
                             <td class="px-4 py-3 text-center">
+                                @if($cap->ultimaSesion)
+                                    @php $asistUrl = route('capacitaciones.asistencia.publica', $cap->ultimaSesion->token); @endphp
+                                    <div class="d-flex align-items-center justify-content-center gap-1">
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-qr" data-toggle="modal" data-target="#qrModal{{ $cap->id }}" title="Ver QR">
+                                            <i class="fas fa-qrcode"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary btn-qr btn-copy-link" data-link="{{ $asistUrl }}" title="Copiar link">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                    {{-- Modal QR --}}
+                                    <div class="modal fade" id="qrModal{{ $cap->id }}" tabindex="-1" role="dialog">
+                                        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                                            <div class="modal-content" style="border-radius:1rem;">
+                                                <div class="modal-header border-0 pb-0">
+                                                    <h6 class="modal-title fw-bold">QR - {{ $cap->titulo }}</h6>
+                                                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                                                </div>
+                                                <div class="modal-body text-center pt-2">
+                                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={{ urlencode($asistUrl) }}" alt="QR Asistencia" class="img-fluid mb-2" style="max-width:220px;">
+                                                    <div class="mt-2">
+                                                        <small class="text-muted d-block" style="word-break:break-all;">{{ $asistUrl }}</small>
+                                                        <button type="button" class="btn btn-sm btn-outline-primary mt-2 btn-copy-link" data-link="{{ $asistUrl }}">
+                                                            <i class="fas fa-copy me-1"></i> Copiar enlace
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-center">
                                 <span class="badge bg-info bg-opacity-10 text-info" style="font-size:0.85rem;">{{ $cap->asistencias_count }}</span>
                             </td>
                             <td class="px-4 py-3 text-center">
@@ -135,6 +178,9 @@
                                     <a href="{{ route('config.capacitaciones.edit', $cap->id) }}" class="btn btn-sm btn-outline-warning" title="Editar">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    <button type="button" class="btn btn-sm btn-outline-info btn-informes" data-cap-id="{{ $cap->id }}" data-cap-titulo="{{ $cap->titulo }}" title="Informes">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </button>
                                     <form action="{{ route('config.capacitaciones.destroy', $cap->id) }}" method="POST" style="display:inline-block" onsubmit="return confirm('¿Eliminar esta capacitación?');">
                                         @csrf @method('DELETE')
                                         <button class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
@@ -144,7 +190,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="10" class="text-center py-5 text-muted">
+                            <td colspan="11" class="text-center py-5 text-muted">
                                 <i class="fas fa-chalkboard-teacher fa-2x mb-2 d-block"></i>
                                 No hay capacitaciones registradas aún.
                             </td>
@@ -159,4 +205,175 @@
         </div>
     </div>
 </div>
+
+{{-- Modal Informes --}}
+<div class="modal fade" id="modalInformes" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content" style="border-radius:1rem;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #2f4185, #48599e); border-radius: 1rem 1rem 0 0;">
+                <h5 class="modal-title text-white fw-bold">
+                    <i class="fas fa-chart-bar me-2"></i>Informes: <span id="informeTitulo"></span>
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body" id="informeBody" style="min-height:300px;">
+                <div class="text-center py-5">
+                    <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+                    <p class="text-muted mt-2">Cargando informes...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ─── Copiar link ───
+    document.querySelectorAll('.btn-copy-link').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var link = this.getAttribute('data-link');
+            var self = this;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(link).then(function() {
+                    self.innerHTML = '<i class="fas fa-check"></i>';
+                    setTimeout(function() {
+                        self.innerHTML = self.closest('.modal-body')
+                            ? '<i class="fas fa-copy me-1"></i> Copiar enlace'
+                            : '<i class="fas fa-copy"></i>';
+                    }, 2000);
+                });
+            }
+        });
+    });
+
+    // ─── Informes ───
+    document.querySelectorAll('.btn-informes').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var capId = this.dataset.capId;
+            var capTitulo = this.dataset.capTitulo;
+            document.getElementById('informeTitulo').textContent = capTitulo;
+            document.getElementById('informeBody').innerHTML = '<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x text-muted"></i><p class="text-muted mt-2">Cargando informes...</p></div>';
+            $('#modalInformes').modal('show');
+
+            fetch('/configuracion/capacitaciones/' + capId + '/informes', {
+                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.ok || !data.sesiones.length) {
+                    document.getElementById('informeBody').innerHTML = '<div class="text-center py-5 text-muted"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>No hay sesiones registradas.</div>';
+                    return;
+                }
+                renderInformes(data, capId);
+            })
+            .catch(function() {
+                document.getElementById('informeBody').innerHTML = '<div class="alert alert-danger">Error al cargar informes.</div>';
+            });
+        });
+    });
+
+    function renderInformes(data, capId) {
+        var sesiones = data.sesiones;
+        var html = '';
+
+        // Sesión pills
+        html += '<div class="mb-3 d-flex flex-wrap align-items-center gap-1">';
+        html += '<strong class="small text-muted mr-2">Sesiones:</strong>';
+        sesiones.forEach(function(s, i) {
+            html += '<button class="sesion-pill' + (i === 0 ? ' active' : '') + '" data-sesion-idx="' + i + '">';
+            html += '<i class="fas fa-calendar-alt mr-1"></i>' + s.fecha + ' ' + s.hora_inicio;
+            html += '</button>';
+        });
+        html += '</div>';
+
+        // Sesión content
+        sesiones.forEach(function(s, i) {
+            html += '<div class="sesion-content" data-sesion-idx="' + i + '" style="' + (i > 0 ? 'display:none;' : '') + '">';
+
+            // Stats
+            var totalAsist = s.citados_asistieron.length + s.no_citados_asistieron.length;
+            html += '<div class="row mb-3 g-2">';
+            html += '<div class="col-md-3"><div class="p-3 rounded-3 bg-light text-center"><div class="h4 fw-bold mb-0" style="color:#2f4185;">' + s.total_citados + '</div><small class="text-muted fw-bold">Citados</small></div></div>';
+            html += '<div class="col-md-3"><div class="p-3 rounded-3 bg-light text-center"><div class="h4 fw-bold mb-0 text-success">' + s.citados_asistieron.length + '</div><small class="text-muted fw-bold">Citados Asistieron</small></div></div>';
+            html += '<div class="col-md-3"><div class="p-3 rounded-3 bg-light text-center"><div class="h4 fw-bold mb-0 text-info">' + s.no_citados_asistieron.length + '</div><small class="text-muted fw-bold">No Citados</small></div></div>';
+            html += '<div class="col-md-3"><div class="p-3 rounded-3 bg-light text-center"><div class="h4 fw-bold mb-0 text-danger">' + s.citados_no_asistieron.length + '</div><small class="text-muted fw-bold">Ausentes</small></div></div>';
+            html += '</div>';
+
+            // Export button
+            html += '<div class="mb-3"><a href="/configuracion/capacitaciones/' + capId + '/sesiones/' + s.id + '/excel" class="btn btn-sm btn-success"><i class="fas fa-file-excel me-1"></i> Exportar Excel</a>';
+            html += '<small class="text-muted ml-2">Sesión creada: ' + s.created_at + '</small></div>';
+
+            // Tabs
+            html += '<ul class="nav nav-tabs mb-2" role="tablist">';
+            html += '<li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#citAsist' + s.id + '">Citados que Asistieron (' + s.citados_asistieron.length + ')</a></li>';
+            html += '<li class="nav-item"><a class="nav-link" data-toggle="tab" href="#noCitAsist' + s.id + '">No Citados (' + s.no_citados_asistieron.length + ')</a></li>';
+            html += '<li class="nav-item"><a class="nav-link" data-toggle="tab" href="#ausentes' + s.id + '">Ausentes (' + s.citados_no_asistieron.length + ')</a></li>';
+            html += '</ul>';
+
+            html += '<div class="tab-content">';
+
+            // Tab 1: Citados que asistieron
+            html += '<div class="tab-pane fade show active" id="citAsist' + s.id + '">';
+            html += buildTable(s.citados_asistieron, true);
+            html += '</div>';
+
+            // Tab 2: No citados
+            html += '<div class="tab-pane fade" id="noCitAsist' + s.id + '">';
+            html += buildTable(s.no_citados_asistieron, true);
+            html += '</div>';
+
+            // Tab 3: Ausentes
+            html += '<div class="tab-pane fade" id="ausentes' + s.id + '">';
+            if (s.citados_no_asistieron.length) {
+                html += '<table class="table table-sm informe-table"><thead><tr><th>Nombre</th><th>Identificación</th></tr></thead><tbody>';
+                s.citados_no_asistieron.forEach(function(r) {
+                    html += '<tr><td>' + r.nombre + '</td><td>' + r.identificacion + '</td></tr>';
+                });
+                html += '</tbody></table>';
+            } else {
+                html += '<p class="text-muted text-center py-3">Todos los citados asistieron.</p>';
+            }
+            html += '</div>';
+
+            html += '</div>'; // tab-content
+            html += '</div>'; // sesion-content
+        });
+
+        document.getElementById('informeBody').innerHTML = html;
+
+        // Sesion pill navigation
+        document.querySelectorAll('.sesion-pill').forEach(function(pill) {
+            pill.addEventListener('click', function() {
+                document.querySelectorAll('.sesion-pill').forEach(function(p) { p.classList.remove('active'); });
+                this.classList.add('active');
+                var idx = this.dataset.sesionIdx;
+                document.querySelectorAll('.sesion-content').forEach(function(c) {
+                    c.style.display = c.dataset.sesionIdx === idx ? '' : 'none';
+                });
+            });
+        });
+    }
+
+    function buildTable(rows, full) {
+        if (!rows.length) return '<p class="text-muted text-center py-3">Sin registros.</p>';
+        var html = '<table class="table table-sm table-hover informe-table"><thead><tr>';
+        html += '<th>Nombre</th><th>Identificación</th><th>Tipo Contrato</th><th>Correo</th><th>Fecha/Hora</th>';
+        html += '</tr></thead><tbody>';
+        rows.forEach(function(r) {
+            html += '<tr>';
+            html += '<td>' + r.nombre + '</td>';
+            html += '<td>' + r.identificacion + '</td>';
+            html += '<td>' + (r.tipo_contrato || '—') + '</td>';
+            html += '<td>' + (r.correo || '—') + '</td>';
+            html += '<td>' + r.hora_registro + '</td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        return html;
+    }
+});
+</script>
+@endpush
