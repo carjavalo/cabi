@@ -242,21 +242,29 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // ─── Copiar link ───
+    function copiarAlPortapapeles(text, btn) {
+        var originalHtml = btn.innerHTML;
+        function showOk() {
+            btn.innerHTML = '<i class="fas fa-check text-success"></i>';
+            setTimeout(function() { btn.innerHTML = originalHtml; }, 2000);
+        }
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(showOk).catch(function() { fallbackCopy(text, btn, showOk); });
+        } else {
+            fallbackCopy(text, btn, showOk);
+        }
+    }
+    function fallbackCopy(text, btn, onSuccess) {
+        var ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); onSuccess(); } catch(e) { prompt('Copiar este enlace:', text); }
+        document.body.removeChild(ta);
+    }
     document.querySelectorAll('.btn-copy-link').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
-            var link = this.getAttribute('data-link');
-            var self = this;
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(link).then(function() {
-                    self.innerHTML = '<i class="fas fa-check"></i>';
-                    setTimeout(function() {
-                        self.innerHTML = self.closest('.modal-body')
-                            ? '<i class="fas fa-copy me-1"></i> Copiar enlace'
-                            : '<i class="fas fa-copy"></i>';
-                    }, 2000);
-                });
-            }
+            copiarAlPortapapeles(this.getAttribute('data-link'), this);
         });
     });
 
@@ -371,19 +379,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function buildTable(rows, full) {
         if (!rows.length) return '<p class="text-muted text-center py-3">Sin registros.</p>';
-        var html = '<table class="table table-sm table-hover informe-table"><thead><tr>';
-        html += '<th>Nombre</th><th>Identificación</th><th>Tipo Contrato</th><th>Correo</th><th>Fecha/Hora</th>';
+        var html = '<div class="table-responsive"><table class="table table-sm table-hover informe-table"><thead><tr>';
+        html += '<th>Nombre</th><th>Identificación</th><th>Área/Servicio</th><th>Cargo</th><th>Vinculación</th><th>Fecha/Hora</th>';
         html += '</tr></thead><tbody>';
         rows.forEach(function(r) {
             html += '<tr>';
             html += '<td>' + r.nombre + '</td>';
             html += '<td>' + r.identificacion + '</td>';
+            html += '<td>' + (r.area_servicio || '—') + '</td>';
+            html += '<td>' + (r.cargo || '—') + '</td>';
             html += '<td>' + (r.tipo_contrato || '—') + '</td>';
-            html += '<td>' + (r.correo || '—') + '</td>';
             html += '<td>' + r.hora_registro + '</td>';
             html += '</tr>';
         });
-        html += '</tbody></table>';
+        html += '</tbody></table></div>';
         return html;
     }
     @endif

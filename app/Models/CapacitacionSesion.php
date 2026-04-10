@@ -36,17 +36,11 @@ class CapacitacionSesion extends Model
         $fechaSesion = $this->fecha->format('Y-m-d');
         $hoy = $ahora->format('Y-m-d');
 
-        if ($hoy !== $fechaSesion) {
-            return false;
+        // Permitir registro durante todo el día de la sesión
+        if ($hoy === $fechaSesion) {
+            return true;
         }
 
-        if ($this->hora_inicio && $this->hora_fin) {
-            $inicio = \Carbon\Carbon::parse($fechaSesion . ' ' . $this->hora_inicio);
-            $fin = \Carbon\Carbon::parse($fechaSesion . ' ' . $this->hora_fin);
-            return $ahora->between($inicio, $fin);
-        }
-
-        // Si no tiene horario, está abierta todo el día de la fecha
-        return true;
+        return false;
     }
 }

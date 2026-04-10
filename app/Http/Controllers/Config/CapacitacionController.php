@@ -296,17 +296,19 @@ class CapacitacionController extends Controller
                 'created_at' => $sesion->created_at->format('d/m/Y H:i'),
                 'total_citados' => count($citadosIds),
                 'citados_asistieron' => $citadosAsistieron->map(fn($r) => [
-                    'nombre' => $r->nombre,
+                    'nombre' => $r->nombre . ' ' . ($r->apellidos ?? ''),
                     'identificacion' => $r->identificacion,
+                    'area_servicio' => $r->area_servicio,
+                    'cargo' => $r->cargo,
                     'tipo_contrato' => $r->tipo_contrato,
-                    'correo' => $r->correo,
                     'hora_registro' => $r->created_at->format('d/m/Y H:i'),
                 ])->values(),
                 'no_citados_asistieron' => $noCitadosAsistieron->map(fn($r) => [
-                    'nombre' => $r->nombre,
+                    'nombre' => $r->nombre . ' ' . ($r->apellidos ?? ''),
                     'identificacion' => $r->identificacion,
+                    'area_servicio' => $r->area_servicio,
+                    'cargo' => $r->cargo,
                     'tipo_contrato' => $r->tipo_contrato,
-                    'correo' => $r->correo,
                     'hora_registro' => $r->created_at->format('d/m/Y H:i'),
                 ])->values(),
                 'citados_no_asistieron' => $citadosNoAsistieron,
@@ -316,7 +318,7 @@ class CapacitacionController extends Controller
         return response()->json(['ok' => true, 'capacitacion' => $capacitacion->titulo, 'sesiones' => $data]);
     }
 
-    // ─── Exportar Excel (CSV) de una sesión ───
+    // ─── Exportar Excel (.xlsx) de una sesión ───
     public function exportarSesion(Capacitacion $capacitacione, CapacitacionSesion $sesion)
     {
         if (!Schema::hasTable('capacitacion_sesiones')) {
@@ -342,57 +344,149 @@ class CapacitacionController extends Controller
             }
         }
 
-        $filename = 'asistencia_' . Str::slug($capacitacione->titulo) . '_sesion_' . $sesion->fecha->format('Y-m-d') . '.csv';
+        $filename = 'asistencia_' . Str::slug($capacitacione->titulo) . '_sesion_' . $sesion->fecha->format('Y-m-d') . '.xls';
 
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
+        // Generar XML Spreadsheet 2003 (formato nativo de Excel)
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $xml .= '<?mso-application progid="Excel.Sheet"?>' . "\n";
+        $xml .= '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"';
+        $xml .= ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"';
+        $xml .= ' xmlns:x="urn:schemas-microsoft-com:office:excel">' . "\n";
+
+        // Estilos
+        $xml .= '<Styles>';
+        $xml .= '<Style ss:ID="header"><Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="10"/><Interior ss:Color="#2E3A75" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/></Borders></Style>';
+        $xml .= '<Style ss:ID="title"><Font ss:Bold="1" ss:Size="14" ss:Color="#2E3A75"/></Style>';
+        $xml .= '<Style ss:ID="subtitle"><Font ss:Bold="1" ss:Size="10" ss:Color="#555555"/></Style>';
+        $xml .= '<Style ss:ID="section"><Font ss:Bold="1" ss:Size="11" ss:Color="#FFFFFF"/><Interior ss:Color="#3B4A8A" ss:Pattern="Solid"/></Style>';
+        $xml .= '<Style ss:ID="default"><Font ss:Size="10"/><Alignment ss:Vertical="Center"/></Style>';
+        $xml .= '<Style ss:ID="alt"><Font ss:Size="10"/><Interior ss:Color="#F0F2F8" ss:Pattern="Solid"/><Alignment ss:Vertical="Center"/></Style>';
+        $xml .= '<Style ss:ID="badge_si"><Font ss:Bold="1" ss:Color="#28A745" ss:Size="10"/><Alignment ss:Horizontal="Center"/></Style>';
+        $xml .= '<Style ss:ID="badge_no"><Font ss:Bold="1" ss:Color="#DC3545" ss:Size="10"/><Alignment ss:Horizontal="Center"/></Style>';
+        $xml .= '</Styles>';
+
+        // ─── Hoja 1: Asistentes ───
+        $xml .= '<Worksheet ss:Name="Asistentes">';
+        $xml .= '<Table>';
+
+        // Anchos de columna
+        $xml .= '<Column ss:Width="180"/><Column ss:Width="160"/><Column ss:Width="120"/><Column ss:Width="160"/><Column ss:Width="140"/><Column ss:Width="130"/><Column ss:Width="70"/><Column ss:Width="90"/><Column ss:Width="140"/>';
+
+        // Título
+        $xml .= '<Row ss:Height="30"><Cell ss:StyleID="title" ss:MergeAcross="8"><Data ss:Type="String">REPORTE DE ASISTENCIA</Data></Cell></Row>';
+        $xml .= '<Row><Cell ss:StyleID="subtitle"><Data ss:Type="String">Capacitación:</Data></Cell><Cell ss:MergeAcross="3"><Data ss:Type="String">' . $this->xmlEscape($capacitacione->titulo) . '</Data></Cell></Row>';
+        $xml .= '<Row><Cell ss:StyleID="subtitle"><Data ss:Type="String">Fecha sesión:</Data></Cell><Cell><Data ss:Type="String">' . $sesion->fecha->format('d/m/Y') . '</Data></Cell>';
+        $xml .= '<Cell ss:Index="4" ss:StyleID="subtitle"><Data ss:Type="String">Horario:</Data></Cell><Cell><Data ss:Type="String">' . ($sesion->hora_inicio ?? '—') . ' - ' . ($sesion->hora_fin ?? '—') . '</Data></Cell></Row>';
+        $xml .= '<Row><Cell ss:StyleID="subtitle"><Data ss:Type="String">Instructor:</Data></Cell><Cell><Data ss:Type="String">' . $this->xmlEscape($capacitacione->instructor ?? '—') . '</Data></Cell>';
+        $xml .= '<Cell ss:Index="4" ss:StyleID="subtitle"><Data ss:Type="String">Total asistentes:</Data></Cell><Cell><Data ss:Type="Number">' . $registros->count() . '</Data></Cell></Row>';
+        $xml .= '<Row></Row>';
+
+        // Encabezados
+        $headers = ['Nombre', 'Apellidos', 'Identificación', 'Área/Servicio', 'Cargo', 'Tipo Vinculación', 'Citado', 'Autoriza Firma', 'Fecha/Hora Registro'];
+        $xml .= '<Row ss:Height="25">';
+        foreach ($headers as $h) {
+            $xml .= '<Cell ss:StyleID="header"><Data ss:Type="String">' . $h . '</Data></Cell>';
+        }
+        $xml .= '</Row>';
+
+        // Datos
+        $rowIdx = 0;
+        foreach ($registros as $r) {
+            $style = ($rowIdx % 2 === 0) ? 'default' : 'alt';
+            $xml .= '<Row>';
+            $xml .= '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . $this->xmlEscape($r->nombre) . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . $this->xmlEscape($r->apellidos ?? '—') . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . $this->xmlEscape($r->identificacion) . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . $this->xmlEscape($r->area_servicio ?? '—') . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . $this->xmlEscape($r->cargo ?? '—') . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . $this->xmlEscape($r->tipo_contrato ?? '—') . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="' . ($r->es_citado ? 'badge_si' : 'badge_no') . '"><Data ss:Type="String">' . ($r->es_citado ? 'Sí' : 'No') . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="' . ($r->autoriza_firma ? 'badge_si' : 'badge_no') . '"><Data ss:Type="String">' . ($r->autoriza_firma ? 'Sí' : 'No') . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . $r->created_at->format('d/m/Y H:i:s') . '</Data></Cell>';
+            $xml .= '</Row>';
+            $rowIdx++;
+        }
+
+        $xml .= '</Table></Worksheet>';
+
+        // ─── Hoja 2: Ausentes ───
+        $xml .= '<Worksheet ss:Name="Citados Ausentes">';
+        $xml .= '<Table>';
+        $xml .= '<Column ss:Width="250"/><Column ss:Width="150"/>';
+        $xml .= '<Row ss:Height="25"><Cell ss:StyleID="header"><Data ss:Type="String">Nombre</Data></Cell><Cell ss:StyleID="header"><Data ss:Type="String">Identificación</Data></Cell></Row>';
+
+        foreach ($ausentes as $u) {
+            $nombre = $u->name . ' ' . ($u->apellido1 ?? '') . ' ' . ($u->apellido2 ?? '');
+            $xml .= '<Row><Cell ss:StyleID="default"><Data ss:Type="String">' . $this->xmlEscape(trim($nombre)) . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="default"><Data ss:Type="String">' . $this->xmlEscape($u->identificacion ?? '—') . '</Data></Cell></Row>';
+        }
+
+        if (empty($ausentes)) {
+            $xml .= '<Row><Cell ss:MergeAcross="1"><Data ss:Type="String">Todos los citados asistieron.</Data></Cell></Row>';
+        }
+
+        $xml .= '</Table></Worksheet>';
+
+        // ─── Hoja 3: No Citados que Asistieron ───
+        $noCitados = $registros->where('es_citado', false);
+        $xml .= '<Worksheet ss:Name="No Citados">';
+        $xml .= '<Table>';
+        $xml .= '<Column ss:Width="180"/><Column ss:Width="160"/><Column ss:Width="120"/><Column ss:Width="160"/><Column ss:Width="140"/><Column ss:Width="130"/><Column ss:Width="140"/>';
+
+        $headersNC = ['Nombre', 'Apellidos', 'Identificación', 'Área/Servicio', 'Cargo', 'Tipo Vinculación', 'Fecha/Hora Registro'];
+        $xml .= '<Row ss:Height="25">';
+        foreach ($headersNC as $h) {
+            $xml .= '<Cell ss:StyleID="header"><Data ss:Type="String">' . $h . '</Data></Cell>';
+        }
+        $xml .= '</Row>';
+
+        $rowIdx = 0;
+        foreach ($noCitados as $r) {
+            $style = ($rowIdx % 2 === 0) ? 'default' : 'alt';
+            $xml .= '<Row>';
+            $xml .= '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . $this->xmlEscape($r->nombre) . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . $this->xmlEscape($r->apellidos ?? '—') . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . $this->xmlEscape($r->identificacion) . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . $this->xmlEscape($r->area_servicio ?? '—') . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . $this->xmlEscape($r->cargo ?? '—') . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . $this->xmlEscape($r->tipo_contrato ?? '—') . '</Data></Cell>';
+            $xml .= '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . $r->created_at->format('d/m/Y H:i:s') . '</Data></Cell>';
+            $xml .= '</Row>';
+            $rowIdx++;
+        }
+
+        if ($noCitados->isEmpty()) {
+            $xml .= '<Row><Cell ss:MergeAcross="6"><Data ss:Type="String">No hubo asistentes no citados.</Data></Cell></Row>';
+        }
+
+        $xml .= '</Table></Worksheet>';
+
+        // ─── Hoja 4: Resumen ───
+        $xml .= '<Worksheet ss:Name="Resumen">';
+        $xml .= '<Table>';
+        $xml .= '<Column ss:Width="200"/><Column ss:Width="100"/>';
+        $xml .= '<Row ss:Height="25"><Cell ss:StyleID="title" ss:MergeAcross="1"><Data ss:Type="String">RESUMEN</Data></Cell></Row>';
+        $xml .= '<Row></Row>';
+        $xml .= '<Row><Cell ss:StyleID="subtitle"><Data ss:Type="String">Total citados</Data></Cell><Cell><Data ss:Type="Number">' . count($citadosIds) . '</Data></Cell></Row>';
+        $xml .= '<Row><Cell ss:StyleID="subtitle"><Data ss:Type="String">Citados que asistieron</Data></Cell><Cell><Data ss:Type="Number">' . $registros->where('es_citado', true)->count() . '</Data></Cell></Row>';
+        $xml .= '<Row><Cell ss:StyleID="subtitle"><Data ss:Type="String">No citados que asistieron</Data></Cell><Cell><Data ss:Type="Number">' . $registros->where('es_citado', false)->count() . '</Data></Cell></Row>';
+        $xml .= '<Row><Cell ss:StyleID="subtitle"><Data ss:Type="String">Citados ausentes</Data></Cell><Cell><Data ss:Type="Number">' . count($ausentes) . '</Data></Cell></Row>';
+        $xml .= '<Row><Cell ss:StyleID="subtitle"><Data ss:Type="String">Total asistentes</Data></Cell><Cell><Data ss:Type="Number">' . $registros->count() . '</Data></Cell></Row>';
+        $xml .= '<Row></Row>';
+        $xml .= '<Row><Cell ss:StyleID="subtitle"><Data ss:Type="String">Generado:</Data></Cell><Cell><Data ss:Type="String">' . now()->format('d/m/Y H:i:s') . '</Data></Cell></Row>';
+        $xml .= '</Table></Worksheet>';
+
+        $xml .= '</Workbook>';
+
+        return response($xml, 200, [
+            'Content-Type' => 'application/vnd.ms-excel',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ];
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
 
-        $callback = function () use ($registros, $ausentes, $capacitacione, $sesion) {
-            $file = fopen('php://output', 'w');
-            // BOM for Excel UTF-8
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
-
-            // Encabezado del reporte
-            fputcsv($file, ['REPORTE DE ASISTENCIA'], ';');
-            fputcsv($file, ['Capacitación:', $capacitacione->titulo], ';');
-            fputcsv($file, ['Fecha sesión:', $sesion->fecha->format('d/m/Y')], ';');
-            fputcsv($file, ['Horario:', ($sesion->hora_inicio ?? '—') . ' - ' . ($sesion->hora_fin ?? '—')], ';');
-            fputcsv($file, ['Instructor:', $capacitacione->instructor ?? '—'], ';');
-            fputcsv($file, [], ';');
-
-            // Asistentes
-            fputcsv($file, ['=== ASISTENTES ==='], ';');
-            fputcsv($file, ['Nombre', 'Identificación', 'Tipo Contrato', 'Correo', 'Citado', 'Autoriza Firma', 'Fecha/Hora Registro'], ';');
-            foreach ($registros as $r) {
-                fputcsv($file, [
-                    $r->nombre,
-                    $r->identificacion,
-                    $r->tipo_contrato ?? '—',
-                    $r->correo ?? '—',
-                    $r->es_citado ? 'Sí' : 'No',
-                    $r->autoriza_firma ? 'Sí' : 'No',
-                    $r->created_at->format('d/m/Y H:i:s'),
-                ], ';');
-            }
-
-            fputcsv($file, [], ';');
-            fputcsv($file, ['=== CITADOS AUSENTES ==='], ';');
-            fputcsv($file, ['Nombre', 'Identificación'], ';');
-            foreach ($ausentes as $u) {
-                fputcsv($file, [
-                    $u->name . ' ' . ($u->apellido1 ?? '') . ' ' . ($u->apellido2 ?? ''),
-                    $u->identificacion ?? '—',
-                ], ';');
-            }
-
-            fputcsv($file, [], ';');
-            fputcsv($file, ['Generado:', now()->format('d/m/Y H:i:s')], ';');
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+    private function xmlEscape(string $str): string
+    {
+        return htmlspecialchars($str, ENT_XML1 | ENT_QUOTES, 'UTF-8');
     }
 }

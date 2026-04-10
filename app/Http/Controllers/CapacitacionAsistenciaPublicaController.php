@@ -23,9 +23,7 @@ class CapacitacionAsistenciaPublicaController extends Controller
         $ultimaSesion = $capacitacion->sesiones()->latest()->first();
         $esUltimaSesion = $ultimaSesion && $ultimaSesion->id === $sesion->id;
 
-        $vinculaciones = \App\Models\Vinculacion::orderBy('nombre')->pluck('nombre');
-
-        return view('capacitaciones.asistencia_publica', compact('sesion', 'capacitacion', 'esUltimaSesion', 'vinculaciones'));
+        return view('capacitaciones.asistencia_publica', compact('sesion', 'capacitacion', 'esUltimaSesion'));
     }
 
     /**
@@ -49,9 +47,11 @@ class CapacitacionAsistenciaPublicaController extends Controller
 
         $request->validate([
             'nombre' => 'required|string|max:200',
+            'apellidos' => 'required|string|max:200',
             'identificacion' => 'required|string|max:50',
-            'tipo_contrato' => 'nullable|string|max:100',
-            'correo' => 'nullable|email|max:200',
+            'area_servicio' => 'required|string|max:200',
+            'cargo' => 'required|string|max:200',
+            'tipo_contrato' => 'required|string|max:100',
             'autoriza_firma' => 'required|accepted',
         ], [
             'autoriza_firma.required' => 'Debe autorizar con su firma para registrar asistencia.',
@@ -77,9 +77,12 @@ class CapacitacionAsistenciaPublicaController extends Controller
             'capacitacion_id' => $capacitacion->id,
             'user_id' => $user?->id,
             'nombre' => $request->nombre,
+            'apellidos' => $request->apellidos,
             'identificacion' => $request->identificacion,
+            'area_servicio' => $request->area_servicio,
+            'cargo' => $request->cargo,
             'tipo_contrato' => $request->tipo_contrato,
-            'correo' => $request->correo,
+            'correo' => $user?->email,
             'autoriza_firma' => true,
             'es_citado' => $esCitado,
         ]);
@@ -107,9 +110,11 @@ class CapacitacionAsistenciaPublicaController extends Controller
 
         return response()->json([
             'found' => true,
-            'nombre' => trim($user->name . ' ' . ($user->apellido1 ?? '') . ' ' . ($user->apellido2 ?? '')),
-            'correo' => $user->email,
-            'tipo_contrato' => $user->tipo_vinculacion ?? '',
+            'nombre' => $user->name ?? '',
+            'apellidos' => trim(($user->apellido1 ?? '') . ' ' . ($user->apellido2 ?? '')),
+            'area_servicio' => $user->servicio ?? '',
+            'cargo' => $user->cargo ?? '',
+            'tipo_vinculacion' => $user->tipo_vinculacion ?? '',
         ]);
     }
 }

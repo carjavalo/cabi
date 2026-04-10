@@ -10,7 +10,8 @@ class CapacitacionAsistenciaRegistro extends Model
 
     protected $fillable = [
         'sesion_id', 'capacitacion_id', 'user_id',
-        'nombre', 'identificacion', 'tipo_contrato', 'correo',
+        'nombre', 'apellidos', 'identificacion', 'tipo_contrato',
+        'area_servicio', 'cargo', 'correo',
         'autoriza_firma', 'es_citado',
     ];
 
