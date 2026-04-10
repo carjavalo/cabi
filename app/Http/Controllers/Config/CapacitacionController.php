@@ -10,21 +10,29 @@ use App\Models\CapacitacionAsistenciaRegistro;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class CapacitacionController extends Controller
 {
     public function index()
     {
-        $capacitaciones = Capacitacion::with('ultimaSesion')
-            ->withCount(['asistencias', 'asistencias as asistieron_count' => function ($q) {
+        $hasSesiones = Schema::hasTable('capacitacion_sesiones');
+
+        $query = Capacitacion::query();
+        if ($hasSesiones) {
+            $query->with('ultimaSesion');
+        }
+        $capacitaciones = $query->withCount(['asistencias', 'asistencias as asistieron_count' => function ($q) {
                 $q->where('asistio', true);
             }])->orderBy('fecha', 'desc')->paginate(15);
 
         $activas = Capacitacion::where('activo', true)->where('fecha', '>=', now()->toDateString())->count();
-        $totalAsistieron = CapacitacionAsistenciaRegistro::count();
+        $totalAsistieron = ($hasSesiones && Schema::hasTable('capacitacion_asistencia_registros'))
+            ? CapacitacionAsistenciaRegistro::count()
+            : CapacitacionAsistencia::where('asistio', true)->count();
 
-        return view('config.capacitaciones.index', compact('capacitaciones', 'activas', 'totalAsistieron'));
+        return view('config.capacitaciones.index', compact('capacitaciones', 'activas', 'totalAsistieron', 'hasSesiones'));
     }
 
     public function create()
@@ -74,14 +82,16 @@ class CapacitacionController extends Controller
         }
 
         // Crear primera sesión
-        CapacitacionSesion::create([
-            'capacitacion_id' => $capacitacion->id,
-            'token' => Str::random(32),
-            'fecha' => $request->fecha,
-            'hora_inicio' => $request->hora_inicio,
-            'hora_fin' => $request->hora_fin,
-            'citados_ids' => $usuariosIds,
-        ]);
+        if (Schema::hasTable('capacitacion_sesiones')) {
+            CapacitacionSesion::create([
+                'capacitacion_id' => $capacitacion->id,
+                'token' => Str::random(32),
+                'fecha' => $request->fecha,
+                'hora_inicio' => $request->hora_inicio,
+                'hora_fin' => $request->hora_fin,
+                'citados_ids' => $usuariosIds,
+            ]);
+        }
 
         return redirect()->route('config.capacitaciones.index')
                          ->with('success', 'Capacitación creada exitosamente.');
@@ -161,7 +171,7 @@ class CapacitacionController extends Controller
         }
 
         // Si cambiaron fechas/hora o citados, crear nueva sesión con nuevo token
-        if ($fechaCambio || $citadosCambio) {
+        if (($fechaCambio || $citadosCambio) && Schema::hasTable('capacitacion_sesiones')) {
             CapacitacionSesion::create([
                 'capacitacion_id' => $capacitacion->id,
                 'token' => Str::random(32),
@@ -247,6 +257,10 @@ class CapacitacionController extends Controller
     // ─── API: Obtener datos de informes por sesiones ───
     public function informes(Capacitacion $capacitacione)
     {
+        if (!Schema::hasTable('capacitacion_sesiones')) {
+            return response()->json(['ok' => false, 'error' => 'Las tablas de sesiones aún no están disponibles.'], 200);
+        }
+
         $capacitacion = $capacitacione;
         $sesiones = $capacitacion->sesiones()->with('registros')->orderBy('created_at', 'desc')->get();
 
@@ -305,6 +319,10 @@ class CapacitacionController extends Controller
     // ─── Exportar Excel (CSV) de una sesión ───
     public function exportarSesion(Capacitacion $capacitacione, CapacitacionSesion $sesion)
     {
+        if (!Schema::hasTable('capacitacion_sesiones')) {
+            abort(404, 'Tablas de sesiones no disponibles.');
+        }
+
         if ($sesion->capacitacion_id !== $capacitacione->id) {
             abort(404);
         }

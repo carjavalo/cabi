@@ -123,8 +123,15 @@
                             <td class="px-4 py-3 small">{{ $cap->ubicacion ?: '—' }}</td>
                             <td class="px-4 py-3 small">{{ $cap->instructor ?: '—' }}</td>
                             <td class="px-4 py-3 text-center">
-                                @if($cap->ultimaSesion)
-                                    @php $asistUrl = route('capacitaciones.asistencia.publica', $cap->ultimaSesion->token); @endphp
+                                @php
+                                    $asistUrl = null;
+                                    if (!empty($hasSesiones) && $cap->ultimaSesion) {
+                                        $asistUrl = route('capacitaciones.asistencia.publica', $cap->ultimaSesion->token);
+                                    } elseif ($cap->token) {
+                                        $asistUrl = route('capacitaciones.asistencia.publica', $cap->token);
+                                    }
+                                @endphp
+                                @if($asistUrl)
                                     <div class="d-flex align-items-center justify-content-center gap-1">
                                         <button type="button" class="btn btn-sm btn-outline-primary btn-qr" data-toggle="modal" data-target="#qrModal{{ $cap->id }}" title="Ver QR">
                                             <i class="fas fa-qrcode"></i>
@@ -178,9 +185,11 @@
                                     <a href="{{ route('config.capacitaciones.edit', $cap->id) }}" class="btn btn-sm btn-outline-warning" title="Editar">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    @if(!empty($hasSesiones))
                                     <button type="button" class="btn btn-sm btn-outline-info btn-informes" data-cap-id="{{ $cap->id }}" data-cap-titulo="{{ $cap->titulo }}" title="Informes">
                                         <i class="fas fa-chart-bar"></i>
                                     </button>
+                                    @endif
                                     <form action="{{ route('config.capacitaciones.destroy', $cap->id) }}" method="POST" style="display:inline-block" onsubmit="return confirm('¿Eliminar esta capacitación?');">
                                         @csrf @method('DELETE')
                                         <button class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
@@ -207,6 +216,7 @@
 </div>
 
 {{-- Modal Informes --}}
+@if(!empty($hasSesiones))
 <div class="modal fade" id="modalInformes" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content" style="border-radius:1rem;">
@@ -225,6 +235,7 @@
         </div>
     </div>
 </div>
+@endif
 @endsection
 
 @push('scripts')
@@ -250,6 +261,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ─── Informes ───
+    @if(!empty($hasSesiones))
     document.querySelectorAll('.btn-informes').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var capId = this.dataset.capId;
@@ -374,6 +386,7 @@ document.addEventListener('DOMContentLoaded', function() {
         html += '</tbody></table>';
         return html;
     }
+    @endif
 });
 </script>
 @endpush
