@@ -198,7 +198,7 @@
           </li>
           <!-- Capacitaciones (se muestra después de Bienestar) -->
           <li class="nav-item">
-            <a href="{{ url('/configuracion/capacitaciones') }}" class="nav-link {{ request()->is('configuracion/capacitaciones*') ? 'active' : '' }}">
+            <a href="{{ route('capacitaciones.index_user') }}" class="nav-link {{ request()->is('capacitaciones*') && !request()->is('configuracion/capacitaciones*') ? 'active' : '' }}">
               <i class="nav-icon fas fa-chalkboard-teacher"></i>
               <p>Capacitaciones</p>
             </a>

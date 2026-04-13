@@ -50,6 +50,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/bienestar/observaciones/{identificacion}', [BienestarListadoController::class, 'getObservaciones'])->name('bienestar.observaciones.get');
     Route::post('/bienestar/observaciones', [BienestarListadoController::class, 'storeObservacion'])->name('bienestar.observaciones.store');
 
+    // Capacitaciones - Listado User
+    Route::get('/capacitaciones', [\App\Http\Controllers\CapacitacionListadoController::class, 'index'])->name('capacitaciones.index_user');
+
     // Rutas de asistencia
     Route::get('/bienestar/asistencia/cargar', [BienestarListadoController::class, 'cargarAsistencia'])->name('bienestar.asistencia.cargar');
     Route::post('/bienestar/asistencia/guardar', [BienestarListadoController::class, 'guardarAsistencia'])->name('bienestar.asistencia.guardar');
