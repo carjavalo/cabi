@@ -124,7 +124,7 @@
                                     <a href="{{ route('config.capacitaciones.show', $cap->id) }}" class="btn btn-sm btn-outline-primary" title="Ver Detalles">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ route('config.capacitaciones.edit', $cap->id) }}" class="btn btn-sm btn-outline-warning" title="Editar">
+                                    <a href="{{ route('capacitaciones.edit_user', $cap->id) }}" class="btn btn-sm btn-outline-warning" title="Asignar Participantes">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                 </div>

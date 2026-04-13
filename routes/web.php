@@ -52,6 +52,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Capacitaciones - Listado User
     Route::get('/capacitaciones', [\App\Http\Controllers\CapacitacionListadoController::class, 'index'])->name('capacitaciones.index_user');
+    Route::get('/capacitaciones/{capacitacion}/editar', [\App\Http\Controllers\CapacitacionListadoController::class, 'edit'])->name('capacitaciones.edit_user');
+    Route::put('/capacitaciones/{capacitacion}', [\App\Http\Controllers\CapacitacionListadoController::class, 'update'])->name('capacitaciones.update_user');
 
     // Rutas de asistencia
     Route::get('/bienestar/asistencia/cargar', [BienestarListadoController::class, 'cargarAsistencia'])->name('bienestar.asistencia.cargar');
