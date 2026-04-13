@@ -196,6 +196,13 @@
               <li class="nav-item"><a href="#" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Item 2</p></a></li> -->
             </ul>
           </li>
+          <!-- Capacitaciones (se muestra después de Bienestar) -->
+          <li class="nav-item">
+            <a href="{{ url('/configuracion/capacitaciones') }}" class="nav-link {{ request()->is('configuracion/capacitaciones*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-chalkboard-teacher"></i>
+              <p>Capacitaciones</p>
+            </a>
+          </li>
           <!-- Configuración submenu (visible para Super Admin, Administrador y Operador) -->
           @if(Auth::check() && in_array(Auth::user()->role, ['Super Admin','Administrador','Operador']))
           <li class="nav-item has-treeview">
