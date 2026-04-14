@@ -192,17 +192,19 @@
                   <li class="nav-item"><a href="{{ url('/bienestar/listados') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Listado</p></a></li>
                 </ul>
               </li>
-                <!-- 
-              <li class="nav-item"><a href="#" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Item 2</p></a></li> -->
             </ul>
           </li>
-          <!-- Capacitaciones (se muestra después de Bienestar) -->
+          
+          <!-- Capacitaciones (visible para Coordinador y admins si aplica) -->
+          @if(Auth::check() && in_array(Auth::user()->role, ['Coordinador', 'Super Admin', 'Administrador', 'Operador']))
           <li class="nav-item">
             <a href="{{ route('capacitaciones.index_user') }}" class="nav-link {{ request()->is('capacitaciones*') && !request()->is('configuracion/capacitaciones*') ? 'active' : '' }}">
               <i class="nav-icon fas fa-chalkboard-teacher"></i>
               <p>Capacitaciones</p>
             </a>
           </li>
+          @endif
+
           <!-- Configuración submenu (visible para Super Admin, Administrador y Operador) -->
           @if(Auth::check() && in_array(Auth::user()->role, ['Super Admin','Administrador','Operador']))
           <li class="nav-item has-treeview">

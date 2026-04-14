@@ -12,8 +12,18 @@ use Illuminate\Support\Facades\Schema;
 
 class CapacitacionListadoController extends Controller
 {
+    private function checkAccess()
+    {
+        $role = auth()->user()->role ?? '';
+        if (!in_array($role, ['Coordinador', 'Super Admin', 'Administrador', 'Operador'])) {
+            abort(403, 'No tiene permisos para acceder a esta sección.');
+        }
+    }
+
     public function index()
     {
+        $this->checkAccess();
+
         $hasSesiones = Schema::hasTable('capacitacion_sesiones');
 
         $query = Capacitacion::query();
@@ -36,6 +46,8 @@ class CapacitacionListadoController extends Controller
 
     public function edit(Capacitacion $capacitacion)
     {
+        $this->checkAccess();
+
         $capacitacion->load('asistencias');
         $usuarios = User::where('role', 'Usuario')->orderBy('name')->get();
         $asignadosIds = $capacitacion->asistencias->pluck('user_id')->toArray();
@@ -53,6 +65,8 @@ class CapacitacionListadoController extends Controller
 
     public function update(Request $request, Capacitacion $capacitacion)
     {
+        $this->checkAccess();
+
         $request->validate([
             'usuarios' => 'nullable|array',
             'usuarios.*' => 'exists:users,id',

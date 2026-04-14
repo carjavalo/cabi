@@ -66,6 +66,7 @@
                                 <option value="Administrador" {{ old('role')=='Administrador' ? 'selected' : '' }}>Administrador</option>
                                 @endif
                                 <option value="Instructor GYM" {{ old('role')=='Instructor GYM' ? 'selected' : '' }}>Instructor GYM</option>
+                                <option value="Coordinador" {{ old('role')=='Coordinador' ? 'selected' : '' }}>Coordinador</option>
                                 <option value="Operador" {{ old('role')=='Operador' ? 'selected' : '' }}>Operador</option>
                                 <option value="Usuario" {{ old('role')=='Usuario' ? 'selected' : '' }}>Usuario</option>
                             </select>
