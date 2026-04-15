@@ -11,7 +11,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Notifications\CapacitacionCitado;
 
 class CapacitacionController extends Controller
 {
@@ -80,6 +82,9 @@ class CapacitacionController extends Controller
                     'asistio' => false,
                 ]);
             }
+
+            // Notificar por email a los citados
+            $this->notificarCitados($usuariosIds, $capacitacion);
         }
 
         // Crear primera sesión
@@ -169,6 +174,11 @@ class CapacitacionController extends Controller
                 'user_id' => $userId,
                 'asistio' => false,
             ]);
+        }
+
+        // Notificar por email solo a los nuevos citados
+        if (!empty($nuevos)) {
+            $this->notificarCitados($nuevos, $capacitacion);
         }
 
         // Si cambiaron fechas/hora o citados, crear nueva sesión con nuevo token
@@ -489,5 +499,22 @@ class CapacitacionController extends Controller
     private function xmlEscape(string $str): string
     {
         return htmlspecialchars($str, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+    }
+
+    /**
+     * Enviar notificación por email a los usuarios citados.
+     */
+    private function notificarCitados(array $userIds, Capacitacion $capacitacion): void
+    {
+        $usuarios = User::whereIn('id', $userIds)->whereNotNull('email')->get();
+
+        foreach ($usuarios as $usuario) {
+            try {
+                $usuario->notify(new CapacitacionCitado($capacitacion));
+                Log::info("Notificación de citación enviada a {$usuario->email} para capacitación: {$capacitacion->titulo}");
+            } catch (\Throwable $e) {
+                Log::error("Error enviando notificación de citación a {$usuario->email}: " . $e->getMessage());
+            }
+        }
     }
 }

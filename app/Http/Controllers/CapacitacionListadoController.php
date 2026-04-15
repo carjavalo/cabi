@@ -8,7 +8,9 @@ use App\Models\CapacitacionAsistencia;
 use App\Models\CapacitacionAsistenciaRegistro;
 use App\Models\User;
 use App\Models\Servicio;
+use App\Notifications\CapacitacionCitado;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
 
 class CapacitacionListadoController extends Controller
 {
@@ -89,6 +91,11 @@ class CapacitacionListadoController extends Controller
             ]);
         }
 
+        // Notificar por email solo a los nuevos citados
+        if (!empty($nuevos)) {
+            $this->notificarCitados($nuevos, $capacitacion);
+        }
+
         // Crear nueva sesión si cambiaron los citados
         if (Schema::hasTable('capacitacion_sesiones') && !empty(array_merge($removidos, $nuevos))) {
             \App\Models\CapacitacionSesion::create([
@@ -103,5 +110,22 @@ class CapacitacionListadoController extends Controller
 
         return redirect()->route('capacitaciones.index_user')
                          ->with('success', 'Asistentes actualizados exitosamente.');
+    }
+
+    /**
+     * Enviar notificación por email a los usuarios citados.
+     */
+    private function notificarCitados(array $userIds, Capacitacion $capacitacion): void
+    {
+        $usuarios = User::whereIn('id', $userIds)->whereNotNull('email')->get();
+
+        foreach ($usuarios as $usuario) {
+            try {
+                $usuario->notify(new CapacitacionCitado($capacitacion));
+                Log::info("Notificación de citación enviada a {$usuario->email} para capacitación: {$capacitacion->titulo}");
+            } catch (\Throwable $e) {
+                Log::error("Error enviando notificación de citación a {$usuario->email}: " . $e->getMessage());
+            }
+        }
     }
 }
