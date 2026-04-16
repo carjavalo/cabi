@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Notifications\CustomVerifyEmail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -76,5 +77,33 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => mb_convert_case(mb_strtolower(trim($value)), MB_CASE_TITLE, 'UTF-8'),
+        );
+    }
+
+    protected function apellido1(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => $value ? mb_convert_case(mb_strtolower(trim($value)), MB_CASE_TITLE, 'UTF-8') : $value,
+        );
+    }
+
+    protected function apellido2(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => $value ? mb_convert_case(mb_strtolower(trim($value)), MB_CASE_TITLE, 'UTF-8') : $value,
+        );
+    }
+
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => mb_strtolower(trim($value)),
+        );
     }
 }
