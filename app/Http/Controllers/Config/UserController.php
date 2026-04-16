@@ -101,12 +101,12 @@ class UserController extends Controller
             'name' => ['required','string','max:255'],
             'apellido1' => ['nullable','string','max:255'],
             'apellido2' => ['nullable','string','max:255'],
-            'identificacion' => ['nullable','string','max:100'],
+            'identificacion' => ['nullable','string','max:100','unique:users,identificacion'],
             'servicio_id' => ['nullable','integer','exists:servicios,id'],
             'tipo_vinculacion_id' => ['nullable','integer','exists:vinculaciones,id'],
             'cargo' => ['nullable', 'string', 'max:100'],
             'role' => ['required','string','in:Super Admin,Administrador,Coordinador,Operador,Usuario,Instructor GYM'],
-            'email' => ['required','email','max:255','unique:'.User::class],
+            'email' => ['required','email','max:255','unique:users,email'],
             'password' => ['required','confirmed','min:6'],
         ]);
 

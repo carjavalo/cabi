@@ -4,6 +4,47 @@
 @section('header','Crear Usuario')
 
 @section('content')
+
+<!-- Modal de errores de validación -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%);">
+                <h5 class="modal-title" id="errorModalLabel">
+                    <i class="fas fa-exclamation-triangle mr-2"></i> Error al crear usuario
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-3">
+                    <i class="fas fa-user-times text-danger" style="font-size: 3rem;"></i>
+                </div>
+                <p class="text-center text-muted mb-3">No se pudo crear el usuario por los siguientes motivos:</p>
+                <ul class="list-group list-group-flush" id="errorList">
+                    @foreach($errors->all() as $error)
+                        <li class="list-group-item border-0 py-2">
+                            <i class="fas fa-times-circle text-danger mr-2"></i>
+                            @if(str_contains($error, 'identificacion') || str_contains($error, 'identificación'))
+                                <strong>Cédula duplicada:</strong> Ya existe un usuario registrado con este número de identificación.
+                            @elseif(str_contains($error, 'email') || str_contains($error, 'correo'))
+                                <strong>Correo duplicado:</strong> Ya existe un usuario registrado con este correo electrónico.
+                            @else
+                                {{ $error }}
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">
+                    <i class="fas fa-pencil-alt mr-1"></i> Corregir datos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="row justify-content-center mb-5">
     <div class="col-lg-10 col-xl-9" style="zoom: 0.98;">
         <div class="card shadow-lg border-0 rounded-lg">
@@ -134,3 +175,13 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    @if($errors->any())
+        $('#errorModal').modal('show');
+    @endif
+});
+</script>
+@endpush
