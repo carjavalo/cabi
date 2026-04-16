@@ -76,7 +76,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Configuración - rutas placeholder para gestión
     Route::get('/configuracion/usuarios', function () { return view('config.usuarios'); });
-    Route::get('/configuracion/servicios', function () { return view('config.servicios'); });
     Route::get('/configuracion/vinculaciones', function () { return view('config.vinculaciones'); });
     Route::get('/configuracion/cursos', function () { return view('config.cursos'); });
 
@@ -94,6 +93,7 @@ Route::prefix('configuracion')->name('config.')->middleware(['auth', 'verified']
     Route::resource('usuarios', UserController::class)->except(['show']);
     Route::post('usuarios/{id}/verify-email', [UserController::class, 'verifyEmail'])->name('usuarios.verify-email');
     Route::resource('servicios', ServicioController::class)->except(['show']);
+    Route::get('servicios-buscar', [ServicioController::class, 'buscar'])->name('servicios.buscar');
     Route::resource('vinculaciones', VinculacionController::class)->except(['show']);
     Route::get('cargos/export', [CargoController::class, 'exportExcel'])->name('cargos.export');
     Route::resource('cargos', CargoController::class);

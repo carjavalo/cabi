@@ -41,6 +41,32 @@
         </div>
     @endif
 
+    <!-- Search Filter -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body py-3">
+            <form method="GET" action="{{ route('config.servicios.index') }}" class="row g-2 align-items-center">
+                <div class="col-md-8 col-lg-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" name="buscar" class="form-control border-start-0" 
+                               placeholder="Buscar servicio por nombre..." 
+                               value="{{ request('buscar') }}">
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>Buscar
+                    </button>
+                    @if(request('buscar'))
+                        <a href="{{ route('config.servicios.index') }}" class="btn btn-outline-secondary ms-1">
+                            <i class="fas fa-times me-1"></i>Limpiar
+                        </a>
+                    @endif
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Table Card -->
     <div class="card border-0 shadow-lg rounded-3">
         <div class="card-body p-0">
