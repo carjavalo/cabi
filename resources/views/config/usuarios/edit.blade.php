@@ -9,7 +9,7 @@
         <div class="card shadow-lg border-0 rounded-lg">
             <div class="card-header text-white text-center py-3" style="background: linear-gradient(135deg, #2e3a75 0%, #1a234f 100%); border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem;">
                 <h4 class="mb-0 font-weight-bold"><i class="fas fa-user-edit mr-2"></i> Editar Usuario</h4>
-                <p class="mb-0 small text-white-50">Actualice la informaci�n del usuario en el sistema</p>
+                <p class="mb-0 small text-white-50">Actualice la información del usuario en el sistema</p>
             </div>
             
             <div class="card-body p-4 bg-white">
@@ -17,7 +17,7 @@
                     @csrf
                     @method('PUT')
                     
-                    <h6 class="text-secondary border-bottom pb-2 mb-3"><i class="fas fa-address-card mr-1"></i> Informaci�n Personal</h6>
+                    <h6 class="text-secondary border-bottom pb-2 mb-3"><i class="fas fa-address-card mr-1"></i> Información Personal</h6>
                     
                     <div class="form-row">
                         <div class="form-group col-md-6 mb-3">
@@ -26,7 +26,7 @@
                             @error('name')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
                         </div>
                         <div class="form-group col-md-6 mb-3">
-                            <label for="identificacion" class="small text-muted font-weight-bold">N�mero de Identificaci�n</label>
+                            <label for="identificacion" class="small text-muted font-weight-bold">Número de Identificación</label>
                             <input id="identificacion" name="identificacion" type="text" class="form-control bg-light" value="{{ old('identificacion',$user->identificacion) }}" placeholder="Documento de identidad" style="border: 1px solid #ced4da; border-radius: 6px;" />
                         </div>
                     </div>
@@ -42,7 +42,7 @@
                         </div>
                     </div>
 
-                    <h6 class="text-secondary border-bottom pb-2 mb-3"><i class="fas fa-briefcase mr-1"></i> Informaci�n Institucional</h6>
+                    <h6 class="text-secondary border-bottom pb-2 mb-3"><i class="fas fa-briefcase mr-1"></i> Información Institucional</h6>
 
                     <div class="form-row">
                         <div class="form-group col-md-6 mb-3">
@@ -76,9 +76,9 @@
 
                     <div class="form-row mb-4">
                         <div class="form-group col-md-6 mb-3">
-                            <label for="tipo_vinculacion_id" class="small text-muted font-weight-bold">Tipo de vinculaci�n</label>
+                            <label for="tipo_vinculacion_id" class="small text-muted font-weight-bold">Tipo de vinculación</label>
                             <select id="tipo_vinculacion_id" name="tipo_vinculacion_id" class="form-control custom-select bg-light" style="border: 1px solid #ced4da; border-radius: 6px;">
-                                <option value="">Seleccione vinculaci�n</option>
+                                <option value="">Seleccione vinculación</option>
                                 @if(isset($vinculaciones) && $vinculaciones->count())   
                                     @foreach($vinculaciones as $v)
                                         <option value="{{ $v->id }}" {{ old('tipo_vinculacion_id',$user->tipo_vinculacion_id)==$v->id ? 'selected' : '' }}>{{ $v->nombre }}</option>
@@ -103,7 +103,7 @@
 
                     <div class="form-row mb-2">
                         <div class="form-group col-12 mb-3">
-                            <label for="email" class="small text-muted font-weight-bold">Correo Electr�nico <span class="text-danger">*</span></label>
+                            <label for="email" class="small text-muted font-weight-bold">Correo Electrónico <span class="text-danger">*</span></label>
                             <input id="email" name="email" type="email" class="form-control bg-light @error('email') is-invalid @enderror" value="{{ old('email',$user->email) }}" required placeholder="ejemplo@correo.com" style="border: 1px solid #ced4da; border-radius: 6px;" />
                             @error('email')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
                         </div>
@@ -111,13 +111,13 @@
 
                     <div class="form-row mb-4">
                         <div class="form-group col-md-6 mb-3">
-                            <label for="password" class="small text-muted font-weight-bold">Nueva Contrase�a <span class="text-info font-italic font-weight-normal">(dejar vac�o para mantener)</span></label>
+                            <label for="password" class="small text-muted font-weight-bold">Nueva Contraseña <span class="text-info font-italic font-weight-normal">(dejar vacío para mantener)</span></label>
                             <input id="password" name="password" type="password" class="form-control bg-light @error('password') is-invalid @enderror" placeholder="Dejar en blanco si no cambia" style="border: 1px solid #ced4da; border-radius: 6px;" />
                             @error('password')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
                         </div>
                         <div class="form-group col-md-6 mb-3">
-                            <label for="password_confirmation" class="small text-muted font-weight-bold">Confirmar nueva contrase�a</label>
-                            <input id="password_confirmation" name="password_confirmation" type="password" class="form-control bg-light" placeholder="Repita la contrase�a si la cambia" style="border: 1px solid #ced4da; border-radius: 6px;" />
+                            <label for="password_confirmation" class="small text-muted font-weight-bold">Confirmar nueva contraseña</label>
+                            <input id="password_confirmation" name="password_confirmation" type="password" class="form-control bg-light" placeholder="Repita la contraseña si la cambia" style="border: 1px solid #ced4da; border-radius: 6px;" />
                         </div>
                     </div>
 
