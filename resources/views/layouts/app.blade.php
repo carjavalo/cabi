@@ -224,6 +224,17 @@
               <li class="nav-item"><a href="{{ url('/configuracion/capacitaciones') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestion Capacitaciones</p></a></li>
             </ul>
           </li>
+          @if(Auth::check() && Auth::user()->role === 'Super Admin')
+          <li class="nav-item has-treeview">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fas fa-ellipsis-h"></i>
+              <p>Otros <i class="right fas fa-angle-left"></i></p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item"><a href="{{ route('otros.ciau1') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>ciau1</p></a></li>
+            </ul>
+          </li>
+          @endif
           @endif
         </ul>
       </nav>

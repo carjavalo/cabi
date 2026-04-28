@@ -78,6 +78,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/configuracion/usuarios', function () { return view('config.usuarios'); });
     Route::get('/configuracion/vinculaciones', function () { return view('config.vinculaciones'); });
     Route::get('/configuracion/cursos', function () { return view('config.cursos'); });
+    Route::get('/otros/ciau1', function () { return view('otros.ciau1'); })->name('otros.ciau1');
 
 }); // Fin del grupo auth + verified
 
