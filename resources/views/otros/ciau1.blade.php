@@ -147,7 +147,7 @@
                         <p class="text-[10px] uppercase tracking-widest font-bold">Información Importante</p>
                     </div>
                     <p class="text-[11px] leading-snug opacity-90">Asegúrate de completar el registro al finalizar cada
-                        sesión para certificar tu asistencia.</p>
+                        sesión.</p>
                 </div>
                 <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-white/5 rounded-full"></div>
             </div>
