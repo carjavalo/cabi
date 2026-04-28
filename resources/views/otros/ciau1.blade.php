@@ -66,7 +66,7 @@
 
 
             <div class="w-40 mb-3 bg-white dark:bg-transparent overflow-hidden rounded-lg">
-                <img src="http://intranet.huv.gov.co/intranet/wp-content/uploads/2026/02/logoinicio.gif"
+                <img src="{{ asset('img/logoinicio.gif') }}"
                     alt="Hospital Universitario del Valle" class="w-full h-auto object-contain">
             </div>
 
