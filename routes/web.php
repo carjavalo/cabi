@@ -38,13 +38,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return view('dashboard', compact('publicidad'));
     })->name('dashboard');
 
-    // Bienestar - GYM routes
-    Route::get('/bienestar/gym/inscripcion', function () {
-        $servicios = Servicio::orderBy('nombre')->get();
-        $vinculaciones = Vinculacion::orderBy('nombre')->get();
-        return view('bienestar.gym.inscripcion', compact('servicios','vinculaciones'));
-    });
-
     // Bienestar - Listados
     Route::get('/bienestar/listados', [BienestarListadoController::class, 'index'])->name('bienestar.listados');
     Route::get('/bienestar/observaciones/{identificacion}', [BienestarListadoController::class, 'getObservaciones'])->name('bienestar.observaciones.get');
@@ -59,8 +52,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/bienestar/asistencia/cargar', [BienestarListadoController::class, 'cargarAsistencia'])->name('bienestar.asistencia.cargar');
     Route::post('/bienestar/asistencia/guardar', [BienestarListadoController::class, 'guardarAsistencia'])->name('bienestar.asistencia.guardar');
     Route::get('/bienestar/asistencia/consultar', [BienestarListadoController::class, 'consultarAsistencia'])->name('bienestar.asistencia.consultar');
-    Route::post('/bienestar/gym/inscripcion', [AgendaHorarioController::class, 'storeInscription'])->name('inscripcion.store');
-
     // Agenda - usar controlador para mostrar y guardar
     Route::get('/bienestar/gym/agenda', [AgendaHorarioController::class, 'index'])->name('agenda.horario');
     Route::post('/bienestar/gym/agenda', [AgendaHorarioController::class, 'store'])->name('agenda.horario.store');
@@ -81,6 +72,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/otros/ciau1', function () { return view('otros.ciau1'); })->name('otros.ciau1');
 
 }); // Fin del grupo auth + verified
+
+// Rutas públicas de GYM - no requieren autenticación
+Route::get('/bienestar/gym/inscripcion', function () {
+    $servicios = \App\Models\Servicio::orderBy('nombre')->get();
+    $vinculaciones = \App\Models\Vinculacion::orderBy('nombre')->get();
+    return view('bienestar.gym.inscripcion', compact('servicios','vinculaciones'));
+});
+Route::post('/bienestar/gym/inscripcion', [AgendaHorarioController::class, 'storeInscription'])->name('inscripcion.store');
 
 // Load authentication routes (login, register, password reset)
 require __DIR__.'/auth.php';
