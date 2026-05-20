@@ -224,6 +224,13 @@
               <li class="nav-item"><a href="{{ url('/configuracion/capacitaciones') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestion Capacitaciones</p></a></li>
             </ul>
           </li>
+
+          <li class="nav-item">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fas fa-file-invoice-dollar"></i>
+              <p>Recaudo</p>
+            </a>
+          </li>
           @if(Auth::check() && Auth::user()->role === 'Super Admin')
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link">
