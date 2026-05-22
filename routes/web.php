@@ -118,6 +118,13 @@ Route::prefix('configuracion')->name('config.')->middleware(['auth', 'verified']
     Route::resource('publicidad', App\Http\Controllers\Config\PublicidadController::class);
 });
 
+use App\Http\Controllers\RecaudoController;
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/recaudo', [RecaudoController::class, 'index'])->name('recaudo.index');
+    Route::post('/recaudo', [RecaudoController::class, 'store'])->name('recaudo.store');
+    Route::delete('/recaudo/{recaudo}', [RecaudoController::class, 'destroy'])->name('recaudo.destroy');
+});
+
 // Rutas públicas para responder encuestas y eventos
 Route::get('/encuestas/responder/{id}', [EncuestaController::class, 'mostrarEncuesta'])->name('encuestas.mostrar');
 Route::post('/encuestas/guardar', [EncuestaController::class, 'guardarRespuesta'])->name('encuestas.guardar');
