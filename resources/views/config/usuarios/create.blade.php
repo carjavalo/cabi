@@ -139,6 +139,55 @@
                         </div>
                     </div>
 
+                    <h6 class="text-secondary border-bottom pb-2 mb-3 mt-4"><i class="fas fa-id-badge mr-1"></i> Información Demográfica</h6>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-4 mb-3">
+                            <label for="genero" class="text-secondary font-weight-bold small">Género</label>
+                            <select id="genero" name="genero" class="form-control" style="border-radius: 6px; border: 1px solid #ced4da;">
+                                <option value="">Seleccione</option>
+                                <option value="M" {{ old('genero')=='M' ? 'selected' : '' }}>Masculino</option>
+                                <option value="F" {{ old('genero')=='F' ? 'selected' : '' }}>Femenino</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-4 mb-3">
+                            <label for="edad" class="text-secondary font-weight-bold small">Edad</label>
+                            <input id="edad" name="edad" type="number" min="0" max="999" class="form-control @error('edad') is-invalid @enderror" value="{{ old('edad') }}" placeholder="Edad" style="border-radius: 6px; border: 1px solid #ced4da;"/>
+                            @error('edad')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
+                        </div>
+                        <div class="form-group col-md-4 mb-3">
+                            <label for="fnacimiento" class="text-secondary font-weight-bold small">Fecha de Nacimiento</label>
+                            <input id="fnacimiento" name="fnacimiento" type="date" class="form-control @error('fnacimiento') is-invalid @enderror" value="{{ old('fnacimiento') }}" style="border-radius: 6px; border: 1px solid #ced4da;"/>
+                            @error('fnacimiento')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6 mb-3">
+                            <label for="contacto" class="text-secondary font-weight-bold small">Contacto</label>
+                            <input id="contacto" name="contacto" type="text" maxlength="20" class="form-control" value="{{ old('contacto') }}" placeholder="Teléfono / celular" style="border-radius: 6px; border: 1px solid #ced4da;"/>
+                        </div>
+                        <div class="form-group col-md-6 mb-3">
+                            <label for="direccionr" class="text-secondary font-weight-bold small">Dirección de Residencia</label>
+                            <input id="direccionr" name="direccionr" type="text" maxlength="100" class="form-control" value="{{ old('direccionr') }}" placeholder="Dirección de residencia" style="border-radius: 6px; border: 1px solid #ced4da;"/>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-4 mb-3">
+                            <label for="estracto" class="text-secondary font-weight-bold small">Estrato</label>
+                            <input id="estracto" name="estracto" type="text" maxlength="5" class="form-control" value="{{ old('estracto') }}" placeholder="Estrato" style="border-radius: 6px; border: 1px solid #ced4da;"/>
+                        </div>
+                        <div class="form-group col-md-4 mb-3">
+                            <label for="tvivienda" class="text-secondary font-weight-bold small">Tipo de Vivienda</label>
+                            <input id="tvivienda" name="tvivienda" type="text" maxlength="5" class="form-control" value="{{ old('tvivienda') }}" placeholder="Tipo vivienda" style="border-radius: 6px; border: 1px solid #ced4da;"/>
+                        </div>
+                        <div class="form-group col-md-4 mb-3">
+                            <label for="escivil" class="text-secondary font-weight-bold small">Estado Civil</label>
+                            <input id="escivil" name="escivil" type="text" maxlength="5" class="form-control" value="{{ old('escivil') }}" placeholder="Estado civil" style="border-radius: 6px; border: 1px solid #ced4da;"/>
+                        </div>
+                    </div>
+
                     <h6 class="text-secondary border-bottom pb-2 mb-3 mt-4"><i class="fas fa-lock mr-1"></i> Credenciales de Acceso</h6>
 
                     <div class="form-row mb-3">

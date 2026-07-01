@@ -99,6 +99,55 @@
                         </div>
                     </div>
 
+                    <h6 class="text-secondary border-bottom pb-2 mb-3"><i class="fas fa-id-badge mr-1"></i> Información Demográfica</h6>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-4 mb-3">
+                            <label for="genero" class="small text-muted font-weight-bold">Género</label>
+                            <select id="genero" name="genero" class="form-control custom-select bg-light" style="border: 1px solid #ced4da; border-radius: 6px;">
+                                <option value="">Seleccione</option>
+                                <option value="M" {{ old('genero',$user->genero)=='M' ? 'selected' : '' }}>Masculino</option>
+                                <option value="F" {{ old('genero',$user->genero)=='F' ? 'selected' : '' }}>Femenino</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-4 mb-3">
+                            <label for="edad" class="small text-muted font-weight-bold">Edad</label>
+                            <input id="edad" name="edad" type="number" min="0" max="999" class="form-control bg-light @error('edad') is-invalid @enderror" value="{{ old('edad',$user->edad) }}" placeholder="Edad" style="border: 1px solid #ced4da; border-radius: 6px;" />
+                            @error('edad')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
+                        </div>
+                        <div class="form-group col-md-4 mb-3">
+                            <label for="fnacimiento" class="small text-muted font-weight-bold">Fecha de Nacimiento</label>
+                            <input id="fnacimiento" name="fnacimiento" type="date" class="form-control bg-light @error('fnacimiento') is-invalid @enderror" value="{{ old('fnacimiento', optional($user->fnacimiento)->format('Y-m-d')) }}" style="border: 1px solid #ced4da; border-radius: 6px;" />
+                            @error('fnacimiento')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6 mb-3">
+                            <label for="contacto" class="small text-muted font-weight-bold">Contacto</label>
+                            <input id="contacto" name="contacto" type="text" maxlength="20" class="form-control bg-light" value="{{ old('contacto',$user->contacto) }}" placeholder="Teléfono / celular" style="border: 1px solid #ced4da; border-radius: 6px;" />
+                        </div>
+                        <div class="form-group col-md-6 mb-3">
+                            <label for="direccionr" class="small text-muted font-weight-bold">Dirección de Residencia</label>
+                            <input id="direccionr" name="direccionr" type="text" maxlength="100" class="form-control bg-light" value="{{ old('direccionr',$user->direccionr) }}" placeholder="Dirección de residencia" style="border: 1px solid #ced4da; border-radius: 6px;" />
+                        </div>
+                    </div>
+
+                    <div class="form-row mb-4">
+                        <div class="form-group col-md-4 mb-3">
+                            <label for="estracto" class="small text-muted font-weight-bold">Estrato</label>
+                            <input id="estracto" name="estracto" type="text" maxlength="5" class="form-control bg-light" value="{{ old('estracto',$user->estracto) }}" placeholder="Estrato" style="border: 1px solid #ced4da; border-radius: 6px;" />
+                        </div>
+                        <div class="form-group col-md-4 mb-3">
+                            <label for="tvivienda" class="small text-muted font-weight-bold">Tipo de Vivienda</label>
+                            <input id="tvivienda" name="tvivienda" type="text" maxlength="5" class="form-control bg-light" value="{{ old('tvivienda',$user->tvivienda) }}" placeholder="Tipo vivienda" style="border: 1px solid #ced4da; border-radius: 6px;" />
+                        </div>
+                        <div class="form-group col-md-4 mb-3">
+                            <label for="escivil" class="small text-muted font-weight-bold">Estado Civil</label>
+                            <input id="escivil" name="escivil" type="text" maxlength="5" class="form-control bg-light" value="{{ old('escivil',$user->escivil) }}" placeholder="Estado civil" style="border: 1px solid #ced4da; border-radius: 6px;" />
+                        </div>
+                    </div>
+
                     <h6 class="text-secondary border-bottom pb-2 mb-3"><i class="fas fa-lock mr-1"></i> Credenciales de Acceso</h6>
 
                     <div class="form-row mb-2">

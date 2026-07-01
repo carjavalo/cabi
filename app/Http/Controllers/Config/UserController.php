@@ -108,6 +108,14 @@ class UserController extends Controller
             'role' => ['required','string','in:Super Admin,Administrador,Coordinador,Operador,Usuario,Instructor GYM'],
             'email' => ['required','email','max:255','unique:users,email'],
             'password' => ['required','confirmed','min:6'],
+            'genero' => ['nullable','in:M,F'],
+            'edad' => ['nullable','integer','min:0','max:999'],
+            'fnacimiento' => ['nullable','date'],
+            'contacto' => ['nullable','string','max:20'],
+            'direccionr' => ['nullable','string','max:100'],
+            'estracto' => ['nullable','string','max:5'],
+            'tvivienda' => ['nullable','string','max:5'],
+            'escivil' => ['nullable','string','max:5'],
         ]);
 
         // Prevent non-super-admins from assigning Super Admin role
@@ -132,6 +140,14 @@ class UserController extends Controller
             'email'=>$data['email'],
             'password'=>Hash::make($data['password']),
             'role'=>$data['role'] ?? 'Usuario',
+            'genero'=>$data['genero'] ?? null,
+            'edad'=>$data['edad'] ?? null,
+            'fnacimiento'=>$data['fnacimiento'] ?? null,
+            'contacto'=>$data['contacto'] ?? null,
+            'direccionr'=>$data['direccionr'] ?? null,
+            'estracto'=>$data['estracto'] ?? null,
+            'tvivienda'=>$data['tvivienda'] ?? null,
+            'escivil'=>$data['escivil'] ?? null,
         ];
 
         if (Schema::hasColumn('users', 'cargo')) {
@@ -191,6 +207,14 @@ class UserController extends Controller
             'role' => ['required','string','in:Super Admin,Administrador,Coordinador,Operador,Usuario,Instructor GYM'],
             'email' => ['required','email','max:255','unique:users,email,'.$user->id],
             'password' => ['nullable','confirmed','min:6'],
+            'genero' => ['nullable','in:M,F'],
+            'edad' => ['nullable','integer','min:0','max:999'],
+            'fnacimiento' => ['nullable','date'],
+            'contacto' => ['nullable','string','max:20'],
+            'direccionr' => ['nullable','string','max:100'],
+            'estracto' => ['nullable','string','max:5'],
+            'tvivienda' => ['nullable','string','max:5'],
+            'escivil' => ['nullable','string','max:5'],
         ]);
 
         $user->name = $data['name'];
@@ -204,6 +228,14 @@ class UserController extends Controller
         if (Schema::hasColumn('users', 'cargo')) {
             $user->cargo = $data['cargo'] ?? '';
         }
+        $user->genero = $data['genero'] ?? null;
+        $user->edad = $data['edad'] ?? null;
+        $user->fnacimiento = $data['fnacimiento'] ?? null;
+        $user->contacto = $data['contacto'] ?? null;
+        $user->direccionr = $data['direccionr'] ?? null;
+        $user->estracto = $data['estracto'] ?? null;
+        $user->tvivienda = $data['tvivienda'] ?? null;
+        $user->escivil = $data['escivil'] ?? null;
         $user->email = $data['email'];
         if (!empty($data['password'])) {
             $user->password = Hash::make($data['password']);
