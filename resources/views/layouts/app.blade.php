@@ -195,7 +195,19 @@
               <li class="nav-item"><a href="{{ route('recaudo.index') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Recaudo</p></a></li>
             </ul>
           </li>
-          
+
+          <!-- Salud Ocupacional submenu -->
+          <li class="nav-item has-treeview">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fas fa-briefcase-medical"></i>
+              <p>Salud Ocupacional <i class="right fas fa-angle-left"></i></p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item"><a href="#" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Concepto Medico</p></a></li>
+              <li class="nav-item"><a href="#" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Historia Clinica</p></a></li>
+            </ul>
+          </li>
+
           <!-- Capacitaciones (visible para Coordinador y admins si aplica) -->
           @if(Auth::check() && in_array(Auth::user()->role, ['Coordinador', 'Super Admin', 'Administrador', 'Operador']))
           <li class="nav-item">
