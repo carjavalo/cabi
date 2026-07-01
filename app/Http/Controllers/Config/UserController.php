@@ -140,18 +140,15 @@ class UserController extends Controller
             'email'=>$data['email'],
             'password'=>Hash::make($data['password']),
             'role'=>$data['role'] ?? 'Usuario',
-            'genero'=>$data['genero'] ?? null,
-            'edad'=>$data['edad'] ?? null,
-            'fnacimiento'=>$data['fnacimiento'] ?? null,
-            'contacto'=>$data['contacto'] ?? null,
-            'direccionr'=>$data['direccionr'] ?? null,
-            'estracto'=>$data['estracto'] ?? null,
-            'tvivienda'=>$data['tvivienda'] ?? null,
-            'escivil'=>$data['escivil'] ?? null,
         ];
 
         if (Schema::hasColumn('users', 'cargo')) {
             $userdata['cargo'] = $data['cargo'] ?? '';
+        }
+        foreach (['genero','edad','fnacimiento','contacto','direccionr','estracto','tvivienda','escivil'] as $campo) {
+            if (Schema::hasColumn('users', $campo)) {
+                $userdata[$campo] = $data[$campo] ?? null;
+            }
         }
 
         $user = User::create($userdata);
@@ -228,14 +225,11 @@ class UserController extends Controller
         if (Schema::hasColumn('users', 'cargo')) {
             $user->cargo = $data['cargo'] ?? '';
         }
-        $user->genero = $data['genero'] ?? null;
-        $user->edad = $data['edad'] ?? null;
-        $user->fnacimiento = $data['fnacimiento'] ?? null;
-        $user->contacto = $data['contacto'] ?? null;
-        $user->direccionr = $data['direccionr'] ?? null;
-        $user->estracto = $data['estracto'] ?? null;
-        $user->tvivienda = $data['tvivienda'] ?? null;
-        $user->escivil = $data['escivil'] ?? null;
+        foreach (['genero','edad','fnacimiento','contacto','direccionr','estracto','tvivienda','escivil'] as $campo) {
+            if (Schema::hasColumn('users', $campo)) {
+                $user->{$campo} = $data[$campo] ?? null;
+            }
+        }
         $user->email = $data['email'];
         if (!empty($data['password'])) {
             $user->password = Hash::make($data['password']);
