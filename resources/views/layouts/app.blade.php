@@ -203,7 +203,7 @@
               <p>Salud Ocupacional <i class="right fas fa-angle-left"></i></p>
             </a>
             <ul class="nav nav-treeview">
-              <li class="nav-item"><a href="#" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Concepto Medico</p></a></li>
+              <li class="nav-item"><a href="{{ route('salud.concepto.index') }}" class="nav-link {{ request()->routeIs('salud.concepto.*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Concepto Medico</p></a></li>
               <li class="nav-item"><a href="#" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Historia Clinica</p></a></li>
             </ul>
           </li>

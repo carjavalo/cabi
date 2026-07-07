@@ -65,6 +65,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/api/inscritos/{id}', [\App\Http\Controllers\Api\InscritoController::class, 'updateInscrito'])->name('api.inscritos.update');
     Route::delete('/api/inscritos/{id}', [\App\Http\Controllers\Api\InscritoController::class, 'deleteInscrito'])->name('api.inscritos.delete');
 
+    // ─── Salud Ocupacional · Concepto Médico ───
+    Route::prefix('salud-ocupacional/concepto')->name('salud.concepto.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'store'])->name('store');
+        Route::get('/paciente/{identificacion}', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'buscarPaciente'])->name('paciente.buscar');
+        Route::post('/paciente', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'storePaciente'])->name('paciente.store');
+        Route::put('/paciente/{user}', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'updatePaciente'])->name('paciente.update');
+        Route::get('/{concepto}', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'show'])->name('show');
+    });
+
     // Configuración - rutas placeholder para gestión
     Route::get('/configuracion/usuarios', function () { return view('config.usuarios'); });
     Route::get('/configuracion/vinculaciones', function () { return view('config.vinculaciones'); });

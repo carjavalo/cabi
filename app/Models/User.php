@@ -62,7 +62,23 @@ class User extends Authenticatable implements MustVerifyEmail
         'estracto',
         'tvivienda',
         'escivil',
+        'grupo_sanguineo',
+        'lugar_nacimiento',
+        'numero_hijos',
+        'escolaridad',
+        'profesion',
+        'eps',
+        'afp',
+        'arl',
     ];
+
+    /**
+     * Conceptos médicos ocupacionales del trabajador (historial multi-visita).
+     */
+    public function conceptosMedicos()
+    {
+        return $this->hasMany(ConceptoMedico::class)->orderByDesc('fecha_atencion')->orderByDesc('id');
+    }
 
     /**
      * The attributes that should be hidden for serialization.
@@ -112,7 +128,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected function email(): Attribute
     {
         return Attribute::make(
-            set: fn ($value) => mb_strtolower(trim($value)),
+            set: fn ($value) => $value !== null ? mb_strtolower(trim($value)) : null,
         );
     }
 }
