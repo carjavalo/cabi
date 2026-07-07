@@ -8,17 +8,39 @@ use App\Models\ConceptoDocumento;
 use App\Models\User;
 use App\Models\Cargo;
 use App\Models\Servicio;
+use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-class ConceptoMedicoController extends Controller
+class ConceptoMedicoController extends Controller implements HasMiddleware
 {
     /** Datos institucionales del empleador (HUV). */
     private const EMPLEADOR = 'HOSPITAL UNIVERSITARIO DEL VALLE "EVARISTO GARCÍA" E.S.E';
     private const NIT       = '890303461-2';
+
+    /**
+     * Control de acceso del módulo de Salud Ocupacional.
+     *
+     * Por ahora el ingreso está restringido EXCLUSIVAMENTE al rol "Super Admin".
+     * Cuando se construya el módulo de permisos por roles, este punto será el
+     * lugar donde se otorgará el acceso a los demás roles según sus permisos.
+     */
+    public static function middleware(): array
+    {
+        return [
+            function (Request $request, Closure $next) {
+                $user = Auth::user();
+                if (!$user || $user->role !== 'Super Admin') {
+                    abort(403, 'Acceso restringido al módulo de Salud Ocupacional.');
+                }
+                return $next($request);
+            },
+        ];
+    }
 
     /**
      * Vista principal: asistente para diligenciar un nuevo concepto médico.

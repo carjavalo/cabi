@@ -196,7 +196,8 @@
             </ul>
           </li>
 
-          <!-- Salud Ocupacional submenu -->
+          <!-- Salud Ocupacional submenu (SOLO Super Admin; el acceso se ampliará con el módulo de permisos por roles) -->
+          @if(Auth::check() && Auth::user()->role === 'Super Admin')
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-briefcase-medical"></i>
@@ -207,6 +208,7 @@
               <li class="nav-item"><a href="#" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Historia Clinica</p></a></li>
             </ul>
           </li>
+          @endif
 
           <!-- Capacitaciones (visible para Coordinador y admins si aplica) -->
           @if(Auth::check() && in_array(Auth::user()->role, ['Coordinador', 'Super Admin', 'Administrador', 'Operador']))
