@@ -12,7 +12,9 @@ use App\Models\Vinculacion;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -58,10 +60,15 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         $cargos    = $this->safeList(fn () => Cargo::orderBy('nombre')->pluck('nombre'));
         $servicios = $this->safeList(fn () => Servicio::orderBy('nombre')->pluck('nombre'));
 
-        $recientes = ConceptoMedico::with('user')
+        // Las migraciones del módulo deben estar aplicadas. Si faltan, la vista
+        // se muestra igualmente con un aviso en vez de arrojar un error 500.
+        $migracionesPendientes = !Schema::hasTable('conceptos_medicos')
+            || !Schema::hasColumn('users', 'eps');
+
+        $recientes = $this->safeList(fn () => ConceptoMedico::with('user')
             ->orderByDesc('created_at')
             ->take(8)
-            ->get();
+            ->get());
 
         $medico = trim(
             (Auth::user()->name ?? '') . ' ' .
@@ -78,7 +85,92 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'medicoNombre'=> $medico !== '' ? $medico : (Auth::user()->name ?? ''),
             'tipos'       => ConceptoMedico::TIPOS,
             'conceptos'   => ConceptoMedico::CONCEPTOS,
+            'migracionesPendientes' => $migracionesPendientes,
         ]);
+    }
+
+    /**
+     * Diagnóstico del módulo (solo Super Admin). Reporta en JSON el estado de la
+     * base de datos y de las migraciones para identificar por qué falla en el
+     * servidor sin necesidad de acceso a terminal o a los logs.
+     */
+    public function diagnostico()
+    {
+        $out = [];
+        $out['php']       = PHP_VERSION;
+        $out['app_env']   = config('app.env');
+        $out['app_debug'] = config('app.debug');
+
+        try {
+            DB::connection()->getPdo();
+            $out['db'] = 'conectada (' . config('database.connections.' . config('database.default') . '.database') . ')';
+        } catch (\Throwable $e) {
+            $out['db'] = 'ERROR: ' . $e->getMessage();
+        }
+
+        $out['tabla_conceptos_medicos']   = Schema::hasTable('conceptos_medicos') ? 'existe' : 'FALTA';
+        $out['tabla_concepto_documentos'] = Schema::hasTable('concepto_documentos') ? 'existe' : 'FALTA';
+        foreach (['grupo_sanguineo', 'lugar_nacimiento', 'numero_hijos', 'escolaridad', 'profesion', 'eps', 'afp', 'arl'] as $col) {
+            $out['users.' . $col] = Schema::hasColumn('users', $col) ? 'existe' : 'FALTA';
+        }
+
+        try {
+            $out['vinculacion_planta_id'] = $this->plantaId() ?? 'no encontrada';
+        } catch (\Throwable $e) {
+            $out['vinculacion_planta_id'] = 'ERROR: ' . $e->getMessage();
+        }
+
+        try {
+            $out['conceptos_registrados'] = ConceptoMedico::count();
+        } catch (\Throwable $e) {
+            $out['conceptos_registrados'] = 'ERROR: ' . $e->getMessage();
+        }
+
+        try {
+            $out['migraciones_del_modulo'] = DB::table('migrations')
+                ->where('migration', 'like', '%2026_07_07%')
+                ->pluck('migration');
+        } catch (\Throwable $e) {
+            $out['migraciones_del_modulo'] = 'ERROR: ' . $e->getMessage();
+        }
+
+        return response()->json($out, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
+     * Ejecuta las migraciones pendientes desde el navegador (solo Super Admin).
+     * Útil en hostings cPanel sin acceso a terminal. Es idempotente: solo corre
+     * lo que esté pendiente.
+     */
+    public function migrar()
+    {
+        $res = [];
+
+        try {
+            Artisan::call('migrate', ['--force' => true]);
+            $res['migrate'] = trim(Artisan::output());
+        } catch (\Throwable $e) {
+            $res['migrate'] = 'ERROR: ' . $e->getMessage();
+        }
+
+        try {
+            Artisan::call('storage:link');
+            $res['storage_link'] = trim(Artisan::output());
+        } catch (\Throwable $e) {
+            $res['storage_link'] = 'ERROR: ' . $e->getMessage();
+        }
+
+        foreach (['view:clear', 'route:clear', 'config:clear'] as $cmd) {
+            try {
+                Artisan::call($cmd);
+                $res[$cmd] = trim(Artisan::output()) ?: 'ok';
+            } catch (\Throwable $e) {
+                $res[$cmd] = 'ERROR: ' . $e->getMessage();
+            }
+        }
+
+        $res['listo'] = 'Vuelve a abrir /salud-ocupacional/concepto';
+        return response()->json($res, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     /**

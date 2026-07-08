@@ -72,6 +72,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/paciente/{identificacion}', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'buscarPaciente'])->name('paciente.buscar');
         Route::post('/paciente', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'storePaciente'])->name('paciente.store');
         Route::put('/paciente/{user}', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'updatePaciente'])->name('paciente.update');
+        Route::get('/diagnostico', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'diagnostico'])->name('diagnostico');
+        Route::get('/migrar', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'migrar'])->name('migrar');
         Route::get('/{concepto}', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'show'])->name('show');
     });
 

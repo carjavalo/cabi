@@ -212,6 +212,14 @@
     </div>
     @endif
 
+    @if(!empty($migracionesPendientes))
+    <div class="alert alert-warning" style="border-radius:12px;">
+        <strong><i class="fas fa-database"></i> Configuración pendiente en el servidor:</strong>
+        faltan las migraciones de este módulo. Ejecuta <code>php&nbsp;artisan&nbsp;migrate&nbsp;--force</code>
+        en el hosting para habilitar el registro de conceptos y los datos del paciente.
+    </div>
+    @endif
+
     <div class="row">
         <!-- SIDEBAR -->
         <div class="col-lg-3 mb-3">
