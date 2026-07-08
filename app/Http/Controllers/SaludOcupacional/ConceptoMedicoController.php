@@ -8,6 +8,7 @@ use App\Models\ConceptoDocumento;
 use App\Models\User;
 use App\Models\Cargo;
 use App\Models\Servicio;
+use App\Models\Vinculacion;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -21,6 +22,13 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
     /** Datos institucionales del empleador (HUV). */
     private const EMPLEADOR = 'HOSPITAL UNIVERSITARIO DEL VALLE "EVARISTO GARCÍA" E.S.E';
     private const NIT       = '890303461-2';
+
+    /** Solo los trabajadores con esta vinculación pueden ser atendidos como pacientes. */
+    private const VINCULACION_ATENDIBLE = 'Planta';
+
+    /** Cache del id de la vinculación "Planta" (columna tipo_vinculacion_id). */
+    private ?int $plantaId = null;
+    private bool $plantaIdResolved = false;
 
     /**
      * Control de acceso del módulo de Salud Ocupacional.
@@ -86,6 +94,17 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             return response()->json(['found' => false]);
         }
 
+        // Regla de negocio: solo se atienden trabajadores de vinculación "Planta".
+        if (!$this->esPlanta($user)) {
+            return response()->json([
+                'found'    => true,
+                'elegible' => false,
+                'message'  => 'El trabajador ' . trim($user->name . ' ' . ($user->apellido1 ?? ''))
+                    . ' tiene vinculación "' . ($user->tipo_vinculacion ?: 'sin definir')
+                    . '". Solo se atienden trabajadores de vinculación ' . self::VINCULACION_ATENDIBLE . '.',
+            ]);
+        }
+
         $historial = ConceptoMedico::where('user_id', $user->id)
             ->orderByDesc('fecha_atencion')
             ->orderByDesc('id')
@@ -101,6 +120,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
 
         return response()->json([
             'found'    => true,
+            'elegible' => true,
             'paciente' => $this->pacientePayload($user),
             'historial'=> $historial,
         ]);
@@ -167,6 +187,14 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         ]);
 
         $user = !empty($validated['user_id']) ? User::find($validated['user_id']) : null;
+
+        // Regla de negocio: el concepto debe pertenecer a un trabajador de vinculación "Planta".
+        if (!$user || !$this->esPlanta($user)) {
+            return redirect()->back()->withInput()->with(
+                'error',
+                'Solo se pueden atender trabajadores cuya vinculación es ' . self::VINCULACION_ATENDIBLE . '. Verifica el paciente seleccionado.'
+            );
+        }
 
         $concepto = new ConceptoMedico();
         $concepto->user_id        = $user?->id;
@@ -301,6 +329,13 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'servicio'        => $data['servicio'] ?? null,
         ];
 
+        // Los pacientes atendidos en este módulo son, por regla de negocio,
+        // trabajadores de vinculación "Planta". Se fija explícitamente.
+        $payload['tipo_vinculacion'] = self::VINCULACION_ATENDIBLE;
+        if ($this->plantaId() !== null) {
+            $payload['tipo_vinculacion_id'] = $this->plantaId();
+        }
+
         // Columnas nuevas (defensivo por si la migración aún no corrió)
         foreach (['grupo_sanguineo', 'lugar_nacimiento', 'numero_hijos', 'escolaridad', 'profesion', 'eps', 'afp', 'arl'] as $campo) {
             if (Schema::hasColumn('users', $campo)) {
@@ -320,6 +355,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'apellido2'        => $user->apellido2,
             'nombre_completo'  => trim($user->name . ' ' . ($user->apellido1 ?? '') . ' ' . ($user->apellido2 ?? '')),
             'identificacion'   => $user->identificacion,
+            'vinculacion'      => $user->tipo_vinculacion,
             'genero'           => $user->genero,
             'edad'             => $user->edad,
             'fnacimiento'      => optional($user->fnacimiento)->format('Y-m-d'),
@@ -340,6 +376,36 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'afp'              => $user->afp ?? null,
             'arl'              => $user->arl ?? null,
         ];
+    }
+
+    /**
+     * ¿El trabajador es de vinculación "Planta"? Contempla tanto el nombre
+     * textual (tipo_vinculacion) como el id (tipo_vinculacion_id), pues en la
+     * base de datos existen registros con uno u otro.
+     */
+    private function esPlanta(User $u): bool
+    {
+        if (strcasecmp(trim((string) $u->tipo_vinculacion), self::VINCULACION_ATENDIBLE) === 0) {
+            return true;
+        }
+        $pid = $this->plantaId();
+        return $pid !== null && (int) $u->tipo_vinculacion_id === $pid;
+    }
+
+    /** Id de la vinculación "Planta" en el catálogo (o null si no existe). */
+    private function plantaId(): ?int
+    {
+        if (!$this->plantaIdResolved) {
+            $this->plantaIdResolved = true;
+            try {
+                $this->plantaId = optional(
+                    Vinculacion::whereRaw('LOWER(nombre) = ?', [strtolower(self::VINCULACION_ATENDIBLE)])->first()
+                )->id;
+            } catch (\Throwable $e) {
+                $this->plantaId = null;
+            }
+        }
+        return $this->plantaId;
     }
 
     private function decodeJsonField($value)

@@ -127,7 +127,9 @@
     .so-pill{ display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;padding:5px 12px;border-radius:99px;margin-top:9px; }
     .so-pill.found{ background:#eaf7f0;color:var(--so-ok); }
     .so-pill.new{ background:#fbf3e4;color:var(--so-warn); }
+    .so-pill.bad{ background:#fbebe9;color:var(--so-bad); }
     .so-pill.idle{ background:var(--so-soft);color:var(--so-mut); }
+    .so-note{ display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--so-mut);margin-top:7px;line-height:1.4; }
 
     /* Attach + docs */
     .so-attach{ display:inline-flex;align-items:center;gap:9px;padding:11px 19px;border:1.5px dashed var(--so-brand);background:var(--so-bg);
@@ -155,6 +157,20 @@
     .so-hist a:hover{ border-color:var(--so-brand);background:var(--so-bg); }
     .so-hist .d{ font-size:12px;color:var(--so-mut); }
     .so-hist .c{ font-size:13px;font-weight:700;color:var(--so-brand); }
+
+    /* Tarjeta de paciente seleccionado */
+    .so-pcard .top{ display:flex;gap:12px;align-items:center; }
+    .so-pcard .av{ width:48px;height:48px;border-radius:13px;background:linear-gradient(135deg,var(--so-brand),var(--so-brand-l));color:#fff;
+        display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex-shrink:0;box-shadow:0 8px 18px -10px rgba(46,58,117,.7); }
+    .so-pcard .nm{ font-weight:800;font-size:15px;line-height:1.15;color:var(--so-text);word-break:break-word; }
+    .so-pcard .id{ font-size:12px;color:var(--so-mut); }
+    .so-pchips{ display:flex;flex-wrap:wrap;gap:6px;margin-top:11px; }
+    .so-pchip{ font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--so-bg);color:var(--so-brand); }
+    .so-pchip.vinc{ background:#eaf7f0;color:var(--so-ok); }
+    .so-prow{ display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:6px 0;border-top:1px dashed var(--so-line); }
+    .so-prow:first-of-type{ border-top:none; }
+    .so-prow .k{ color:var(--so-mut);white-space:nowrap; }
+    .so-prow .v{ font-weight:600;text-align:right;color:var(--so-text);word-break:break-word; }
 
     /* Review certificate */
     .so-cert{ border:1px solid var(--so-line);border-radius:14px;overflow:hidden; }
@@ -214,6 +230,32 @@
                         </button></li>
                         @endforeach
                     </ul>
+                </div>
+
+                <div class="so-card mt-3" id="so-patient-card" style="display:none;">
+                    <div style="height:5px;background:linear-gradient(90deg,var(--so-brand),var(--so-brand-l));"></div>
+                    <div class="p-3">
+                        <div class="lbl so-mono" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--so-mut);font-weight:700;margin-bottom:11px;">
+                            <i class="fas fa-user-check" style="color:var(--so-ok);"></i> Paciente seleccionado
+                        </div>
+                        <div class="so-pcard">
+                            <div class="top">
+                                <div class="av" id="pc-av">PA</div>
+                                <div style="min-width:0;">
+                                    <div class="nm" id="pc-nombre">—</div>
+                                    <div class="id so-mono" id="pc-ident">—</div>
+                                </div>
+                            </div>
+                            <div class="so-pchips" id="pc-chips"></div>
+                            <div style="margin-top:12px;">
+                                <div class="so-prow"><span class="k">Vinculación</span><span class="v" id="pc-vinc">—</span></div>
+                                <div class="so-prow"><span class="k">EPS</span><span class="v" id="pc-eps">—</span></div>
+                                <div class="so-prow"><span class="k">Teléfono</span><span class="v" id="pc-tel">—</span></div>
+                                <div class="so-prow"><span class="k">Cargo</span><span class="v" id="pc-cargo">—</span></div>
+                                <div class="so-prow"><span class="k">Servicio</span><span class="v" id="pc-serv">—</span></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="so-card mt-3" id="so-hist-card" style="display:none;">
@@ -303,9 +345,11 @@
                                     <button type="button" class="so-ident-btn" id="so-ident-search" title="Buscar paciente"><i class="fas fa-search"></i></button>
                                 </div>
                                 <div id="so-ident-pill" class="so-pill idle"><i class="fas fa-circle" style="font-size:7px;"></i> Escribe una identificación para buscar</div>
+                                <div class="so-note"><i class="fas fa-info-circle" style="margin-top:2px;color:var(--so-brand);"></i> Solo se atienden trabajadores de vinculación <strong style="color:var(--so-brand)">Planta</strong>.</div>
                             </div>
 
                             <div><label class="so-lbl mut">Nombre del paciente</label><input type="text" id="p-nombre" class="so-in ro" readonly></div>
+                            <div><label class="so-lbl mut">Vinculación</label><input type="text" id="p-vinculacion" class="so-in ro" readonly></div>
                             <div><label class="so-lbl mut">Edad</label><input type="text" id="p-edad" name="edad" class="so-in ro" readonly></div>
                             <div><label class="so-lbl mut">Género</label><input type="text" id="p-genero-txt" class="so-in ro" readonly><input type="hidden" id="p-genero" name="genero"></div>
                             <div><label class="so-lbl mut">Grupo sanguíneo</label><input type="text" id="p-grupo" class="so-in ro" readonly></div>
@@ -588,6 +632,10 @@
       <div class="modal-body" style="background:#fff;">
         <form id="pacienteForm">
           <input type="hidden" id="pf-id">
+          <div style="display:flex;align-items:flex-start;gap:9px;background:#eef0fb;border:1px solid #d6dbf0;border-radius:10px;padding:11px 14px;margin-bottom:16px;font-size:13px;color:#3a3e56;">
+            <i class="fas fa-id-badge" style="color:var(--so-brand);margin-top:2px;"></i>
+            <span>El paciente se registrará con vinculación <strong style="color:var(--so-brand)">Planta</strong>, ya que solo estos trabajadores pueden ser atendidos en Salud Ocupacional.</span>
+          </div>
           <div class="so-grid">
             <div><label class="so-lbl">Nombres <span class="text-danger">*</span></label><input type="text" id="pf-name" class="so-in" required></div>
             <div><label class="so-lbl">Primer apellido</label><input type="text" id="pf-apellido1" class="so-in"></div>
@@ -746,7 +794,10 @@
     function setPill(kind, text){
         const el = $('#so-ident-pill');
         el.className = 'so-pill '+kind;
-        let icon = kind==='found'?'<i class="fas fa-check-circle"></i>':(kind==='new'?'<i class="fas fa-exclamation-circle"></i>':'<i class="fas fa-circle" style="font-size:7px;"></i>');
+        let icon = kind==='found' ? '<i class="fas fa-check-circle"></i>'
+                 : (kind==='bad' ? '<i class="fas fa-ban"></i>'
+                 : (kind==='new' ? '<i class="fas fa-exclamation-circle"></i>'
+                 : '<i class="fas fa-circle" style="font-size:7px;"></i>'));
         el.innerHTML = icon+' '+text;
         // icono del botón de acción
         $('#so-ident-icon').className = (kind==='found') ? 'fas fa-user-edit' : 'fas fa-user-plus';
@@ -757,11 +808,16 @@
         fetch(ROUTES.buscar+'/'+encodeURIComponent(ident), {headers:{'Accept':'application/json'}})
             .then(r=>r.json())
             .then(res=>{
-                if(res.found){
+                if(res.found && res.elegible){
                     currentPatient = res.paciente;
                     fillPatientFields(res.paciente);
                     setPill('found','Paciente encontrado: '+res.paciente.nombre_completo);
                     renderHistorial(res.historial||[]);
+                } else if(res.found && !res.elegible){
+                    // Existe pero su vinculación NO es Planta → no puede ser atendido
+                    currentPatient = null; $('#f-user_id').value=''; clearPatientFields();
+                    setPill('bad', res.message || 'El trabajador no es de vinculación Planta y no puede ser atendido.');
+                    $('#so-hist-card').style.display='none';
                 } else {
                     currentPatient = null; $('#f-user_id').value=''; clearPatientFields();
                     setPill('new','No existe. Usa el botón + para crearlo');
@@ -775,6 +831,7 @@
         $('#f-user_id').value = p.id || '';
         $('#f-paciente_nombre').value = p.nombre_completo || '';
         $('#p-nombre').value = p.nombre_completo || '';
+        $('#p-vinculacion').value = p.vinculacion || 'Planta';
         $('#p-edad').value = p.edad || '';
         $('#p-genero').value = p.genero || '';
         $('#p-genero-txt').value = GENERO[p.genero] || p.genero || '';
@@ -796,10 +853,12 @@
         if(p.eps) $('#f-eps').value = p.eps;
         if(p.afp) $('#f-afp').value = p.afp;
         if(p.arl) $('#f-arl').value = p.arl;
+        renderPatientCard(p);
         updateProgress();
     }
     function clearPatientFields(){
-        ['p-nombre','p-edad','p-genero','p-genero-txt','p-grupo','p-fnac','p-lugarnac','p-contacto','p-correo','p-direccion','p-estrato','p-vivienda','p-escivil','p-hijos','p-escolaridad','p-profesion','f-paciente_nombre'].forEach(id=>{ const el=$('#'+id); if(el) el.value=''; });
+        renderPatientCard(null);
+        ['p-nombre','p-vinculacion','p-edad','p-genero','p-genero-txt','p-grupo','p-fnac','p-lugarnac','p-contacto','p-correo','p-direccion','p-estrato','p-vivienda','p-escivil','p-hijos','p-escolaridad','p-profesion','f-paciente_nombre'].forEach(id=>{ const el=$('#'+id); if(el) el.value=''; });
     }
 
     function renderHistorial(list){
@@ -808,6 +867,31 @@
         card.style.display='block';
         $('#so-hist-count').textContent = list.length;
         box.innerHTML = list.map(h=>`<a href="${h.url}" target="_blank"><span class="c">${h.concepto}</span><span class="d">${h.fecha||''} · ${h.tipo||''}</span></a>`).join('');
+    }
+
+    // Ilustra los datos del paciente seleccionado (tarjeta lateral persistente)
+    function initials(name){
+        const p = (name||'').trim().split(/\s+/);
+        return ((p[0]||'')[0]||'') + ((p[1]||'')[0]||'');
+    }
+    function renderPatientCard(p){
+        const card = $('#so-patient-card');
+        if(!p){ card.style.display='none'; return; }
+        card.style.display='block';
+        $('#pc-av').textContent = (initials(p.nombre_completo)||'PA').toUpperCase();
+        $('#pc-nombre').textContent = p.nombre_completo || '—';
+        $('#pc-ident').textContent = p.identificacion || '—';
+        const chips = [];
+        if(p.edad) chips.push((p.edad)+' años');
+        if(p.genero) chips.push(GENERO[p.genero] || p.genero);
+        if(p.grupo_sanguineo) chips.push(p.grupo_sanguineo);
+        chips.push('<span class="so-pchip vinc">'+(p.vinculacion || 'Planta')+'</span>');
+        $('#pc-chips').innerHTML = chips.map(c=> c.startsWith('<span') ? c : `<span class="so-pchip">${c}</span>`).join('');
+        setTxt('pc-vinc', p.vinculacion || 'Planta');
+        setTxt('pc-eps', p.eps);
+        setTxt('pc-tel', p.contacto);
+        setTxt('pc-cargo', p.cargo);
+        setTxt('pc-serv', p.servicio);
     }
 
     // ─── Modal paciente (crear / editar) ───
@@ -955,9 +1039,9 @@
 
     // ─── Validación al guardar ───
     $('#so-form').addEventListener('submit', function(e){
-        if(!$('#f-user_id').value && !identInput.value.trim()){
+        if(!$('#f-user_id').value){
             e.preventDefault();
-            Swal.fire({icon:'warning',title:'Falta el paciente',text:'Selecciona o crea un paciente antes de guardar.'});
+            Swal.fire({icon:'warning',title:'Paciente no válido',text:'Debes seleccionar un paciente de vinculación Planta. Búscalo por identificación o créalo con el botón +.'});
             showStep(1);
             return;
         }
