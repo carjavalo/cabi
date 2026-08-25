@@ -80,6 +80,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ─── Salud Ocupacional · Catálogos de afiliación (EPS / AFP / ARL) ───
     // CRUD dinámico consumido por los botones "+" del paso 3 del concepto médico.
     Route::prefix('salud-ocupacional/entidades')->name('salud.entidades.')->group(function () {
+        // Debe ir antes de /{tipo} para no ser capturada como nombre de catálogo.
+        Route::get('/diagnostico', [\App\Http\Controllers\SaludOcupacional\EntidadAfiliacionController::class, 'diagnostico'])->name('diagnostico');
         Route::get('/{tipo}', [\App\Http\Controllers\SaludOcupacional\EntidadAfiliacionController::class, 'index'])->name('index');
         Route::post('/{tipo}', [\App\Http\Controllers\SaludOcupacional\EntidadAfiliacionController::class, 'store'])->name('store');
         Route::put('/{tipo}/{id}', [\App\Http\Controllers\SaludOcupacional\EntidadAfiliacionController::class, 'update'])->name('update');

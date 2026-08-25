@@ -8,10 +8,12 @@ use App\Models\Arl;
 use App\Models\Eps;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
@@ -53,35 +55,97 @@ class EntidadAfiliacionController extends Controller implements HasMiddleware
      */
     public function index(Request $request, string $tipo)
     {
-        [$modelo, , $plural] = $this->catalogo($tipo);
+        return $this->responder(function () use ($request, $tipo) {
+            [$modelo, , $plural] = $this->catalogo($tipo);
+            $tabla = (new $modelo)->getTable();
 
-        if (!Schema::hasTable((new $modelo)->getTable())) {
+            // En cPanel las migraciones suelen quedar pendientes: se crean e
+            // inicializan las tablas del catálogo al vuelo (operación idempotente).
+            if (!Schema::hasTable($tabla)) {
+                $this->provisionar($tabla);
+            }
+
+            if (!Schema::hasTable($tabla)) {
+                return response()->json([
+                    'ok'      => false,
+                    'message' => 'El catálogo de ' . $plural . ' no existe en la base de datos y no se pudo crear '
+                        . 'automáticamente. Abre /salud-ocupacional/concepto/migrar para ejecutar las migraciones.',
+                    'items'   => [],
+                ]);
+            }
+
+            $q = trim((string) $request->query('q', ''));
+
+            $items = $modelo::query()
+                ->when($q !== '', function ($query) use ($q) {
+                    $query->where(function ($sub) use ($q) {
+                        $sub->where('nombre', 'like', '%' . $q . '%')
+                            ->orWhere('codigo', 'like', '%' . $q . '%');
+                    });
+                })
+                ->orderBy('nombre')
+                ->get()
+                ->map(fn (Model $e) => $this->payload($e));
+
             return response()->json([
-                'ok'      => false,
-                'message' => 'El catálogo de ' . $plural . ' aún no está creado. Ejecuta las migraciones pendientes.',
-                'items'   => [],
+                'ok'    => true,
+                'tipo'  => $tipo,
+                'label' => $plural,
+                'items' => $items,
             ]);
+        });
+    }
+
+    /**
+     * Diagnóstico del CRUD de catálogos (solo Super Admin).
+     *
+     * Reporta en JSON por qué falla el módulo en el servidor sin necesidad de
+     * acceso a terminal ni a los logs, igual que el diagnóstico del concepto.
+     */
+    public function diagnostico()
+    {
+        $out = [
+            'php'       => PHP_VERSION,
+            'app_env'   => config('app.env'),
+            'app_debug' => config('app.debug'),
+        ];
+
+        try {
+            DB::connection()->getPdo();
+            $out['db'] = 'conectada (' . config('database.connections.' . config('database.default') . '.database') . ')';
+        } catch (\Throwable $e) {
+            $out['db'] = 'ERROR: ' . $e->getMessage();
         }
 
-        $q = trim((string) $request->query('q', ''));
+        foreach (self::CATALOGOS as $tipo => [$modelo, , $plural]) {
+            $tabla = (new $modelo)->getTable();
+            $info  = [
+                'modelo'       => class_exists($modelo) ? $modelo . ' (cargado)' : $modelo . ' — CLASE NO ENCONTRADA',
+                'tabla'        => $tabla,
+                'tabla_existe' => Schema::hasTable($tabla) ? 'sí' : 'NO',
+            ];
 
-        $items = $modelo::query()
-            ->when($q !== '', function ($query) use ($q) {
-                $query->where(function ($sub) use ($q) {
-                    $sub->where('nombre', 'like', '%' . $q . '%')
-                        ->orWhere('codigo', 'like', '%' . $q . '%');
-                });
-            })
-            ->orderBy('nombre')
-            ->get()
-            ->map(fn (Model $e) => $this->payload($e));
+            if ($info['tabla_existe'] === 'sí') {
+                foreach (['id', 'nombre', 'codigo', 'nit', 'activo'] as $col) {
+                    $info['columna_' . $col] = Schema::hasColumn($tabla, $col) ? 'existe' : 'FALTA';
+                }
+                try {
+                    $info['registros'] = $modelo::count();
+                } catch (\Throwable $e) {
+                    $info['registros'] = 'ERROR: ' . $e->getMessage();
+                }
+            }
 
-        return response()->json([
-            'ok'    => true,
-            'tipo'  => $tipo,
-            'label' => $plural,
-            'items' => $items,
-        ]);
+            $out['catalogo_' . $tipo] = $info;
+        }
+
+        $out['controlador'] = static::class;
+        $out['migracion']   = DB::table('migrations')
+            ->where('migration', 'like', '%entidades_afiliacion%')
+            ->pluck('migration')
+            ->all() ?: 'NO registrada en la tabla migrations';
+
+        return response()->json($out, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     /**
@@ -89,18 +153,25 @@ class EntidadAfiliacionController extends Controller implements HasMiddleware
      */
     public function store(Request $request, string $tipo)
     {
-        [$modelo, $singular] = $this->catalogo($tipo);
+        return $this->responder(function () use ($request, $tipo) {
+            [$modelo, $singular] = $this->catalogo($tipo);
 
-        $data = $this->validar($request, $modelo);
-        $data['activo'] = $request->boolean('activo', true);
+            $tabla = (new $modelo)->getTable();
+            if (!Schema::hasTable($tabla)) {
+                $this->provisionar($tabla);
+            }
 
-        $entidad = $modelo::create($data);
+            $data = $this->validar($request, $modelo);
+            $data['activo'] = $request->boolean('activo', true);
 
-        return response()->json([
-            'ok'      => true,
-            'message' => $singular . ' "' . $entidad->nombre . '" creada correctamente.',
-            'item'    => $this->payload($entidad),
-        ]);
+            $entidad = $modelo::create($data);
+
+            return response()->json([
+                'ok'      => true,
+                'message' => $singular . ' "' . $entidad->nombre . '" creada correctamente.',
+                'item'    => $this->payload($entidad),
+            ]);
+        });
     }
 
     /**
@@ -108,25 +179,27 @@ class EntidadAfiliacionController extends Controller implements HasMiddleware
      */
     public function update(Request $request, string $tipo, int $id)
     {
-        [$modelo, $singular] = $this->catalogo($tipo);
+        return $this->responder(function () use ($request, $tipo, $id) {
+            [$modelo, $singular] = $this->catalogo($tipo);
 
-        $entidad  = $modelo::findOrFail($id);
-        $anterior = $entidad->nombre;
+            $entidad  = $modelo::findOrFail($id);
+            $anterior = $entidad->nombre;
 
-        $data = $this->validar($request, $modelo, $entidad->id);
+            $data = $this->validar($request, $modelo, $entidad->id);
 
-        $entidad->fill($data);
-        if ($request->has('activo')) {
-            $entidad->activo = $request->boolean('activo');
-        }
-        $entidad->save();
+            $entidad->fill($data);
+            if ($request->has('activo')) {
+                $entidad->activo = $request->boolean('activo');
+            }
+            $entidad->save();
 
-        return response()->json([
-            'ok'       => true,
-            'message'  => $singular . ' actualizada correctamente.',
-            'item'     => $this->payload($entidad),
-            'anterior' => $anterior,
-        ]);
+            return response()->json([
+                'ok'       => true,
+                'message'  => $singular . ' actualizada correctamente.',
+                'item'     => $this->payload($entidad),
+                'anterior' => $anterior,
+            ]);
+        });
     }
 
     /**
@@ -138,31 +211,124 @@ class EntidadAfiliacionController extends Controller implements HasMiddleware
      */
     public function destroy(string $tipo, int $id)
     {
-        [$modelo, $singular] = $this->catalogo($tipo);
+        return $this->responder(function () use ($tipo, $id) {
+            [$modelo, $singular] = $this->catalogo($tipo);
 
-        $entidad = $modelo::findOrFail($id);
-        $usos    = $this->contarUsos($tipo, $entidad->nombre);
+            $entidad = $modelo::findOrFail($id);
+            $usos    = $this->contarUsos($tipo, $entidad->nombre);
 
-        if ($usos > 0) {
+            if ($usos > 0) {
+                return response()->json([
+                    'ok'      => false,
+                    'en_uso'  => true,
+                    'usos'    => $usos,
+                    'message' => 'No se puede eliminar: "' . $entidad->nombre . '" está en uso en '
+                        . $usos . ' registro(s). Puedes desactivarla para que deje de aparecer en el listado.',
+                ], 409);
+            }
+
+            $nombre = $entidad->nombre;
+            $entidad->delete();
+
             return response()->json([
-                'ok'      => false,
-                'en_uso'  => true,
-                'usos'    => $usos,
-                'message' => 'No se puede eliminar: "' . $entidad->nombre . '" está en uso en '
-                    . $usos . ' registro(s). Puedes desactivarla para que deje de aparecer en el listado.',
-            ], 409);
-        }
-
-        $nombre = $entidad->nombre;
-        $entidad->delete();
-
-        return response()->json([
-            'ok'      => true,
-            'message' => $singular . ' "' . $nombre . '" eliminada correctamente.',
-        ]);
+                'ok'      => true,
+                'message' => $singular . ' "' . $nombre . '" eliminada correctamente.',
+            ]);
+        });
     }
 
     // --------------------------- Helpers ---------------------------
+
+    /**
+     * Ejecuta la acción y traduce cualquier fallo a JSON.
+     *
+     * Sin esto, un error en el servidor devuelve la página HTML de error 500 de
+     * Laravel; el front intenta parsearla como JSON, falla y solo puede mostrar
+     * "fallo de conexión", que oculta la causa real. Aquí el motivo viaja en el
+     * cuerpo de la respuesta y además queda en el log.
+     */
+    private function responder(\Closure $accion)
+    {
+        try {
+            return $accion();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // La validación ya produce su propia respuesta 422 en JSON.
+            throw $e;
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            // abort() intencional (404 de catálogo no soportado, 403 de acceso).
+            throw $e;
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'La entidad ya no existe en el catálogo. Actualiza el listado.',
+            ], 404);
+        } catch (\Throwable $e) {
+            Log::error('Catálogo de afiliación: ' . $e->getMessage(), [
+                'excepcion' => get_class($e),
+                'archivo'   => $e->getFile() . ':' . $e->getLine(),
+            ]);
+
+            return response()->json([
+                'ok'        => false,
+                'message'   => 'Error en el servidor: ' . $e->getMessage(),
+                'excepcion' => class_basename($e),
+                'donde'     => basename($e->getFile()) . ':' . $e->getLine(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Crea la tabla del catálogo si falta y la inicializa con las entidades
+     * de uso corriente en Colombia.
+     *
+     * En cPanel no hay terminal para lanzar `php artisan migrate`, así que el
+     * módulo se autoabastece la primera vez que se usa. Es idempotente.
+     */
+    private function provisionar(string $tabla): void
+    {
+        $semilla = [
+            'eps' => [
+                'Nueva EPS', 'EPS Sura', 'EPS Sanitas', 'Salud Total', 'Compensar', 'Famisanar',
+                'Coosalud', 'Emssanar', 'Servicio Occidental de Salud (SOS)', 'Comfenalco Valle', 'Asmet Salud',
+            ],
+            'afps' => ['Porvenir', 'Protección', 'Colfondos', 'Skandia', 'Colpensiones'],
+            'arls' => [
+                'ARL Sura', 'Positiva', 'Colmena Seguros', 'Seguros Bolívar', 'AXA Colpatria',
+                'La Equidad Seguros', 'Mapfre',
+            ],
+        ];
+
+        if (!isset($semilla[$tabla])) {
+            return;
+        }
+
+        try {
+            if (!Schema::hasTable($tabla)) {
+                Schema::create($tabla, function (Blueprint $table) {
+                    $table->id();
+                    $table->string('nombre', 150)->unique();
+                    $table->string('codigo', 40)->nullable();
+                    $table->string('nit', 40)->nullable();
+                    $table->boolean('activo')->default(true);
+                    $table->timestamps();
+                });
+
+                $ahora = now();
+                foreach ($semilla[$tabla] as $nombre) {
+                    DB::table($tabla)->insert([
+                        'nombre'     => $nombre,
+                        'activo'     => true,
+                        'created_at' => $ahora,
+                        'updated_at' => $ahora,
+                    ]);
+                }
+
+                Log::info('Catálogo de afiliación: tabla "' . $tabla . '" creada e inicializada automáticamente.');
+            }
+        } catch (\Throwable $e) {
+            Log::error('Catálogo de afiliación: no se pudo crear la tabla "' . $tabla . '": ' . $e->getMessage());
+        }
+    }
 
     /** Resuelve el catálogo a partir del segmento {tipo} de la ruta. */
     private function catalogo(string $tipo): array

@@ -150,6 +150,17 @@
     .so-cat-row .acts .ed:hover{ border-color:var(--so-brand);color:var(--so-brand); }
     .so-cat-row .acts .del:hover{ border-color:var(--so-bad);color:var(--so-bad); }
     .so-cat-empty{ padding:26px 14px;text-align:center;color:var(--so-mut);font-size:13px; }
+    .so-cat-msg{ display:flex;align-items:flex-start;gap:9px;border-radius:10px;padding:11px 14px;margin-bottom:14px;
+        font-size:13px;font-weight:600;line-height:1.4; }
+    .so-cat-msg.ok{ background:#eaf7f0;color:#1f7a52;border:1px solid #bfe6d2; }
+    .so-cat-msg.err{ background:#fbebe9;color:#a5342b;border:1px solid #f0cac6; }
+    .so-cat-msg.info{ background:#eef0fb;color:var(--so-brand);border:1px solid #d6dbf0; }
+    /* Confirmación de borrado en línea, dentro de la propia fila */
+    .so-cat-row.confirm{ background:#fbebe9; }
+    .so-cat-row .ask{ font-size:12.5px;font-weight:700;color:var(--so-bad);margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0; }
+    .so-cat-row .ask button{ border-radius:8px;border:1px solid var(--so-line2);background:#fff;cursor:pointer;
+        font-size:12px;font-weight:700;padding:5px 11px;height:30px;width:auto; }
+    .so-cat-row .ask .si{ background:var(--so-bad);border-color:var(--so-bad);color:#fff; }
     .so-cat-form{ background:var(--so-soft);border:1px solid var(--so-line);border-radius:12px;padding:14px;margin-bottom:14px; }
     .so-cat-form .row-f{ display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end; }
     @media (max-width:720px){ .so-cat-form .row-f{ grid-template-columns:1fr; } }
@@ -758,6 +769,11 @@
       </div>
       <div class="modal-body" style="background:#fff;">
 
+        {{-- Avisos en línea: no se usa SweetAlert2 aquí porque su popup y el
+             modal de Bootstrap se disputan el foco y dejan el modal bajo un
+             ancestro con aria-hidden. --}}
+        <div id="cat-msg" class="so-cat-msg" role="status" aria-live="polite" style="display:none;"></div>
+
         {{-- Formulario: crea una entidad nueva o edita la seleccionada --}}
         <div class="so-cat-form">
           <input type="hidden" id="cat-id">
@@ -838,6 +854,18 @@
     const TIPOS = @json($tipos);
     const CONCEPTOS = @json($conceptos);
     const GENERO = { F:'Femenino', M:'Masculino', O:'Otro' };
+
+    /**
+     * El contenido de la vista se inserta dentro del div.wrapper del layout, y
+     * SweetAlert2 marca a los hermanos del body con aria-hidden mientras muestra
+     * un popup: un modal abierto y con foco queda entonces bajo un ancestro
+     * oculto para lectores de pantalla y el navegador lo bloquea. Se mueve el
+     * modal a body, igual que hace el layout con su logoutModal.
+     */
+    (function(){
+        const m = document.getElementById('catalogoModal');
+        if(m && m.parentNode !== document.body) document.body.appendChild(m);
+    })();
 
     let step = 0;
     const totalSteps = 7;
@@ -1074,6 +1102,28 @@
     const catUrl = (tipo, id)=> ROUTES.entidades + '/' + tipo + (id ? '/'+id : '');
     const esc = (s)=> String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+    /**
+     * Lee la respuesta sin asumir que es JSON: ante un 500 el servidor puede
+     * devolver la página HTML de error, y hacerle .json() enmascara la causa
+     * real como si fuera un fallo de red.
+     */
+    async function catFetch(url, opts){
+        let r;
+        try {
+            r = await fetch(url, opts);
+        } catch (e) {
+            return { ok:false, status:0, j:{ message:'No se pudo contactar al servidor. Revisa tu conexión.' } };
+        }
+        const texto = await r.text();
+        let j = null;
+        try { j = JSON.parse(texto); } catch(e){ /* la respuesta no era JSON */ }
+        if(j === null){
+            j = { message: 'El servidor respondió con un error ' + r.status + ' (respuesta no válida). '
+                + 'Abre /salud-ocupacional/entidades/diagnostico para ver el detalle.' };
+        }
+        return { ok:r.ok, status:r.status, j };
+    }
+
     // Abre el modal desde cualquier botón "+" (paso 3 o modal de paciente)
     $$('.so-cat-btn').forEach(btn=>{
         btn.addEventListener('click', (ev)=>{
@@ -1090,6 +1140,7 @@
         const meta = CAT_META[tipo];
         $('#catModalTitle').innerHTML = '<i class="fas '+meta.icono+' mr-2"></i>'+meta.titulo;
         catResetForm();
+        catMsgLimpiar();
         $('#cat-buscar').value = '';
         // Precarga el nombre escrito en el campo, para crearlo de una vez
         const actual = ($('#'+targetId) ? $('#'+targetId).value : '').trim();
@@ -1104,6 +1155,23 @@
         });
     }
 
+    /** Aviso en línea dentro del modal (sustituye a Swal mientras está abierto). */
+    let catMsgT = null;
+    function catMsg(tipo, texto){
+        const box = $('#cat-msg');
+        if(!box || !texto) return;
+        const ico = tipo==='ok' ? 'fa-circle-check' : (tipo==='err' ? 'fa-circle-exclamation' : 'fa-circle-info');
+        box.className = 'so-cat-msg ' + tipo;
+        box.innerHTML = '<i class="fas '+ico+'" style="margin-top:2px;"></i><span>'+esc(texto)+'</span>';
+        box.style.display = 'flex';
+        clearTimeout(catMsgT);
+        if(tipo === 'ok') catMsgT = setTimeout(catMsgLimpiar, 4000);
+    }
+    function catMsgLimpiar(){
+        const box = $('#cat-msg');
+        if(box){ box.style.display = 'none'; box.innerHTML = ''; }
+    }
+
     function catResetForm(){
         $('#cat-id').value = '';
         ['cat-nombre','cat-codigo','cat-nit'].forEach(id=> $('#'+id).value = '');
@@ -1115,15 +1183,13 @@
     function catCargar(){
         const q = $('#cat-buscar').value.trim();
         $('#cat-list').innerHTML = '<div class="so-cat-empty"><i class="fas fa-spinner fa-spin"></i> Cargando…</div>';
-        return fetch(catUrl(catTipo) + (q ? '?q='+encodeURIComponent(q) : ''), {
+        return catFetch(catUrl(catTipo) + (q ? '?q='+encodeURIComponent(q) : ''), {
                 headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}
             })
-            .then(r=> r.json())
-            .then(j=>{
-                catItems = j.items || [];
-                catRender(j.ok === false ? (j.message || 'No se pudo cargar el catálogo.') : null);
-            })
-            .catch(()=>{ catItems = []; catRender('Fallo de conexión al cargar el catálogo.'); });
+            .then(({ok,j})=>{
+                catItems = (ok && j.ok !== false) ? (j.items || []) : [];
+                catRender((ok && j.ok !== false) ? null : (j.message || 'No se pudo cargar el catálogo.'));
+            });
     }
 
     function catRender(errorMsg){
@@ -1156,7 +1222,7 @@
 
         $$('.so-cat-row .use', box).forEach(b=> b.addEventListener('click', ()=> catUsar(catItems[+b.dataset.i])));
         $$('.so-cat-row .ed',  box).forEach(b=> b.addEventListener('click', ()=> catEditar(catItems[+b.dataset.i])));
-        $$('.so-cat-row .del', box).forEach(b=> b.addEventListener('click', ()=> catEliminar(catItems[+b.dataset.i])));
+        $$('.so-cat-row .del', box).forEach(b=> b.addEventListener('click', ()=> catPedirConfirmacion(b.closest('.so-cat-row'), catItems[+b.dataset.i])));
 
         $('#cat-count').textContent = catItems.length + ' entidad(es) en el catálogo de ' + CAT_META[catTipo].singular;
     }
@@ -1184,31 +1250,47 @@
         $('#cat-nombre').focus();
     }
 
+    /** Paso 1: la fila pregunta la confirmación sin salir del modal. */
+    function catPedirConfirmacion(fila, e){
+        if(!fila || fila.classList.contains('confirm')) return;
+        const acts = $('.acts', fila);
+        if(!acts) return;
+        acts.style.display = 'none';
+        fila.classList.add('confirm');
+
+        const ask = document.createElement('div');
+        ask.className = 'ask';
+        ask.innerHTML = '<span>¿Eliminar?</span>'
+            + '<button type="button" class="si">Sí, eliminar</button>'
+            + '<button type="button" class="no">Cancelar</button>';
+        fila.appendChild(ask);
+
+        $('.no', ask).addEventListener('click', ()=>{
+            ask.remove();
+            fila.classList.remove('confirm');
+            acts.style.display = '';
+        });
+        $('.si', ask).addEventListener('click', ()=>{
+            ask.innerHTML = '<span><i class="fas fa-spinner fa-spin"></i> Eliminando…</span>';
+            catEliminar(e);
+        });
+    }
+
+    /** Paso 2: ya confirmado, se elimina en el servidor. */
     function catEliminar(e){
         if(!e) return;
-        Swal.fire({
-            icon:'warning',
-            title:'¿Eliminar del catálogo?',
-            html:'Se eliminará <strong>'+esc(e.nombre)+'</strong> del catálogo de '+CAT_META[catTipo].singular+'.',
-            showCancelButton:true, confirmButtonText:'Sí, eliminar', cancelButtonText:'Cancelar',
-            confirmButtonColor:'#c4453b',
-        }).then(res=>{
-            if(!res.isConfirmed) return;
-            fetch(catUrl(catTipo, e.id), {
-                method:'DELETE',
-                headers:{'Accept':'application/json','X-CSRF-TOKEN':CSRF,'X-Requested-With':'XMLHttpRequest'}
-            })
-            .then(async r=>({ok:r.ok, j: await r.json().catch(()=>({}))}))
-            .then(({ok,j})=>{
-                if(ok && j.ok){
-                    catSyncDatalist(e.nombre, null);
-                    catCargar();
-                    Swal.fire({icon:'success',title:'Eliminada',text:j.message,timer:1700,showConfirmButton:false});
-                } else {
-                    Swal.fire({icon: j.en_uso?'info':'error', title: j.en_uso?'Entidad en uso':'Error', text: j.message || 'No se pudo eliminar.'});
-                }
-            })
-            .catch(()=> Swal.fire({icon:'error',title:'Error',text:'Fallo de conexión.'}));
+        catFetch(catUrl(catTipo, e.id), {
+            method:'DELETE',
+            headers:{'Accept':'application/json','X-CSRF-TOKEN':CSRF,'X-Requested-With':'XMLHttpRequest'}
+        })
+        .then(({ok,j})=>{
+            if(ok && j.ok){
+                catSyncDatalist(e.nombre, null);
+                catMsg('ok', j.message);
+            } else {
+                catMsg(j.en_uso ? 'info' : 'err', j.message || 'No se pudo eliminar.');
+            }
+            catCargar();
         });
     }
 
@@ -1216,7 +1298,8 @@
         if(catBusy) return;
         const nombre = $('#cat-nombre').value.trim();
         if(!nombre){
-            Swal.fire({icon:'warning',title:'Nombre requerido',text:'Escribe el nombre de la entidad.'});
+            catMsg('err', 'Escribe el nombre de la entidad.');
+            $('#cat-nombre').focus();
             return;
         }
         const id     = $('#cat-id').value;
@@ -1225,12 +1308,11 @@
 
         catBusy = true;
         $('#cat-save').disabled = true;
-        fetch(url, {
+        catFetch(url, {
             method,
             headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':CSRF,'X-Requested-With':'XMLHttpRequest'},
             body: JSON.stringify({ nombre, codigo:$('#cat-codigo').value.trim(), nit:$('#cat-nit').value.trim() })
         })
-        .then(async r=>({ok:r.ok, j: await r.json().catch(()=>({}))}))
         .then(({ok,j})=>{
             catBusy = false;
             $('#cat-save').disabled = false;
@@ -1240,14 +1322,14 @@
                 if(j.anterior && j.anterior !== j.item.nombre) catSyncCampos(j.anterior, j.item.nombre);
                 const eraNuevo = !id;
                 catResetForm();
+                catMsg('ok', j.message);
+                // Si acaba de crearse, se selecciona y el modal se cierra solo.
                 catCargar().then(()=>{ if(eraNuevo) catUsar(j.item); });
-                Swal.fire({icon:'success',title:'Listo',text:j.message,timer:1600,showConfirmButton:false});
             } else {
-                const msg = j.message || (j.errors ? Object.values(j.errors).flat().join(' · ') : 'No se pudo guardar.');
-                Swal.fire({icon:'error',title:'Error',text:msg});
+                const msg = (j.errors ? Object.values(j.errors).flat().join(' · ') : '') || j.message || 'No se pudo guardar.';
+                catMsg('err', msg);
             }
-        })
-        .catch(()=>{ catBusy=false; $('#cat-save').disabled=false; Swal.fire({icon:'error',title:'Error',text:'Fallo de conexión.'}); });
+        });
     });
 
     $('#cat-cancel').addEventListener('click', catResetForm);
