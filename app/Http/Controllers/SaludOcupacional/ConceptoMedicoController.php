@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\ConceptoMedico;
 use App\Models\ConceptoDocumento;
 use App\Models\User;
+use App\Models\Afp;
+use App\Models\Arl;
 use App\Models\Cargo;
+use App\Models\Eps;
 use App\Models\Servicio;
 use App\Models\Vinculacion;
 use Closure;
@@ -60,6 +63,11 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         $cargos    = $this->safeList(fn () => Cargo::orderBy('nombre')->pluck('nombre'));
         $servicios = $this->safeList(fn () => Servicio::orderBy('nombre')->pluck('nombre'));
 
+        // Catálogos de seguridad social administrables desde el paso 3 (botones "+").
+        $eps  = $this->safeList(fn () => Eps::where('activo', true)->orderBy('nombre')->pluck('nombre'));
+        $afps = $this->safeList(fn () => Afp::where('activo', true)->orderBy('nombre')->pluck('nombre'));
+        $arls = $this->safeList(fn () => Arl::where('activo', true)->orderBy('nombre')->pluck('nombre'));
+
         // Las migraciones del módulo deben estar aplicadas. Si faltan, la vista
         // se muestra igualmente con un aviso en vez de arrojar un error 500.
         $migracionesPendientes = !Schema::hasTable('conceptos_medicos')
@@ -79,6 +87,9 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         return view('salud_ocupacional.concepto.index', [
             'cargos'      => $cargos,
             'servicios'   => $servicios,
+            'epsList'     => $eps,
+            'afpList'     => $afps,
+            'arlList'     => $arls,
             'recientes'   => $recientes,
             'empleador'   => self::EMPLEADOR,
             'nit'         => self::NIT,

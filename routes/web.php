@@ -77,6 +77,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{concepto}', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'show'])->name('show');
     });
 
+    // ─── Salud Ocupacional · Catálogos de afiliación (EPS / AFP / ARL) ───
+    // CRUD dinámico consumido por los botones "+" del paso 3 del concepto médico.
+    Route::prefix('salud-ocupacional/entidades')->name('salud.entidades.')->group(function () {
+        Route::get('/{tipo}', [\App\Http\Controllers\SaludOcupacional\EntidadAfiliacionController::class, 'index'])->name('index');
+        Route::post('/{tipo}', [\App\Http\Controllers\SaludOcupacional\EntidadAfiliacionController::class, 'store'])->name('store');
+        Route::put('/{tipo}/{id}', [\App\Http\Controllers\SaludOcupacional\EntidadAfiliacionController::class, 'update'])->name('update');
+        Route::delete('/{tipo}/{id}', [\App\Http\Controllers\SaludOcupacional\EntidadAfiliacionController::class, 'destroy'])->name('destroy');
+    });
+
     // Configuración - rutas placeholder para gestión
     Route::get('/configuracion/usuarios', function () { return view('config.usuarios'); });
     Route::get('/configuracion/vinculaciones', function () { return view('config.vinculaciones'); });

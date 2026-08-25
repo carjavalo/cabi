@@ -124,6 +124,35 @@
     .so-ident-btn{ flex-shrink:0;width:46px;border:1.5px solid var(--so-brand);background:var(--so-bg);color:var(--so-brand);border-radius:10px;
         cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;transition:all .15s; }
     .so-ident-btn:hover{ background:var(--so-brand);color:#fff; }
+
+    /* Botón "+" de catálogos (EPS / AFP / ARL) */
+    .so-cat-btn{ width:24px;height:24px;padding:0;margin-left:6px;vertical-align:middle;
+        border:1.5px solid var(--so-brand);background:var(--so-bg);color:var(--so-brand);border-radius:7px;
+        cursor:pointer;font-size:11px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:all .15s; }
+    .so-cat-btn:hover{ background:var(--so-brand);color:#fff;transform:translateY(-1px); }
+    .so-cat-btn:focus{ outline:2px solid var(--so-brand-l);outline-offset:1px; }
+
+    /* CRUD de catálogos dentro del modal */
+    .so-cat-tools{ display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px; }
+    .so-cat-tools .so-in{ flex:1;min-width:170px; }
+    .so-cat-list{ max-height:46vh;overflow:auto;border:1px solid var(--so-line);border-radius:12px; }
+    .so-cat-row{ display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--so-line);
+        background:#fff;transition:background .12s; }
+    .so-cat-row:last-child{ border-bottom:none; }
+    .so-cat-row:hover{ background:var(--so-soft); }
+    .so-cat-row.off{ opacity:.55; }
+    .so-cat-row .nm{ font-weight:700;font-size:13.5px;color:var(--so-text); }
+    .so-cat-row .mt{ font-size:11.5px;color:var(--so-mut); }
+    .so-cat-row .acts{ margin-left:auto;display:flex;gap:6px;flex-shrink:0; }
+    .so-cat-row .acts button{ width:30px;height:30px;border-radius:8px;border:1px solid var(--so-line2);
+        background:#fff;color:var(--so-mut);cursor:pointer;font-size:12px;transition:all .15s; }
+    .so-cat-row .acts .use:hover{ border-color:var(--so-ok);color:var(--so-ok); }
+    .so-cat-row .acts .ed:hover{ border-color:var(--so-brand);color:var(--so-brand); }
+    .so-cat-row .acts .del:hover{ border-color:var(--so-bad);color:var(--so-bad); }
+    .so-cat-empty{ padding:26px 14px;text-align:center;color:var(--so-mut);font-size:13px; }
+    .so-cat-form{ background:var(--so-soft);border:1px solid var(--so-line);border-radius:12px;padding:14px;margin-bottom:14px; }
+    .so-cat-form .row-f{ display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end; }
+    @media (max-width:720px){ .so-cat-form .row-f{ grid-template-columns:1fr; } }
     .so-pill{ display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;padding:5px 12px;border-radius:99px;margin-top:9px; }
     .so-pill.found{ background:#eaf7f0;color:var(--so-ok); }
     .so-pill.new{ background:#fbf3e4;color:var(--so-warn); }
@@ -386,9 +415,24 @@
                             <div><label class="so-lbl">Servicio</label><input type="text" name="servicio" id="f-servicio" list="dl-serv" class="so-in" placeholder="Área o servicio"></div>
                             <div style="grid-column:1/-1;"><label class="so-lbl">Empleador</label><input type="text" name="empleador" class="so-in ro" value="{{ $empleador }}"></div>
                             <div><label class="so-lbl">NIT</label><input type="text" name="nit" class="so-in ro so-mono" value="{{ $nit }}"></div>
-                            <div><label class="so-lbl">EPS</label><input type="text" name="eps" id="f-eps" list="dl-eps" class="so-in" placeholder="Escribe o selecciona…"></div>
-                            <div><label class="so-lbl">AFP</label><input type="text" name="afp" id="f-afp" list="dl-afp" class="so-in" placeholder="Fondo de pensiones"></div>
-                            <div><label class="so-lbl">ARL</label><input type="text" name="arl" id="f-arl" list="dl-arl" class="so-in" placeholder="Escribe o selecciona…"></div>
+                            <div>
+                                <label class="so-lbl">EPS
+                                    <button type="button" class="so-cat-btn" data-cat="eps" title="Administrar EPS (crear, editar o eliminar)"><i class="fas fa-plus"></i></button>
+                                </label>
+                                <input type="text" name="eps" id="f-eps" list="dl-eps" class="so-in" placeholder="Escribe o selecciona…">
+                            </div>
+                            <div>
+                                <label class="so-lbl">AFP
+                                    <button type="button" class="so-cat-btn" data-cat="afp" title="Administrar AFP (crear, editar o eliminar)"><i class="fas fa-plus"></i></button>
+                                </label>
+                                <input type="text" name="afp" id="f-afp" list="dl-afp" class="so-in" placeholder="Fondo de pensiones">
+                            </div>
+                            <div>
+                                <label class="so-lbl">ARL
+                                    <button type="button" class="so-cat-btn" data-cat="arl" title="Administrar ARL (crear, editar o eliminar)"><i class="fas fa-plus"></i></button>
+                                </label>
+                                <input type="text" name="arl" id="f-arl" list="dl-arl" class="so-in" placeholder="Escribe o selecciona…">
+                            </div>
                         </div>
 
                         <div class="so-sec" style="margin-top:26px;">Documentos de la EPS</div>
@@ -677,9 +721,9 @@
             <div><label class="so-lbl">Profesión</label><input type="text" id="pf-profesion" class="so-in"></div>
             <div><label class="so-lbl">Cargo</label><input type="text" id="pf-cargo" list="dl-cargo" class="so-in"></div>
             <div><label class="so-lbl">Servicio</label><input type="text" id="pf-servicio" list="dl-serv" class="so-in"></div>
-            <div><label class="so-lbl">EPS</label><input type="text" id="pf-eps" list="dl-eps" class="so-in"></div>
-            <div><label class="so-lbl">AFP</label><input type="text" id="pf-afp" list="dl-afp" class="so-in"></div>
-            <div><label class="so-lbl">ARL</label><input type="text" id="pf-arl" list="dl-arl" class="so-in"></div>
+            <div><label class="so-lbl">EPS <button type="button" class="so-cat-btn" data-cat="eps" data-target="pf-eps" title="Administrar EPS"><i class="fas fa-plus"></i></button></label><input type="text" id="pf-eps" list="dl-eps" class="so-in"></div>
+            <div><label class="so-lbl">AFP <button type="button" class="so-cat-btn" data-cat="afp" data-target="pf-afp" title="Administrar AFP"><i class="fas fa-plus"></i></button></label><input type="text" id="pf-afp" list="dl-afp" class="so-in"></div>
+            <div><label class="so-lbl">ARL <button type="button" class="so-cat-btn" data-cat="arl" data-target="pf-arl" title="Administrar ARL"><i class="fas fa-plus"></i></button></label><input type="text" id="pf-arl" list="dl-arl" class="so-in"></div>
           </div>
         </form>
       </div>
@@ -704,6 +748,61 @@
   </div>
 </div>
 
+{{-- CRUD DINÁMICO DE CATÁLOGOS · EPS / AFP / ARL --}}
+<div class="modal fade" id="catalogoModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content" style="border-radius:16px;overflow:hidden;border:none;">
+      <div class="modal-header" style="background:var(--so-brand);color:#fff;border:none;">
+        <h5 class="modal-title" id="catModalTitle"><i class="fas fa-hospital mr-2"></i>Administrar EPS</h5>
+        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body" style="background:#fff;">
+
+        {{-- Formulario: crea una entidad nueva o edita la seleccionada --}}
+        <div class="so-cat-form">
+          <input type="hidden" id="cat-id">
+          <div class="row-f">
+            <div>
+              <label class="so-lbl">Nombre <span class="text-danger">*</span></label>
+              <input type="text" id="cat-nombre" class="so-in" placeholder="Nombre de la entidad" maxlength="150" autocomplete="off">
+            </div>
+            <div>
+              <label class="so-lbl">Código</label>
+              <input type="text" id="cat-codigo" class="so-in" placeholder="Opcional" maxlength="40" autocomplete="off">
+            </div>
+            <div>
+              <label class="so-lbl">NIT</label>
+              <input type="text" id="cat-nit" class="so-in" placeholder="Opcional" maxlength="40" autocomplete="off">
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button type="button" class="so-btn prim" id="cat-save" style="padding:9px 16px;white-space:nowrap;"><i class="fas fa-save"></i> Guardar</button>
+              <button type="button" class="so-btn ghost" id="cat-cancel" style="padding:9px 14px;display:none;">Cancelar</button>
+            </div>
+          </div>
+          <div class="so-note" style="margin-top:10px;">
+            <i class="fas fa-info-circle" style="margin-top:2px;color:var(--so-brand);"></i>
+            <span id="cat-hint">Registra una entidad nueva o usa los botones de cada fila para seleccionarla, editarla o eliminarla.</span>
+          </div>
+        </div>
+
+        {{-- Buscador + listado --}}
+        <div class="so-cat-tools">
+          <input type="text" id="cat-buscar" class="so-in" placeholder="Buscar en el catálogo…" autocomplete="off">
+          <button type="button" class="so-btn ghost" id="cat-reload" style="padding:9px 16px;"><i class="fas fa-sync-alt"></i> Actualizar</button>
+        </div>
+        <div class="so-cat-list" id="cat-list">
+          <div class="so-cat-empty">Cargando…</div>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="border-top:1px solid var(--so-line);">
+        <span class="so-lbl mut" style="margin:0 auto 0 0;" id="cat-count"></span>
+        <button type="button" class="so-btn ghost" data-dismiss="modal" style="padding:9px 18px;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {{-- DATALISTS --}}
 <datalist id="dl-cargo">
     @foreach($cargos as $c)<option value="{{ $c }}"></option>@endforeach
@@ -712,14 +811,15 @@
 <datalist id="dl-serv">
     @foreach($servicios as $s)<option value="{{ $s }}"></option>@endforeach
 </datalist>
+{{-- Catálogos administrables desde los botones "+" del paso 3 --}}
 <datalist id="dl-eps">
-    <option>Nueva EPS</option><option>EPS Sura</option><option>EPS Sanitas</option><option>Salud Total</option><option>Compensar</option><option>Famisanar</option><option>Coosalud</option><option>Emssanar</option><option>Servicio Occidental de Salud (SOS)</option><option>Comfenalco Valle</option><option>Asmet Salud</option>
+    @foreach($epsList as $e)<option value="{{ $e }}"></option>@endforeach
 </datalist>
 <datalist id="dl-afp">
-    <option>Porvenir</option><option>Protección</option><option>Colfondos</option><option>Skandia</option><option>Colpensiones</option>
+    @foreach($afpList as $a)<option value="{{ $a }}"></option>@endforeach
 </datalist>
 <datalist id="dl-arl">
-    <option>ARL Sura</option><option>Positiva</option><option>Colmena Seguros</option><option>Seguros Bolívar</option><option>AXA Colpatria</option><option>La Equidad Seguros</option><option>Mapfre</option>
+    @foreach($arlList as $a)<option value="{{ $a }}"></option>@endforeach
 </datalist>
 @endsection
 
@@ -730,9 +830,10 @@
     'use strict';
     const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const ROUTES = {
-        buscar:  "{{ url('salud-ocupacional/concepto/paciente') }}",
-        store:   "{{ route('salud.concepto.paciente.store') }}",
-        update:  "{{ url('salud-ocupacional/concepto/paciente') }}",
+        buscar:    "{{ url('salud-ocupacional/concepto/paciente') }}",
+        store:     "{{ route('salud.concepto.paciente.store') }}",
+        update:    "{{ url('salud-ocupacional/concepto/paciente') }}",
+        entidades: "{{ url('salud-ocupacional/entidades') }}",
     };
     const TIPOS = @json($tipos);
     const CONCEPTOS = @json($conceptos);
@@ -958,6 +1059,227 @@
         })
         .catch(()=>{ $('#pf-save').disabled=false; Swal.fire({icon:'error',title:'Error',text:'Fallo de conexión.'}); });
     });
+
+    // ─── CRUD dinámico de catálogos: EPS / AFP / ARL ───
+    const CAT_META = {
+        eps: { titulo:'Administrar EPS', icono:'fa-hospital',        singular:'EPS', campo:'f-eps', datalist:'dl-eps' },
+        afp: { titulo:'Administrar AFP', icono:'fa-piggy-bank',      singular:'AFP', campo:'f-afp', datalist:'dl-afp' },
+        arl: { titulo:'Administrar ARL', icono:'fa-helmet-safety',   singular:'ARL', campo:'f-arl', datalist:'dl-arl' },
+    };
+    let catTipo   = 'eps';   // catálogo abierto en el modal
+    let catTarget = 'f-eps'; // input que recibe el valor al seleccionar una fila
+    let catItems  = [];      // último listado cargado
+    let catBusy   = false;
+
+    const catUrl = (tipo, id)=> ROUTES.entidades + '/' + tipo + (id ? '/'+id : '');
+    const esc = (s)=> String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    // Abre el modal desde cualquier botón "+" (paso 3 o modal de paciente)
+    $$('.so-cat-btn').forEach(btn=>{
+        btn.addEventListener('click', (ev)=>{
+            ev.preventDefault();
+            const tipo = btn.dataset.cat;
+            openCatalogo(tipo, btn.dataset.target || CAT_META[tipo].campo);
+        });
+    });
+
+    function openCatalogo(tipo, targetId){
+        if(!CAT_META[tipo]) return;
+        catTipo   = tipo;
+        catTarget = targetId;
+        const meta = CAT_META[tipo];
+        $('#catModalTitle').innerHTML = '<i class="fas '+meta.icono+' mr-2"></i>'+meta.titulo;
+        catResetForm();
+        $('#cat-buscar').value = '';
+        // Precarga el nombre escrito en el campo, para crearlo de una vez
+        const actual = ($('#'+targetId) ? $('#'+targetId).value : '').trim();
+        const yaExiste = ()=> catItems.some(i=> i.nombre.toLowerCase() === actual.toLowerCase());
+        window.jQuery && window.jQuery('#catalogoModal').modal('show');
+        catCargar().then(()=>{
+            if(actual && !yaExiste()){
+                $('#cat-nombre').value = actual;
+                $('#cat-hint').textContent = '"'+actual+'" no está en el catálogo. Presiona Guardar para registrarla.';
+            }
+            $('#cat-nombre').focus();
+        });
+    }
+
+    function catResetForm(){
+        $('#cat-id').value = '';
+        ['cat-nombre','cat-codigo','cat-nit'].forEach(id=> $('#'+id).value = '');
+        $('#cat-save').innerHTML = '<i class="fas fa-save"></i> Guardar';
+        $('#cat-cancel').style.display = 'none';
+        $('#cat-hint').textContent = 'Registra una entidad nueva o usa los botones de cada fila para seleccionarla, editarla o eliminarla.';
+    }
+
+    function catCargar(){
+        const q = $('#cat-buscar').value.trim();
+        $('#cat-list').innerHTML = '<div class="so-cat-empty"><i class="fas fa-spinner fa-spin"></i> Cargando…</div>';
+        return fetch(catUrl(catTipo) + (q ? '?q='+encodeURIComponent(q) : ''), {
+                headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}
+            })
+            .then(r=> r.json())
+            .then(j=>{
+                catItems = j.items || [];
+                catRender(j.ok === false ? (j.message || 'No se pudo cargar el catálogo.') : null);
+            })
+            .catch(()=>{ catItems = []; catRender('Fallo de conexión al cargar el catálogo.'); });
+    }
+
+    function catRender(errorMsg){
+        const box = $('#cat-list');
+        if(errorMsg){
+            box.innerHTML = '<div class="so-cat-empty"><i class="fas fa-triangle-exclamation" style="color:var(--so-warn)"></i> '+esc(errorMsg)+'</div>';
+            $('#cat-count').textContent = '';
+            return;
+        }
+        if(!catItems.length){
+            box.innerHTML = '<div class="so-cat-empty">No hay entidades registradas'
+                + ($('#cat-buscar').value.trim() ? ' que coincidan con la búsqueda' : '')
+                + '. Usa el formulario de arriba para crear la primera.</div>';
+            $('#cat-count').textContent = '';
+            return;
+        }
+        box.innerHTML = catItems.map((e,i)=>{
+            const meta = [e.codigo ? 'Código: '+esc(e.codigo) : '', e.nit ? 'NIT: '+esc(e.nit) : '', e.activo ? '' : 'Inactiva']
+                .filter(Boolean).join(' · ');
+            return '<div class="so-cat-row'+(e.activo?'':' off')+'">'
+                + '<div style="min-width:0;"><div class="nm">'+esc(e.nombre)+'</div>'
+                + (meta ? '<div class="mt">'+meta+'</div>' : '')
+                + '</div>'
+                + '<div class="acts">'
+                +   '<button type="button" class="use" data-i="'+i+'" title="Usar en el formulario"><i class="fas fa-check"></i></button>'
+                +   '<button type="button" class="ed"  data-i="'+i+'" title="Editar"><i class="fas fa-pen"></i></button>'
+                +   '<button type="button" class="del" data-i="'+i+'" title="Eliminar"><i class="fas fa-trash"></i></button>'
+                + '</div></div>';
+        }).join('');
+
+        $$('.so-cat-row .use', box).forEach(b=> b.addEventListener('click', ()=> catUsar(catItems[+b.dataset.i])));
+        $$('.so-cat-row .ed',  box).forEach(b=> b.addEventListener('click', ()=> catEditar(catItems[+b.dataset.i])));
+        $$('.so-cat-row .del', box).forEach(b=> b.addEventListener('click', ()=> catEliminar(catItems[+b.dataset.i])));
+
+        $('#cat-count').textContent = catItems.length + ' entidad(es) en el catálogo de ' + CAT_META[catTipo].singular;
+    }
+
+    /** Coloca la entidad en el input que originó la apertura del modal y cierra. */
+    function catUsar(e){
+        if(!e) return;
+        const el = $('#'+catTarget);
+        if(el){
+            el.value = e.nombre;
+            el.dispatchEvent(new Event('change', {bubbles:true}));
+        }
+        window.jQuery && window.jQuery('#catalogoModal').modal('hide');
+    }
+
+    function catEditar(e){
+        if(!e) return;
+        $('#cat-id').value     = e.id;
+        $('#cat-nombre').value = e.nombre || '';
+        $('#cat-codigo').value = e.codigo || '';
+        $('#cat-nit').value    = e.nit || '';
+        $('#cat-save').innerHTML = '<i class="fas fa-save"></i> Actualizar';
+        $('#cat-cancel').style.display = 'inline-flex';
+        $('#cat-hint').textContent = 'Editando "'+e.nombre+'". Guarda los cambios o cancela para volver a crear.';
+        $('#cat-nombre').focus();
+    }
+
+    function catEliminar(e){
+        if(!e) return;
+        Swal.fire({
+            icon:'warning',
+            title:'¿Eliminar del catálogo?',
+            html:'Se eliminará <strong>'+esc(e.nombre)+'</strong> del catálogo de '+CAT_META[catTipo].singular+'.',
+            showCancelButton:true, confirmButtonText:'Sí, eliminar', cancelButtonText:'Cancelar',
+            confirmButtonColor:'#c4453b',
+        }).then(res=>{
+            if(!res.isConfirmed) return;
+            fetch(catUrl(catTipo, e.id), {
+                method:'DELETE',
+                headers:{'Accept':'application/json','X-CSRF-TOKEN':CSRF,'X-Requested-With':'XMLHttpRequest'}
+            })
+            .then(async r=>({ok:r.ok, j: await r.json().catch(()=>({}))}))
+            .then(({ok,j})=>{
+                if(ok && j.ok){
+                    catSyncDatalist(e.nombre, null);
+                    catCargar();
+                    Swal.fire({icon:'success',title:'Eliminada',text:j.message,timer:1700,showConfirmButton:false});
+                } else {
+                    Swal.fire({icon: j.en_uso?'info':'error', title: j.en_uso?'Entidad en uso':'Error', text: j.message || 'No se pudo eliminar.'});
+                }
+            })
+            .catch(()=> Swal.fire({icon:'error',title:'Error',text:'Fallo de conexión.'}));
+        });
+    }
+
+    $('#cat-save').addEventListener('click', ()=>{
+        if(catBusy) return;
+        const nombre = $('#cat-nombre').value.trim();
+        if(!nombre){
+            Swal.fire({icon:'warning',title:'Nombre requerido',text:'Escribe el nombre de la entidad.'});
+            return;
+        }
+        const id     = $('#cat-id').value;
+        const url    = catUrl(catTipo, id || null);
+        const method = id ? 'PUT' : 'POST';
+
+        catBusy = true;
+        $('#cat-save').disabled = true;
+        fetch(url, {
+            method,
+            headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':CSRF,'X-Requested-With':'XMLHttpRequest'},
+            body: JSON.stringify({ nombre, codigo:$('#cat-codigo').value.trim(), nit:$('#cat-nit').value.trim() })
+        })
+        .then(async r=>({ok:r.ok, j: await r.json().catch(()=>({}))}))
+        .then(({ok,j})=>{
+            catBusy = false;
+            $('#cat-save').disabled = false;
+            if(ok && j.ok){
+                catSyncDatalist(j.anterior || null, j.item.nombre);
+                // Al renombrar, se actualizan los campos que tuvieran el valor anterior
+                if(j.anterior && j.anterior !== j.item.nombre) catSyncCampos(j.anterior, j.item.nombre);
+                const eraNuevo = !id;
+                catResetForm();
+                catCargar().then(()=>{ if(eraNuevo) catUsar(j.item); });
+                Swal.fire({icon:'success',title:'Listo',text:j.message,timer:1600,showConfirmButton:false});
+            } else {
+                const msg = j.message || (j.errors ? Object.values(j.errors).flat().join(' · ') : 'No se pudo guardar.');
+                Swal.fire({icon:'error',title:'Error',text:msg});
+            }
+        })
+        .catch(()=>{ catBusy=false; $('#cat-save').disabled=false; Swal.fire({icon:'error',title:'Error',text:'Fallo de conexión.'}); });
+    });
+
+    $('#cat-cancel').addEventListener('click', catResetForm);
+    $('#cat-reload').addEventListener('click', ()=> catCargar());
+    let catBuscarT = null;
+    $('#cat-buscar').addEventListener('input', ()=>{
+        clearTimeout(catBuscarT);
+        catBuscarT = setTimeout(catCargar, 300);
+    });
+    $('#cat-nombre').addEventListener('keydown', (ev)=>{ if(ev.key==='Enter'){ ev.preventDefault(); $('#cat-save').click(); } });
+
+    /** Mantiene el <datalist> del catálogo al día sin recargar la página. */
+    function catSyncDatalist(quitar, agregar){
+        const dl = $('#'+CAT_META[catTipo].datalist);
+        if(!dl) return;
+        if(quitar){
+            $$('option', dl).forEach(o=>{ if(o.value === quitar) o.remove(); });
+        }
+        if(agregar && !$$('option', dl).some(o=> o.value === agregar)){
+            const opt = document.createElement('option');
+            opt.value = agregar;
+            dl.appendChild(opt);
+        }
+    }
+
+    /** Propaga un renombramiento a los inputs del formulario y del modal de paciente. */
+    function catSyncCampos(anterior, nuevo){
+        ['f-'+catTipo, 'pf-'+catTipo].forEach(id=>{
+            const el = $('#'+id);
+            if(el && el.value === anterior) el.value = nuevo;
+        });
+    }
 
     // ─── Adjuntos ───
     $('#so-attach-btn').addEventListener('click', ()=> $('#f-docs').click());
