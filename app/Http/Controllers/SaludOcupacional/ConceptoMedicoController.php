@@ -125,6 +125,8 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         $out['php']       = PHP_VERSION;
         $out['app_env']   = config('app.env');
         $out['app_debug'] = config('app.debug');
+        $out['upload_max_filesize'] = ini_get('upload_max_filesize') . ' (se requieren 30M o más)';
+        $out['post_max_size']       = ini_get('post_max_size');
 
         try {
             DB::connection()->getPdo();
@@ -219,6 +221,8 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
                 'message'  => 'El trabajador ' . trim($user->name . ' ' . ($user->apellido1 ?? ''))
                     . ' tiene vinculación "' . ($user->tipo_vinculacion ?: 'sin definir')
                     . '". Solo se atienden trabajadores de vinculación ' . self::VINCULACION_ATENDIBLE . '.',
+                // Se envían los datos para poder editarlos desde el botón +
+                'paciente' => $this->pacientePayload($user),
             ]);
         }
 
@@ -316,7 +320,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
     {
         $data = $this->validatePaciente($request, $user->id);
 
-        $user->fill($this->buildPacientePayload($data));
+        $user->fill($this->buildPacientePayload($data, false));
         $user->save();
 
         return response()->json([
@@ -339,7 +343,10 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'enfasis.*'          => ['string', Rule::in(array_keys(ConceptoMedico::ENFASIS))],
             'lugar_atencion'     => ['nullable', 'string', 'max:150'],
             'concepto_resultado' => ['nullable', 'string', 'max:40'],
-            'documentos.*'       => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,gif,webp', 'max:2048'],
+            'documentos.*'       => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,gif,webp', 'max:30720'],
+        ], [
+            'documentos.*.max'   => 'Cada documento adjunto puede pesar máximo 30 MB.',
+            'documentos.*.mimes' => 'Los documentos adjuntos deben ser PDF o imágenes.',
         ]);
 
         $user = !empty($validated['user_id']) ? User::find($validated['user_id']) : null;
@@ -373,6 +380,20 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         // Datos laborales / afiliación (por visita)
         foreach (['cargo_inicio', 'servicio', 'empleador', 'nit', 'eps', 'afp', 'arl'] as $campo) {
             $concepto->{$campo} = $request->input($campo);
+        }
+
+        // Lo diligenciado en el paso 3 actualiza los datos del trabajador, para
+        // que en la próxima atención lleguen automáticamente.
+        // columna en users => [campo del formulario, longitud máxima de la columna]
+        $laborales = ['cargo' => ['cargo_inicio', 100], 'servicio' => ['servicio', 255], 'eps' => ['eps', 120], 'afp' => ['afp', 120], 'arl' => ['arl', 120]];
+        foreach ($laborales as $colUser => [$campo, $max]) {
+            $valor = trim((string) $request->input($campo));
+            if ($valor !== '' && Schema::hasColumn('users', $colUser)) {
+                $user->{$colUser} = mb_substr($valor, 0, $max);
+            }
+        }
+        if ($user->isDirty()) {
+            $user->save();
         }
 
         // Campos de texto simples de la historia clínica
@@ -469,7 +490,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         ]);
     }
 
-    private function buildPacientePayload(array $data): array
+    private function buildPacientePayload(array $data, bool $nuevo = true): array
     {
         $payload = [
             'name'            => $data['name'],
@@ -489,11 +510,14 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'servicio'        => $data['servicio'] ?? null,
         ];
 
-        // Los pacientes atendidos en este módulo son, por regla de negocio,
-        // trabajadores de vinculación "Planta". Se fija explícitamente.
-        $payload['tipo_vinculacion'] = self::VINCULACION_ATENDIBLE;
-        if ($this->plantaId() !== null) {
-            $payload['tipo_vinculacion_id'] = $this->plantaId();
+        // Los pacientes creados en este módulo son, por regla de negocio,
+        // trabajadores de vinculación "Planta". Al editar se conserva la vinculación
+        // que ya tenga el usuario en el directorio.
+        if ($nuevo) {
+            $payload['tipo_vinculacion'] = self::VINCULACION_ATENDIBLE;
+            if ($this->plantaId() !== null) {
+                $payload['tipo_vinculacion_id'] = $this->plantaId();
+            }
         }
 
         // Columnas nuevas (defensivo por si la migración aún no corrió)

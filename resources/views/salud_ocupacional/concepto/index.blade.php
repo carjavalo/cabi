@@ -445,7 +445,7 @@
                     <section class="so-panel so-step" data-step="2" style="display:none;">
                         <div class="so-eyebrow">Paso 3 de 7</div>
                         <h2>Datos laborales y de afiliación</h2>
-                        <p class="sub">Cargo, empleador y seguridad social vigentes en esta atención.</p>
+                        <p class="sub">Cargo, empleador y seguridad social vigentes en esta atención. Se cargan del paciente seleccionado y puedes modificarlos; los cambios se guardan en sus datos.</p>
 
                         <div class="so-grid" style="margin-top:20px;">
                             <div><label class="so-lbl">Cargo</label><input type="text" name="cargo_inicio" id="f-cargo" list="dl-cargo" class="so-in" placeholder="Escribe o selecciona…"></div>
@@ -473,7 +473,7 @@
                         </div>
 
                         <div class="so-sec" style="margin-top:26px;">Documentos de la EPS</div>
-                        <p class="sub" style="margin-bottom:12px;">Adjunta exámenes, órdenes o incapacidades. Solo <strong style="color:var(--so-brand)">PDF o imágenes</strong>, hasta <strong style="color:var(--so-brand)">2 MB</strong> por archivo.</p>
+                        <p class="sub" style="margin-bottom:12px;">Adjunta exámenes, órdenes o incapacidades. Solo <strong style="color:var(--so-brand)">PDF o imágenes</strong>, hasta <strong style="color:var(--so-brand)">30 MB</strong> por archivo.</p>
                         <input type="file" id="f-docs" name="documentos[]" multiple accept="image/*,application/pdf" style="display:none;">
                         <button type="button" class="so-attach" id="so-attach-btn"><i class="fas fa-paperclip"></i> Adjuntar documentos</button>
                         <div id="so-doc-list" style="margin-top:12px;"></div>
@@ -952,9 +952,11 @@
     let searchTimer = null;
     const sugBox = $('#so-sug');
     let sugItems = [], sugIdx = -1, sugSeq = 0;
+    let foundPatient = null;   // último usuario encontrado (sea o no de Planta), para editarlo con +
+    const LABORALES = [['f-cargo','cargo'],['f-servicio','servicio'],['f-eps','eps'],['f-afp','afp'],['f-arl','arl']];
     identInput.addEventListener('input', ()=>{
         clearTimeout(searchTimer);
-        currentPatient = null; $('#f-user_id').value=''; clearPatientFields();
+        currentPatient = null; foundPatient = null; $('#f-user_id').value=''; clearPatientFields();
         setPill('idle','Escribe la cédula o el nombre para buscar');
         const v = identInput.value.trim();
         if(v.length >= 3){ searchTimer = setTimeout(()=>sugerirPacientes(v), 350); }
@@ -1026,17 +1028,19 @@
             .then(r=>r.json())
             .then(res=>{
                 if(res.found && res.elegible){
-                    currentPatient = res.paciente;
+                    currentPatient = foundPatient = res.paciente;
                     fillPatientFields(res.paciente);
                     setPill('found','Paciente encontrado: '+res.paciente.nombre_completo);
                     renderHistorial(res.historial||[]);
                 } else if(res.found && !res.elegible){
-                    // Existe pero su vinculación NO es Planta → no puede ser atendido
+                    // Existe pero su vinculación NO es Planta → no puede ser atendido (sí editado)
                     currentPatient = null; $('#f-user_id').value=''; clearPatientFields();
+                    foundPatient = res.paciente || null;
                     setPill('bad', res.message || 'El trabajador no es de vinculación Planta y no puede ser atendido.');
+                    if(foundPatient) $('#so-ident-icon').className = 'fas fa-user-edit';
                     $('#so-hist-card').style.display='none';
                 } else {
-                    currentPatient = null; $('#f-user_id').value=''; clearPatientFields();
+                    currentPatient = null; foundPatient = null; $('#f-user_id').value=''; clearPatientFields();
                     setPill('new','No existe. Usa el botón + para crearlo');
                     $('#so-hist-card').style.display='none';
                 }
@@ -1065,17 +1069,14 @@
         $('#p-hijos').value = (p.numero_hijos!=null?p.numero_hijos:'');
         $('#p-escolaridad').value = p.escolaridad || '';
         $('#p-profesion').value = p.profesion || '';
-        // Prefill laborales (paso 3)
-        if(p.cargo) $('#f-cargo').value = p.cargo;
-        if(p.servicio) $('#f-servicio').value = p.servicio;
-        if(p.eps) $('#f-eps').value = p.eps;
-        if(p.afp) $('#f-afp').value = p.afp;
-        if(p.arl) $('#f-arl').value = p.arl;
+        // Paso 3: datos laborales y de afiliación del paciente (editables)
+        LABORALES.forEach(([id,k])=>{ $('#'+id).value = p[k] || ''; });
         renderPatientCard(p);
         updateProgress();
     }
     function clearPatientFields(){
         renderPatientCard(null);
+        LABORALES.forEach(([id])=>{ $('#'+id).value = ''; });
         ['p-nombre','p-vinculacion','p-edad','p-genero','p-genero-txt','p-grupo','p-fnac','p-lugarnac','p-contacto','p-correo','p-direccion','p-estrato','p-vivienda','p-escivil','p-hijos','p-escolaridad','p-profesion','f-paciente_nombre'].forEach(id=>{ const el=$('#'+id); if(el) el.value=''; });
     }
 
@@ -1115,16 +1116,43 @@
     // ─── Modal paciente (crear / editar) ───
     const PF = ['name','apellido1','apellido2','tipo_identificacion','identificacion','genero','edad','fnacimiento','grupo_sanguineo','lugar_nacimiento','contacto','email','direccionr','estracto','tvivienda','escivil','numero_hijos','escolaridad','profesion','cargo','servicio','eps','afp','arl'];
 
-    $('#so-ident-action').addEventListener('click', ()=>{
-        if(currentPatient){ openPatientModal('edit', currentPatient); }
-        else {
-            // Si lo digitado es un nombre, se precarga como nombre; si es número, como identificación
-            const v = identInput.value.trim();
-            const esNumero = /^[\d.\s-]+$/.test(v);
-            openPatientModal('create', esNumero
-                ? { identificacion: v.replace(/\D/g,''), tipo_identificacion: $('#p-tipo-ident').value }
-                : { name: v, tipo_identificacion: $('#p-tipo-ident').value });
-        }
+    // Botón +: si la cédula o el nombre digitado ya existe, abre la edición con
+    // sus datos; si no existe, abre la creación con lo digitado precargado.
+    $('#so-ident-action').addEventListener('click', async ()=>{
+        if(currentPatient || foundPatient){ openPatientModal('edit', currentPatient || foundPatient); return; }
+
+        const v = identInput.value.trim();
+        const esNumero = /^[\d.\s-]+$/.test(v);
+        const crear = ()=> openPatientModal('create', esNumero
+            ? { identificacion: v.replace(/\D/g,''), tipo_identificacion: $('#p-tipo-ident').value }
+            : { name: v, tipo_identificacion: $('#p-tipo-ident').value });
+        if(v.length < 3){ crear(); return; }
+
+        const btn = $('#so-ident-action'); btn.disabled = true;
+        try {
+            const sug = await fetch(ROUTES.sugerir+'?q='+encodeURIComponent(v), {headers:{'Accept':'application/json'}}).then(r=>r.json());
+            const items = sug.items || [];
+            const digits = v.replace(/\D/g,'');
+            const match = (esNumero && items.find(i=>i.identificacion===digits)) || (!esNumero && items.length===1 ? items[0] : null);
+
+            if(match){
+                const res = await fetch(ROUTES.buscar+'/'+encodeURIComponent(match.identificacion), {headers:{'Accept':'application/json'}}).then(r=>r.json());
+                if(res.found && res.paciente){
+                    identInput.value = match.identificacion;
+                    buscarPaciente(match.identificacion);
+                    openPatientModal('edit', res.paciente);
+                    return;
+                }
+            }
+            if(!esNumero && items.length > 1){
+                sugerirPacientes(v);   // muestra la lista para elegir
+                Swal.fire({icon:'info',title:'Varios pacientes',text:'Hay '+items.length+' coincidencias. Selecciona el paciente de la lista y luego presiona + para editarlo.'});
+                return;
+            }
+            crear();
+        } catch(_) {
+            Swal.fire({icon:'error',title:'Error',text:'No se pudo consultar el paciente. Intenta de nuevo.'});
+        } finally { btn.disabled = false; }
     });
 
     function openPatientModal(mode, data){
@@ -1189,7 +1217,6 @@
     let catBusy   = false;
 
     const catUrl = (tipo, id)=> ROUTES.entidades + '/' + tipo + (id ? '/'+id : '');
-    const esc = (s)=> String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
     /**
      * Lee la respuesta sin asumir que es JSON: ante un 500 el servidor puede
@@ -1456,11 +1483,21 @@
     $('#so-attach-btn').addEventListener('click', ()=> $('#f-docs').click());
     $('#f-docs').addEventListener('change', ()=>{
         const list = $('#f-docs').files;
+        const MAX_DOC = 30 * 1024 * 1024;   // 30 MB por archivo
+        const grandes = [];
         attachedFiles = [];
         for(const f of list){
+            if(f.size > MAX_DOC){ grandes.push(f.name+' ('+fmtSize(f.size)+')'); continue; }
             const isImg = f.type.startsWith('image/');
             const isPdf = f.type==='application/pdf';
             attachedFiles.push({file:f, url:URL.createObjectURL(f), isImg, isPdf, name:f.name, size:f.size});
+        }
+        if(grandes.length){
+            // Deja en el input solo los archivos permitidos
+            const dt = new DataTransfer();
+            attachedFiles.forEach(a=> dt.items.add(a.file));
+            $('#f-docs').files = dt.files;
+            Swal.fire({icon:'warning',title:'Archivo muy pesado',html:'Superan el máximo de 30 MB y no se adjuntaron:<br><b>'+grandes.map(esc).join('<br>')+'</b>'});
         }
         renderDocs();
     });
