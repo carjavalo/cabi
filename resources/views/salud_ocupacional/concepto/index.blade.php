@@ -121,6 +121,16 @@
     /* Identificación box + symbol */
     .so-ident{ display:flex;gap:8px;align-items:stretch; }
     .so-ident .so-in{ flex:1; }
+    .so-ident .so-ident-tipo{ flex:0 0 120px; }
+    .so-sug-wrap{ flex:1;position:relative;display:flex; }
+    .so-sug{ position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:30;background:#fff;border:1.5px solid var(--so-line);border-radius:10px;box-shadow:0 10px 24px rgba(20,25,60,.12);max-height:280px;overflow:auto; }
+    .so-sug button{ display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;padding:9px 12px;border:0;background:none;cursor:pointer;font-size:13.5px; }
+    .so-sug button:hover, .so-sug button.act{ background:var(--so-bg); }
+    .so-sug .n{ font-weight:600;color:var(--so-brand); }
+    .so-sug .m{ font-size:12px;opacity:.7;white-space:nowrap; }
+    .so-sug .x{ color:#b42318; }
+    .so-sug .empty{ padding:10px 12px;font-size:13px;opacity:.7; }
+    @media (max-width:560px){ .so-ident{ flex-wrap:wrap; } .so-ident .so-ident-tipo{ flex:1 0 100%; } }
     .so-ident-btn{ flex-shrink:0;width:46px;border:1.5px solid var(--so-brand);background:var(--so-bg);color:var(--so-brand);border-radius:10px;
         cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;transition:all .15s; }
     .so-ident-btn:hover{ background:var(--so-brand);color:#fff; }
@@ -389,7 +399,7 @@
                     <section class="so-panel so-step" data-step="1" style="display:none;">
                         <div class="so-eyebrow">Paso 2 de 7</div>
                         <h2>Identificación del paciente</h2>
-                        <p class="sub">Digita la identificación para traer los datos del paciente. Usa el botón para crear o editar.</p>
+                        <p class="sub">Digita la cédula o el nombre para traer los datos del paciente. Usa el botón para crear o editar.</p>
 
                         <div class="so-grid" style="margin-top:20px;">
                             <div style="grid-column:1/-1;">
@@ -399,10 +409,16 @@
                                     </button>
                                 </label>
                                 <div class="so-ident">
-                                    <input type="text" id="f-identificacion" name="identificacion" class="so-in" placeholder="C.C. 00.000.000" autocomplete="off">
+                                    <select id="p-tipo-ident" class="so-in so-ident-tipo" title="Tipo de identificación">
+                                        @foreach($tiposIdentificacion as $k => $t)<option value="{{ $k }}">{{ $t }}</option>@endforeach
+                                    </select>
+                                    <div class="so-sug-wrap">
+                                        <input type="text" id="f-identificacion" name="identificacion" class="so-in" placeholder="N.º de cédula o nombre del paciente" autocomplete="off">
+                                        <div id="so-sug" class="so-sug" style="display:none;"></div>
+                                    </div>
                                     <button type="button" class="so-ident-btn" id="so-ident-search" title="Buscar paciente"><i class="fas fa-search"></i></button>
                                 </div>
-                                <div id="so-ident-pill" class="so-pill idle"><i class="fas fa-circle" style="font-size:7px;"></i> Escribe una identificación para buscar</div>
+                                <div id="so-ident-pill" class="so-pill idle"><i class="fas fa-circle" style="font-size:7px;"></i> Escribe la cédula o el nombre para buscar</div>
                                 <div class="so-note"><i class="fas fa-info-circle" style="margin-top:2px;color:var(--so-brand);"></i> Solo se atienden trabajadores de vinculación <strong style="color:var(--so-brand)">Planta</strong>.</div>
                             </div>
 
@@ -713,6 +729,9 @@
             <div><label class="so-lbl">Nombres <span class="text-danger">*</span></label><input type="text" id="pf-name" class="so-in" required></div>
             <div><label class="so-lbl">Primer apellido</label><input type="text" id="pf-apellido1" class="so-in"></div>
             <div><label class="so-lbl">Segundo apellido</label><input type="text" id="pf-apellido2" class="so-in"></div>
+            <div><label class="so-lbl">Tipo de identificación</label>
+                <select id="pf-tipo_identificacion" class="so-in">@foreach($tiposIdentificacion as $k => $t)<option value="{{ $k }}">{{ $t }}</option>@endforeach</select>
+            </div>
             <div><label class="so-lbl">N.º identificación <span class="text-danger">*</span></label><input type="text" id="pf-identificacion" class="so-in" required></div>
             <div><label class="so-lbl">Género</label>
                 <select id="pf-genero" class="so-in"><option value="">—</option><option value="F">Femenino</option><option value="M">Masculino</option><option value="O">Otro</option></select>
@@ -857,6 +876,7 @@
     const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const ROUTES = {
         buscar:    "{{ url('salud-ocupacional/concepto/paciente') }}",
+        sugerir:   "{{ route('salud.concepto.pacientes.sugerir') }}",
         store:     "{{ route('salud.concepto.paciente.store') }}",
         update:    "{{ url('salud-ocupacional/concepto/paciente') }}",
         entidades: "{{ url('salud-ocupacional/entidades') }}",
@@ -930,14 +950,63 @@
     // ─── Paso 2: búsqueda / auto-completado ───
     const identInput = $('#f-identificacion');
     let searchTimer = null;
+    const sugBox = $('#so-sug');
+    let sugItems = [], sugIdx = -1, sugSeq = 0;
     identInput.addEventListener('input', ()=>{
         clearTimeout(searchTimer);
         currentPatient = null; $('#f-user_id').value=''; clearPatientFields();
-        setPill('idle','Escribe una identificación para buscar');
+        setPill('idle','Escribe la cédula o el nombre para buscar');
         const v = identInput.value.trim();
-        if(v.length >= 4){ searchTimer = setTimeout(()=>buscarPaciente(v), 450); }
+        if(v.length >= 3){ searchTimer = setTimeout(()=>sugerirPacientes(v), 350); }
+        else hideSug();
     });
-    $('#so-ident-search').addEventListener('click', ()=>{ const v=identInput.value.trim(); if(v) buscarPaciente(v); });
+    identInput.addEventListener('keydown', e=>{
+        const open = sugBox.style.display !== 'none' && sugItems.length;
+        if(e.key==='ArrowDown' && open){ e.preventDefault(); markSug(Math.min(sugIdx+1, sugItems.length-1)); }
+        else if(e.key==='ArrowUp' && open){ e.preventDefault(); markSug(Math.max(sugIdx-1, 0)); }
+        else if(e.key==='Escape'){ hideSug(); }
+        else if(e.key==='Enter'){
+            e.preventDefault();
+            if(open && sugIdx>=0) pickSug(sugItems[sugIdx]);
+            else { const v=identInput.value.trim(); if(v) sugerirPacientes(v); }
+        }
+    });
+    document.addEventListener('click', e=>{ if(!e.target.closest('.so-sug-wrap')) hideSug(); });
+    $('#so-ident-search').addEventListener('click', ()=>{ const v=identInput.value.trim(); if(v) sugerirPacientes(v); });
+
+    function hideSug(){ sugBox.style.display='none'; sugIdx=-1; }
+    function markSug(i){ sugIdx=i; sugBox.querySelectorAll('button').forEach((b,k)=>b.classList.toggle('act', k===i)); }
+    function pickSug(item){
+        hideSug();
+        identInput.value = item.identificacion;
+        buscarPaciente(item.identificacion);
+    }
+    function sugerirPacientes(q){
+        const seq = ++sugSeq;
+        setPill('idle','Buscando…');
+        fetch(ROUTES.sugerir+'?q='+encodeURIComponent(q), {headers:{'Accept':'application/json'}})
+            .then(r=>r.json())
+            .then(res=>{
+                if(seq !== sugSeq) return;   // respuesta de una búsqueda anterior
+                sugItems = res.items || [];
+                const digits = q.replace(/\D/g,'');
+                const exacta = /^[\d.\s-]+$/.test(q) && sugItems.find(i=>i.identificacion===digits);
+                if(exacta){ pickSug(exacta); return; }
+                if(sugItems.length===1){ pickSug(sugItems[0]); return; }
+                if(!sugItems.length){
+                    sugBox.innerHTML = '<div class="empty">Sin coincidencias. Usa el botón + para crear el paciente.</div>';
+                    sugBox.style.display='block';
+                    setPill('new','No existe. Usa el botón + para crearlo');
+                    return;
+                }
+                sugBox.innerHTML = sugItems.map((i,k)=>`<button type="button" data-k="${k}"><span class="n">${esc(i.nombre_completo)}</span><span class="m">${esc(i.identificacion)} · <span class="${i.elegible?'':'x'}">${esc(i.vinculacion||'Sin vinculación')}</span></span></button>`).join('');
+                sugBox.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>pickSug(sugItems[+b.dataset.k])));
+                sugBox.style.display='block'; sugIdx=-1;
+                setPill('idle', sugItems.length+' coincidencias. Selecciona el paciente');
+            })
+            .catch(()=> setPill('new','No se pudo consultar. Intenta de nuevo'));
+    }
+    function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
     function setPill(kind, text){
         const el = $('#so-ident-pill');
@@ -979,6 +1048,7 @@
         $('#f-user_id').value = p.id || '';
         $('#f-paciente_nombre').value = p.nombre_completo || '';
         $('#p-nombre').value = p.nombre_completo || '';
+        $('#p-tipo-ident').value = p.tipo_identificacion || 'CC';
         $('#p-vinculacion').value = p.vinculacion || 'Planta';
         $('#p-edad').value = p.edad || '';
         $('#p-genero').value = p.genero || '';
@@ -1043,16 +1113,24 @@
     }
 
     // ─── Modal paciente (crear / editar) ───
-    const PF = ['name','apellido1','apellido2','identificacion','genero','edad','fnacimiento','grupo_sanguineo','lugar_nacimiento','contacto','email','direccionr','estracto','tvivienda','escivil','numero_hijos','escolaridad','profesion','cargo','servicio','eps','afp','arl'];
+    const PF = ['name','apellido1','apellido2','tipo_identificacion','identificacion','genero','edad','fnacimiento','grupo_sanguineo','lugar_nacimiento','contacto','email','direccionr','estracto','tvivienda','escivil','numero_hijos','escolaridad','profesion','cargo','servicio','eps','afp','arl'];
 
     $('#so-ident-action').addEventListener('click', ()=>{
         if(currentPatient){ openPatientModal('edit', currentPatient); }
-        else { openPatientModal('create', { identificacion: identInput.value.trim() }); }
+        else {
+            // Si lo digitado es un nombre, se precarga como nombre; si es número, como identificación
+            const v = identInput.value.trim();
+            const esNumero = /^[\d.\s-]+$/.test(v);
+            openPatientModal('create', esNumero
+                ? { identificacion: v.replace(/\D/g,''), tipo_identificacion: $('#p-tipo-ident').value }
+                : { name: v, tipo_identificacion: $('#p-tipo-ident').value });
+        }
     });
 
     function openPatientModal(mode, data){
         $('#pf-id').value = (mode==='edit' && data) ? (data.id||'') : '';
         PF.forEach(k=>{ const el=$('#pf-'+k); if(el) el.value = (data && data[k]!=null) ? data[k] : ''; });
+        if(!$('#pf-tipo_identificacion').value) $('#pf-tipo_identificacion').value = 'CC';
         $('#pacienteModalTitle').innerHTML = (mode==='edit')
             ? '<i class="fas fa-user-edit mr-2"></i>Editar paciente'
             : '<i class="fas fa-user-plus mr-2"></i>Crear paciente';

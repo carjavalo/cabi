@@ -32,6 +32,15 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
     /** Solo los trabajadores con esta vinculación pueden ser atendidos como pacientes. */
     private const VINCULACION_ATENDIBLE = 'Planta';
 
+    /** Tipos de documento de identificación del paciente. */
+    public const TIPOS_IDENTIFICACION = [
+        'CC'  => 'C.C.',
+        'CE'  => 'C.E.',
+        'TI'  => 'T.I.',
+        'PA'  => 'Pasaporte',
+        'PPT' => 'P.P.T.',
+    ];
+
     /** Cache del id de la vinculación "Planta" (columna tipo_vinculacion_id). */
     private ?int $plantaId = null;
     private bool $plantaIdResolved = false;
@@ -72,7 +81,9 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         // Las migraciones del módulo deben estar aplicadas. Si faltan, la vista
         // se muestra igualmente con un aviso en vez de arrojar un error 500.
         $migracionesPendientes = !Schema::hasTable('conceptos_medicos')
-            || !Schema::hasColumn('users', 'eps');
+            || !Schema::hasColumn('users', 'eps')
+            || !Schema::hasColumn('users', 'tipo_identificacion')
+            || !Schema::hasColumn('conceptos_medicos', 'enfasis');
 
         $recientes = $this->safeList(fn () => ConceptoMedico::with('user')
             ->orderByDesc('created_at')
@@ -96,6 +107,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'nit'         => self::NIT,
             'medicoNombre'=> $medico !== '' ? $medico : (Auth::user()->name ?? ''),
             'tipos'       => ConceptoMedico::TIPOS,
+            'tiposIdentificacion' => self::TIPOS_IDENTIFICACION,
             'enfasis'     => ConceptoMedico::ENFASIS,
             'conceptos'   => ConceptoMedico::CONCEPTOS,
             'migracionesPendientes' => $migracionesPendientes,
@@ -123,7 +135,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
 
         $out['tabla_conceptos_medicos']   = Schema::hasTable('conceptos_medicos') ? 'existe' : 'FALTA';
         $out['tabla_concepto_documentos'] = Schema::hasTable('concepto_documentos') ? 'existe' : 'FALTA';
-        foreach (['grupo_sanguineo', 'lugar_nacimiento', 'numero_hijos', 'escolaridad', 'profesion', 'eps', 'afp', 'arl'] as $col) {
+        foreach (['grupo_sanguineo', 'lugar_nacimiento', 'numero_hijos', 'escolaridad', 'profesion', 'eps', 'afp', 'arl', 'tipo_identificacion'] as $col) {
             $out['users.' . $col] = Schema::hasColumn('users', $col) ? 'existe' : 'FALTA';
         }
 
@@ -229,6 +241,43 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'paciente' => $this->pacientePayload($user),
             'historial'=> $historial,
         ]);
+    }
+
+    /**
+     * Sugerencias de pacientes para el paso 2: busca por número de identificación
+     * (coincidencia por prefijo) o por nombres y apellidos.
+     */
+    public function sugerirPacientes(Request $request)
+    {
+        $q = trim((string) $request->query('q', ''));
+        if (mb_strlen($q) < 3) {
+            return response()->json(['items' => []]);
+        }
+
+        $query = User::query();
+        if (preg_match('/^[\d.\s-]+$/', $q)) {
+            $digits = preg_replace('/\D/', '', $q);
+            $query->where('identificacion', 'like', $digits . '%');
+        } else {
+            // Cada palabra debe aparecer en nombres o apellidos (en cualquier orden)
+            foreach (preg_split('/\s+/', $q) as $word) {
+                $like = '%' . $word . '%';
+                $query->where(function ($w) use ($like) {
+                    $w->where('name', 'like', $like)
+                      ->orWhere('apellido1', 'like', $like)
+                      ->orWhere('apellido2', 'like', $like);
+                });
+            }
+        }
+
+        $items = $query->orderBy('name')->take(10)->get()->map(fn (User $u) => [
+            'identificacion'  => $u->identificacion,
+            'nombre_completo' => trim($u->name . ' ' . ($u->apellido1 ?? '') . ' ' . ($u->apellido2 ?? '')),
+            'vinculacion'     => $this->vinculacionNombre($u),
+            'elegible'        => $this->esPlanta($u),
+        ]);
+
+        return response()->json(['items' => $items]);
     }
 
     /**
@@ -396,6 +445,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'name'            => ['required', 'string', 'max:255'],
             'apellido1'       => ['nullable', 'string', 'max:255'],
             'apellido2'       => ['nullable', 'string', 'max:255'],
+            'tipo_identificacion' => ['nullable', 'string', Rule::in(array_keys(self::TIPOS_IDENTIFICACION))],
             'identificacion'  => ['required', 'string', 'max:100', $unique],
             'genero'          => ['nullable', 'string', 'max:5'],
             'edad'            => ['nullable', 'integer', 'min:0', 'max:150'],
@@ -452,6 +502,14 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
                 $payload[$campo] = $data[$campo] ?? null;
             }
         }
+        if (Schema::hasColumn('users', 'tipo_identificacion')) {
+            $payload['tipo_identificacion'] = $data['tipo_identificacion'] ?? 'CC';
+        }
+
+        // La edad se deriva de la fecha de nacimiento cuando no se digita
+        if (empty($payload['edad']) && !empty($payload['fnacimiento'])) {
+            $payload['edad'] = \Carbon\Carbon::parse($payload['fnacimiento'])->age;
+        }
 
         return $payload;
     }
@@ -464,10 +522,11 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'apellido1'        => $user->apellido1,
             'apellido2'        => $user->apellido2,
             'nombre_completo'  => trim($user->name . ' ' . ($user->apellido1 ?? '') . ' ' . ($user->apellido2 ?? '')),
+            'tipo_identificacion' => $user->tipo_identificacion ?? 'CC',
             'identificacion'   => $user->identificacion,
-            'vinculacion'      => $user->tipo_vinculacion,
+            'vinculacion'      => $this->vinculacionNombre($user),
             'genero'           => $user->genero,
-            'edad'             => $user->edad,
+            'edad'             => $user->edad ?: optional($user->fnacimiento)->age,
             'fnacimiento'      => optional($user->fnacimiento)->format('Y-m-d'),
             'grupo_sanguineo'  => $user->grupo_sanguineo ?? null,
             'lugar_nacimiento' => $user->lugar_nacimiento ?? null,
@@ -481,7 +540,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'escolaridad'      => $user->escolaridad ?? null,
             'profesion'        => $user->profesion ?? null,
             'cargo'            => $user->cargo,
-            'servicio'         => $user->servicio,
+            'servicio'         => $user->servicio ?: ($user->servicio_id ? optional(Servicio::find($user->servicio_id))->nombre : null),
             'eps'              => $user->eps ?? null,
             'afp'              => $user->afp ?? null,
             'arl'              => $user->arl ?? null,
@@ -500,6 +559,19 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         }
         $pid = $this->plantaId();
         return $pid !== null && (int) $u->tipo_vinculacion_id === $pid;
+    }
+
+    /** Nombre de la vinculación: texto guardado o, en su defecto, el del catálogo. */
+    private function vinculacionNombre(User $u): ?string
+    {
+        if (trim((string) $u->tipo_vinculacion) !== '') {
+            return $u->tipo_vinculacion;
+        }
+        try {
+            return $u->tipo_vinculacion_id ? optional(Vinculacion::find($u->tipo_vinculacion_id))->nombre : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /** Id de la vinculación "Planta" en el catálogo (o null si no existe). */

@@ -69,6 +69,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('salud-ocupacional/concepto')->name('salud.concepto.')->group(function () {
         Route::get('/', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'index'])->name('index');
         Route::post('/', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'store'])->name('store');
+        Route::get('/pacientes', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'sugerirPacientes'])->name('pacientes.sugerir');
         Route::get('/paciente/{identificacion}', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'buscarPaciente'])->name('paciente.buscar');
         Route::post('/paciente', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'storePaciente'])->name('paciente.store');
         Route::put('/paciente/{user}', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'updatePaciente'])->name('paciente.update');
