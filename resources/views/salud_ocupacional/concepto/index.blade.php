@@ -490,6 +490,17 @@
                             <button type="button" id="so-view-docs" class="so-btn prim" style="display:none;padding:10px 16px;font-size:13.5px;"><i class="fas fa-eye"></i> Ver documentos EPS <span id="so-view-docs-n" class="badge badge-light"></span></button>
                         </div>
 
+                        <div id="so-hc-prev" class="so-note" style="display:none;margin-top:14px;align-items:flex-start;">
+                            <i class="fas fa-history" style="margin-top:3px;color:var(--so-brand);"></i>
+                            <div style="flex:1;">
+                                Información precargada de la consulta anterior del <strong id="so-hc-prev-fecha" style="color:var(--so-brand)"></strong>
+                                (<a href="#" id="so-hc-prev-link" target="_blank">ver consulta</a>).
+                                Puedes modificarla: al guardar se registra como una <strong>nueva consulta</strong> y la anterior queda intacta.
+                                <button type="button" id="so-hc-clear" class="so-btn ghost" style="padding:4px 11px;font-size:12.5px;margin-left:6px;"><i class="fas fa-eraser"></i> Empezar en blanco</button>
+                                <button type="button" id="so-hc-restore" class="so-btn ghost" style="padding:4px 11px;font-size:12.5px;margin-left:4px;display:none;"><i class="fas fa-undo"></i> Volver a cargar la anterior</button>
+                            </div>
+                        </div>
+
                         <div class="so-sec">Factores de riesgo ocupacional en el cargo actual</div>
                         <div class="so-risk">
                             @php $riesgos = ['Ergonómicos','Ruido','Vibración','Iluminación','Temperatura','Químico','Polvo','Humos','Gases','Vapores','Biológico','Virus','Hongos','Parásitos','Bacterias','Mecánico','Máquinas','Herramientas','Proyecciones','Caídas','Psicosocial','Estrés','Monotonía','Relaciones interpersonales','Fatiga','Público','Robos','Agresiones','Locativo','Estructura','Orden y aseo','Mobiliario','Señalización']; @endphp
@@ -1030,6 +1041,7 @@
                 if(res.found && res.elegible){
                     currentPatient = foundPatient = res.paciente;
                     fillPatientFields(res.paciente);
+                    fillHistoria(res.ultima_historia || null);
                     setPill('found','Paciente encontrado: '+res.paciente.nombre_completo);
                     renderHistorial(res.historial||[]);
                 } else if(res.found && !res.elegible){
@@ -1074,8 +1086,54 @@
         renderPatientCard(p);
         updateProgress();
     }
+    // ─── Paso 4: historia clínica precargada de la última consulta ───
+    const HC_SECTION = document.querySelector('.so-step[data-step="3"]');
+    let ultimaHistoria = null;
+    function hcFields(){ return HC_SECTION.querySelectorAll('input[name], textarea[name], select[name]'); }
+    function setHistoriaValues(campos){
+        hcFields().forEach(el=>{
+            const m = el.name.match(/^([a-z_]+)(?:\[([a-z_]*)\])?$/);
+            if(!m) return;
+            const base = campos ? campos[m[1]] : null;
+            if(el.type==='checkbox'){
+                el.checked = Array.isArray(base) && base.includes(el.value);
+            } else if(el.type==='radio'){
+                el.checked = base != null && String(base) === el.value;
+            } else {
+                const v = m[2] ? (base && typeof base==='object' ? base[m[2]] : null) : base;
+                el.value = (v==null || typeof v==='object') ? '' : v;
+            }
+        });
+        updateProgress();
+    }
+    function fillHistoria(h){
+        ultimaHistoria = h && h.campos ? h : null;
+        setHistoriaValues(ultimaHistoria ? ultimaHistoria.campos : null);
+        const box = $('#so-hc-prev');
+        if(ultimaHistoria){
+            $('#so-hc-prev-fecha').textContent = (h.fecha||'') + (h.tipo ? ' · '+h.tipo : '');
+            $('#so-hc-prev-link').href = h.url || '#';
+            $('#so-hc-clear').style.display = '';
+            $('#so-hc-restore').style.display = 'none';
+            box.style.display = 'flex';
+        } else {
+            box.style.display = 'none';
+        }
+    }
+    $('#so-hc-clear').addEventListener('click', ()=>{
+        setHistoriaValues(null);
+        $('#so-hc-clear').style.display = 'none';
+        $('#so-hc-restore').style.display = '';
+    });
+    $('#so-hc-restore').addEventListener('click', ()=>{
+        if(ultimaHistoria) setHistoriaValues(ultimaHistoria.campos);
+        $('#so-hc-clear').style.display = '';
+        $('#so-hc-restore').style.display = 'none';
+    });
+
     function clearPatientFields(){
         renderPatientCard(null);
+        if(ultimaHistoria) fillHistoria(null);   // no dejar la historia de otro paciente
         LABORALES.forEach(([id])=>{ $('#'+id).value = ''; });
         ['p-nombre','p-vinculacion','p-edad','p-genero','p-genero-txt','p-grupo','p-fnac','p-lugarnac','p-contacto','p-correo','p-direccion','p-estrato','p-vivienda','p-escivil','p-hijos','p-escolaridad','p-profesion','f-paciente_nombre'].forEach(id=>{ const el=$('#'+id); if(el) el.value=''; });
     }

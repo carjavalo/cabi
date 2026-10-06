@@ -239,11 +239,26 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
                 'url'       => route('salud.concepto.show', $c->id),
             ]);
 
+        // Historia clínica de la última consulta: se precarga en el paso 4 para que
+        // el médico la actualice. Al guardar se crea una consulta nueva y la
+        // anterior queda intacta.
+        $ultima = ConceptoMedico::where('user_id', $user->id)
+            ->orderByDesc('fecha_atencion')
+            ->orderByDesc('id')
+            ->first();
+
         return response()->json([
             'found'    => true,
             'elegible' => true,
             'paciente' => $this->pacientePayload($user),
             'historial'=> $historial,
+            'ultima_historia' => $ultima ? [
+                'id'     => $ultima->id,
+                'fecha'  => optional($ultima->fecha_atencion)->format('d/m/Y'),
+                'tipo'   => $ultima->tipo_label,
+                'url'    => route('salud.concepto.show', $ultima->id),
+                'campos' => $ultima->only(ConceptoMedico::CAMPOS_HISTORIA),
+            ] : null,
         ]);
     }
 

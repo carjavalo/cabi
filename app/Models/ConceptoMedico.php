@@ -55,6 +55,34 @@ class ConceptoMedico extends Model
         'created_by',
     ];
 
+    /**
+     * Campos de la historia clínica ocupacional (paso 4). Se precargan desde la
+     * última consulta del paciente para que el médico los actualice en la nueva.
+     */
+    public const CAMPOS_HISTORIA = [
+        'factores_riesgo', 'epp_usa', 'epp_detalle', 'restricciones_previas',
+        'restricciones_previas_detalle', 'motivo_consulta', 'estado_salud',
+        'antecedentes_ocupacionales', 'accidentes_laborales', 'enfermedad_laboral',
+        'antecedentes_familiares', 'antecedentes_personales', 'habitos',
+        'revision_sistemas', 'signos_vitales', 'aspecto_general', 'examen_sistemas',
+        'diagnostico', 'vigilancia_epidemiologica',
+    ];
+
+    /**
+     * Cada consulta es un registro clínico histórico: una vez guardada no se
+     * modifica ni se elimina (se usa para estadísticas y revisiones futuras).
+     * Los cambios del médico se guardan siempre como una consulta nueva.
+     */
+    protected static function booted(): void
+    {
+        static::updating(function () {
+            throw new \LogicException('Un concepto médico guardado no se puede modificar; registre una nueva consulta.');
+        });
+        static::deleting(function () {
+            throw new \LogicException('Un concepto médico guardado no se puede eliminar.');
+        });
+    }
+
     protected function casts(): array
     {
         return [
