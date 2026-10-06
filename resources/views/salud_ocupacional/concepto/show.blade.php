@@ -9,10 +9,17 @@
     $ex = $c->examen_sistemas ?? [];
     $ap = $c->antecedentes_personales ?? [];
     $hb = $c->habitos ?? [];
-    $ao = $c->antecedentes_ocupacionales ?? [];
-    $al = $c->accidentes_laborales ?? [];
-    $el = $c->enfermedad_laboral ?? [];
-    $conceptoClase = ['apto'=>'#2e9e6b','apto_restricciones'=>'#c98a1e','con_restricciones'=>'#c4453b'][$c->concepto_resultado] ?? '#2e3a75';
+    // Secciones con varias filas (las consultas antiguas tienen un solo registro)
+    $filas = [
+        'Antecedentes ocupacionales' => [\App\Models\ConceptoMedico::filas($c->antecedentes_ocupacionales),
+            ['empresa'=>'Empresa','cargo'=>'Cargo','tiempo'=>'Tiempo de exposición','tarea'=>'Descripción de la tarea']],
+        'Accidentes laborales' => [\App\Models\ConceptoMedico::filas($c->accidentes_laborales),
+            ['empresa'=>'Empresa','cargo'=>'Cargo','fecha'=>'Fecha del evento','descripcion'=>'Descripción']],
+        'Enfermedad laboral' => [\App\Models\ConceptoMedico::filas($c->enfermedad_laboral),
+            ['empresa'=>'Empresa','cargo'=>'Cargo','fecha'=>'Fecha del evento','descripcion'=>'Descripción']],
+    ];
+    $colores = ['ok'=>'#2e9e6b','warn'=>'#c98a1e','bad'=>'#c4453b'];
+    $conceptoClase = $colores[$c->concepto_clase] ?? '#2e3a75';
 @endphp
 
 @push('head')
@@ -27,6 +34,9 @@
     .kv{ display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px 22px; }
     .kv .k{ font-size:10.5px;color:#9297ae;text-transform:uppercase;letter-spacing:.05em; }
     .kv .v{ font-size:14.5px;font-weight:600;color:#1f2440; }
+    .tbl{ width:100%;border-collapse:collapse;font-size:13.5px; }
+    .tbl th{ text-align:left;font-size:10.5px;color:#9297ae;text-transform:uppercase;letter-spacing:.05em;font-weight:600;padding:6px 8px;border-bottom:1.5px solid var(--so-line); }
+    .tbl td{ padding:7px 8px;border-bottom:1px solid var(--so-line);color:#1f2440;vertical-align:top;white-space:pre-wrap; }
     .blk{ font-size:14px;color:#3a3e56;line-height:1.5;white-space:pre-wrap; }
     .badge-c{ background:#eef0fb;border:1px solid #d6dbf0;border-radius:12px;padding:15px 18px;margin:14px 0; }
     .toolbar{ max-width:920px;margin:0 auto 14px;display:flex;gap:10px;justify-content:flex-end; }
@@ -90,6 +100,22 @@
         <div class="blk">{{ $dash($c->estado_salud) }}</div>
         @endif
 
+        @foreach($filas as $titulo => [$lista, $cols])
+            @if(count($lista))
+            <div class="sec">{{ $titulo }}</div>
+            <table class="tbl">
+                <thead><tr>@foreach($cols as $lb)<th>{{ $lb }}</th>@endforeach</tr></thead>
+                <tbody>
+                @foreach($lista as $f)
+                    <tr>@foreach($cols as $k => $lb)
+                        <td>{{ $k==='fecha' && !empty($f[$k]) ? \Carbon\Carbon::parse($f[$k])->format('d/m/Y') : $dash($f[$k] ?? null) }}</td>
+                    @endforeach</tr>
+                @endforeach
+                </tbody>
+            </table>
+            @endif
+        @endforeach
+
         @if(array_filter((array)$sv))
         <div class="sec">Examen físico · signos vitales</div>
         <div class="kv">
@@ -108,6 +134,17 @@
             <div style="font-size:10.5px;color:var(--so-brand);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px;">Concepto emitido</div>
             <div style="font-size:20px;font-weight:800;color:{{ $conceptoClase }};">{{ $c->concepto_label }}</div>
         </div>
+
+        @foreach($c->conceptos_enfasis_lista as [$titulo, $lb, $clase])
+        <div class="badge-c">
+            <div style="font-size:10.5px;color:var(--so-brand);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px;">Concepto médico ocupacional · {{ $titulo }}</div>
+            <div style="font-size:17px;font-weight:800;color:{{ $colores[$clase] ?? '#2e3a75' }};">{{ $lb }}</div>
+        </div>
+        @endforeach
+
+        @if($c->observaciones_concepto)
+        <div style="margin-bottom:12px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Observaciones del concepto</div><div class="blk">{{ $c->observaciones_concepto }}</div></div>
+        @endif
 
         @foreach(['recomendaciones'=>'Recomendaciones médicas y compromisos','restricciones'=>'Restricciones médicas ocupacionales','sst'=>'Recomendaciones para el área de SST'] as $k=>$lb)
             @if($c->{$k})

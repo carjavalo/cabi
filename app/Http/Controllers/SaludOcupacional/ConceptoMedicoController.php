@@ -83,7 +83,8 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         $migracionesPendientes = !Schema::hasTable('conceptos_medicos')
             || !Schema::hasColumn('users', 'eps')
             || !Schema::hasColumn('users', 'tipo_identificacion')
-            || !Schema::hasColumn('conceptos_medicos', 'enfasis');
+            || !Schema::hasColumn('conceptos_medicos', 'enfasis')
+            || !Schema::hasColumn('conceptos_medicos', 'concepto_enfasis');
 
         $recientes = $this->safeList(fn () => ConceptoMedico::with('user')
             ->orderByDesc('created_at')
@@ -110,6 +111,8 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'tiposIdentificacion' => self::TIPOS_IDENTIFICACION,
             'enfasis'     => ConceptoMedico::ENFASIS,
             'conceptos'   => ConceptoMedico::CONCEPTOS,
+            'conceptosGrupos'  => ConceptoMedico::CONCEPTOS_GRUPOS,
+            'conceptosEnfasis' => ConceptoMedico::CONCEPTOS_ENFASIS,
             'migracionesPendientes' => $migracionesPendientes,
         ]);
     }
@@ -247,6 +250,13 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             ->orderByDesc('id')
             ->first();
 
+        $camposPrevios = $ultima ? $ultima->only(array_merge(ConceptoMedico::CAMPOS_HISTORIA, ConceptoMedico::CAMPOS_CONCEPTO)) : [];
+        foreach (ConceptoMedico::CAMPOS_FILAS as $campo) {
+            if ($ultima) {
+                $camposPrevios[$campo] = ConceptoMedico::filas($ultima->{$campo});
+            }
+        }
+
         return response()->json([
             'found'    => true,
             'elegible' => true,
@@ -257,7 +267,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
                 'fecha'  => optional($ultima->fecha_atencion)->format('d/m/Y'),
                 'tipo'   => $ultima->tipo_label,
                 'url'    => route('salud.concepto.show', $ultima->id),
-                'campos' => $ultima->only(ConceptoMedico::CAMPOS_HISTORIA),
+                'campos' => $camposPrevios,
             ] : null,
         ]);
     }
@@ -358,6 +368,8 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'enfasis.*'          => ['string', Rule::in(array_keys(ConceptoMedico::ENFASIS))],
             'lugar_atencion'     => ['nullable', 'string', 'max:150'],
             'concepto_resultado' => ['nullable', 'string', 'max:40'],
+            'concepto_enfasis'   => ['nullable', 'array'],
+            'observaciones_concepto' => ['nullable', 'string', 'max:5000'],
             'documentos.*'       => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,gif,webp', 'max:30720'],
         ], [
             'documentos.*.max'   => 'Cada documento adjunto puede pesar máximo 30 MB.',
@@ -372,6 +384,26 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
                 'error',
                 'Solo se pueden atender trabajadores cuya vinculación es ' . self::VINCULACION_ATENDIBLE . '. Verifica el paciente seleccionado.'
             );
+        }
+
+        // El concepto emitido debe corresponder al tipo de atención
+        // (egreso y brigada tienen sus propias opciones).
+        $grupo = ConceptoMedico::grupoConcepto($validated['tipo_atencion'] ?? null);
+        $resultado = $validated['concepto_resultado'] ?? null;
+        if ($resultado !== null && !isset(ConceptoMedico::CONCEPTOS_GRUPOS[$grupo][$resultado])) {
+            return redirect()->back()->withInput()->with(
+                'error',
+                'El concepto seleccionado no corresponde al tipo de atención "' . (ConceptoMedico::TIPOS[$validated['tipo_atencion'] ?? ''] ?? '—') . '".'
+            );
+        }
+
+        // Concepto por énfasis: solo para los énfasis seleccionados y con opciones válidas
+        $conceptoEnfasis = [];
+        foreach ((array) ($validated['concepto_enfasis'] ?? []) as $enf => $op) {
+            if (in_array($enf, (array) ($validated['enfasis'] ?? []), true)
+                && isset(ConceptoMedico::CONCEPTOS_ENFASIS[$enf]['opciones'][$op])) {
+                $conceptoEnfasis[$enf] = $op;
+            }
         }
 
         $concepto = new ConceptoMedico();
@@ -422,11 +454,17 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             $concepto->{$campo} = $request->input($campo);
         }
 
+        if (Schema::hasColumn('conceptos_medicos', 'concepto_enfasis')) {
+            $concepto->concepto_enfasis       = $conceptoEnfasis ?: null;
+            $concepto->observaciones_concepto = $validated['observaciones_concepto'] ?? null;
+        }
+
         // Grupos estructurados (se guardan como JSON)
-        $concepto->factores_riesgo            = $this->decodeJsonField($request->input('factores_riesgo'));
-        $concepto->antecedentes_ocupacionales = $this->decodeJsonField($request->input('antecedentes_ocupacionales'));
-        $concepto->accidentes_laborales       = $this->decodeJsonField($request->input('accidentes_laborales'));
-        $concepto->enfermedad_laboral         = $this->decodeJsonField($request->input('enfermedad_laboral'));
+        $concepto->factores_riesgo           = $this->decodeJsonField($request->input('factores_riesgo'));
+        // Secciones con varias filas: se guardan como lista, sin filas vacías
+        foreach (ConceptoMedico::CAMPOS_FILAS as $campo) {
+            $concepto->{$campo} = ConceptoMedico::filas($this->decodeJsonField($request->input($campo))) ?: null;
+        }
         $concepto->antecedentes_personales    = $this->decodeJsonField($request->input('antecedentes_personales'));
         $concepto->habitos                    = $this->decodeJsonField($request->input('habitos'));
         $concepto->signos_vitales             = $this->decodeJsonField($request->input('signos_vitales'));

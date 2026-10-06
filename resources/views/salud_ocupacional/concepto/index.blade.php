@@ -62,6 +62,16 @@
     .so-sec{ font-family:'Courier New',monospace;font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--so-brand);
         font-weight:700;background:var(--so-bg);padding:9px 13px;border-radius:8px;margin:22px 0 13px; }
     .so-sec.dark{ background:var(--so-brand);color:#fff;text-align:center;letter-spacing:.14em; }
+    .so-sec-rep{ display:flex;justify-content:space-between;align-items:center;gap:10px; }
+    .so-rep-add{ font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border:1.5px solid var(--so-brand);
+        background:#fff;color:var(--so-brand);border-radius:8px;padding:5px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px; }
+    .so-rep-add:hover{ background:var(--so-brand);color:#fff; }
+    .so-rep-row{ position:relative;border:1.5px solid var(--so-line);border-radius:12px;padding:14px 14px 12px;margin-bottom:10px; }
+    .so-rep-row .hd{ display:flex;justify-content:space-between;align-items:center;margin-bottom:10px; }
+    .so-rep-row .num{ font-size:12px;font-weight:700;color:var(--so-mut); }
+    .so-rep-del{ border:1.5px solid #f1c4bf;background:#fff;color:#b42318;border-radius:8px;padding:4px 10px;font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px; }
+    .so-rep-del:hover{ background:#b42318;color:#fff;border-color:#b42318; }
+    .so-rep-row .wide{ grid-column:1/-1; }
 
     .so-lbl{ display:block;font-size:11.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--so-brand);
         margin-bottom:6px;font-family:'Courier New',monospace; }
@@ -92,15 +102,15 @@
     .so-cc .dot{ flex-shrink:0;margin-top:2px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;background:#edeff6;color:transparent; }
     .so-cc .t{ font-size:16px;font-weight:700;color:#2b2f44;margin-bottom:2px;display:block; }
     .so-cc .d{ font-size:13.5px;color:var(--so-mut);line-height:1.4; }
-    .so-cc.ok input:checked + label{ border-color:var(--so-ok);background:#eaf7f0; }
-    .so-cc.ok input:checked + label .dot{ background:var(--so-ok);color:#fff; }
-    .so-cc.ok input:checked + label .t{ color:var(--so-ok); }
-    .so-cc.warn input:checked + label{ border-color:var(--so-warn);background:#fbf3e4; }
-    .so-cc.warn input:checked + label .dot{ background:var(--so-warn);color:#fff; }
-    .so-cc.warn input:checked + label .t{ color:var(--so-warn); }
-    .so-cc.bad input:checked + label{ border-color:var(--so-bad);background:#fbebe9; }
-    .so-cc.bad input:checked + label .dot{ background:var(--so-bad);color:#fff; }
-    .so-cc.bad input:checked + label .t{ color:var(--so-bad); }
+    .so-cc .ok input:checked + label{ border-color:var(--so-ok);background:#eaf7f0; }
+    .so-cc .ok input:checked + label .dot{ background:var(--so-ok);color:#fff; }
+    .so-cc .ok input:checked + label .t{ color:var(--so-ok); }
+    .so-cc .warn input:checked + label{ border-color:var(--so-warn);background:#fbf3e4; }
+    .so-cc .warn input:checked + label .dot{ background:var(--so-warn);color:#fff; }
+    .so-cc .warn input:checked + label .t{ color:var(--so-warn); }
+    .so-cc .bad input:checked + label{ border-color:var(--so-bad);background:#fbebe9; }
+    .so-cc .bad input:checked + label .dot{ background:var(--so-bad);color:#fff; }
+    .so-cc .bad input:checked + label .t{ color:var(--so-bad); }
     .so-cc input{ position:absolute;opacity:0;pointer-events:none; }
 
     /* Risk factor chips */
@@ -538,25 +548,14 @@
                         <div class="so-sec">Descripción del estado de salud actual</div>
                         <textarea name="estado_salud" rows="3" class="so-in" placeholder="Describe el estado de salud actual del paciente…"></textarea>
 
-                        <div class="so-sec">Antecedentes ocupacionales</div>
-                        <div class="so-grid tight">
-                            <div><label class="so-lbl mut">Empresa</label><input type="text" name="antecedentes_ocupacionales[empresa]" class="so-in"></div>
-                            <div><label class="so-lbl mut">Cargo</label><input type="text" name="antecedentes_ocupacionales[cargo]" class="so-in"></div>
-                            <div><label class="so-lbl mut">Tiempo de exposición</label><input type="text" name="antecedentes_ocupacionales[tiempo]" class="so-in"></div>
-                            <div><label class="so-lbl mut">Descripción de la tarea</label><input type="text" name="antecedentes_ocupacionales[tarea]" class="so-in"></div>
+                        {{-- Secciones con varias filas: el + agrega otra fila y cada fila se puede eliminar --}}
+                        @foreach(['antecedentes_ocupacionales'=>'Antecedentes ocupacionales','accidentes_laborales'=>'Accidentes laborales','enfermedad_laboral'=>'Enfermedad laboral'] as $rep=>$lb)
+                        <div class="so-sec so-sec-rep">
+                            <span>{{ $lb }}</span>
+                            <button type="button" class="so-rep-add" data-rep="{{ $rep }}" title="Agregar otra fila"><i class="fas fa-plus"></i> Agregar</button>
                         </div>
-
-                        <div class="so-sec">Accidentes laborales</div>
-                        <div class="so-row2"><label>Empresa</label><input type="text" name="accidentes_laborales[empresa]" class="so-in"></div>
-                        <div class="so-row2"><label>Cargo</label><input type="text" name="accidentes_laborales[cargo]" class="so-in"></div>
-                        <div class="so-row2"><label>Fecha del evento</label><input type="date" name="accidentes_laborales[fecha]" class="so-in"></div>
-                        <div class="so-row2" style="align-items:flex-start;"><label>Descripción</label><textarea name="accidentes_laborales[descripcion]" rows="2" class="so-in"></textarea></div>
-
-                        <div class="so-sec">Enfermedad laboral</div>
-                        <div class="so-row2"><label>Empresa</label><input type="text" name="enfermedad_laboral[empresa]" class="so-in"></div>
-                        <div class="so-row2"><label>Cargo</label><input type="text" name="enfermedad_laboral[cargo]" class="so-in"></div>
-                        <div class="so-row2"><label>Fecha del evento</label><input type="date" name="enfermedad_laboral[fecha]" class="so-in"></div>
-                        <div class="so-row2" style="align-items:flex-start;"><label>Descripción</label><textarea name="enfermedad_laboral[descripcion]" rows="2" class="so-in"></textarea></div>
+                        <div class="so-rep" id="rep-{{ $rep }}"></div>
+                        @endforeach
 
                         <div class="so-sec">Antecedentes familiares</div>
                         <textarea name="antecedentes_familiares" rows="2" class="so-in" placeholder="Antecedentes familiares relevantes…"></textarea>
@@ -605,22 +604,36 @@
                     <section class="so-panel so-step" data-step="4" style="display:none;">
                         <div class="so-eyebrow">Paso 5 de 7</div>
                         <h2>Concepto médico ocupacional</h2>
-                        <p class="sub">Selecciona el concepto emitido según la evaluación médica.</p>
+                        <p class="sub">Selecciona el concepto emitido según la evaluación médica. Las opciones dependen del <strong>tipo de atención</strong> elegido en el paso 1.</p>
+                        <div class="so-note so-prev-mini" style="display:none;"><i class="fas fa-history" style="margin-top:2px;color:var(--so-brand);"></i><span>Precargado de la consulta anterior del <strong class="so-prev-fecha" style="color:var(--so-brand)"></strong>. Puedes cambiarlo; se guarda en la nueva consulta.</span></div>
 
-                        <div class="so-cc" style="margin-top:20px;">
-                            <div class="ok">
-                                <input type="radio" name="concepto_resultado" id="cc-apto" value="apto">
-                                <label for="cc-apto"><span class="dot">✓</span><span><span class="t">Apto</span><span class="d">Sin restricciones para el desempeño del cargo.</span></span></label>
+                        {{-- Opciones según el tipo de atención (general: ingreso, periódico, especializado) --}}
+                        @foreach($conceptosGrupos as $grupo => $ops)
+                        <div class="so-cc" data-grupo="{{ $grupo }}" style="margin-top:20px;{{ $grupo !== 'general' ? 'display:none;' : '' }}">
+                            @foreach($ops as $k => [$lb, $desc, $clase])
+                            <div class="{{ $clase }}">
+                                <input type="radio" name="concepto_resultado" id="cc-{{ $k }}" value="{{ $k }}" {{ $grupo !== 'general' ? 'disabled' : '' }}>
+                                <label for="cc-{{ $k }}"><span class="dot">✓</span><span><span class="t">{{ $lb }}</span><span class="d">{{ $desc }}</span></span></label>
                             </div>
-                            <div class="warn">
-                                <input type="radio" name="concepto_resultado" id="cc-aptor" value="apto_restricciones">
-                                <label for="cc-aptor"><span class="dot">✓</span><span><span class="t">Apto con restricciones</span><span class="d">Puede desempeñar el cargo con recomendaciones.</span></span></label>
-                            </div>
-                            <div class="bad">
-                                <input type="radio" name="concepto_resultado" id="cc-conr" value="con_restricciones">
-                                <label for="cc-conr"><span class="dot">✓</span><span><span class="t">Con restricciones que impiden el desempeño</span><span class="d">No apto para el cargo evaluado.</span></span></label>
+                            @endforeach
+                        </div>
+                        @endforeach
+
+                        {{-- Concepto médico ocupacional · Énfasis (según los énfasis del paso 1) --}}
+                        @foreach($conceptosEnfasis as $enf => $cfg)
+                        <div class="so-enf-cc" data-enfasis="{{ $enf }}" style="display:none;">
+                            <div class="so-sec dark" style="margin-top:26px;">Concepto médico ocupacional · Énfasis</div>
+                            <div class="so-lbl" style="margin-bottom:10px;">{{ $cfg['titulo'] }}</div>
+                            <div class="so-cc">
+                                @foreach($cfg['opciones'] as $k => [$lb, $clase])
+                                <div class="{{ $clase }}">
+                                    <input type="radio" name="concepto_enfasis[{{ $enf }}]" id="ce-{{ $enf }}-{{ $k }}" value="{{ $k }}" disabled>
+                                    <label for="ce-{{ $enf }}-{{ $k }}"><span class="dot">✓</span><span><span class="t">{{ $lb }}</span></span></label>
+                                </div>
+                                @endforeach
                             </div>
                         </div>
+                        @endforeach
                         <div style="margin-top:14px;padding:13px 17px;background:var(--so-soft);border-radius:12px;font-size:13.5px;color:var(--so-mut);">
                             Certificado emitido de acuerdo con la Evaluación Médica Ocupacional realizada el <strong style="color:var(--so-brand)">{{ \Carbon\Carbon::now()->format('d/m/Y') }}</strong>.
                         </div>
@@ -631,8 +644,14 @@
                         <div class="so-eyebrow">Paso 6 de 7</div>
                         <h2>Recomendaciones y firma</h2>
                         <p class="sub">Registra las recomendaciones, restricciones y firma del médico.</p>
+                        <div class="so-note so-prev-mini" style="display:none;"><i class="fas fa-history" style="margin-top:2px;color:var(--so-brand);"></i><span>Textos precargados de la consulta anterior del <strong class="so-prev-fecha" style="color:var(--so-brand)"></strong>. Puedes sobrescribirlos; se guardan en la nueva consulta. La firma se toma en cada consulta.</span></div>
 
                         <div style="margin-top:20px;">
+                            <label class="so-lbl">Observaciones del concepto <span id="so-obs-hint" style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--so-mut);"></span></label>
+                            <textarea name="observaciones_concepto" rows="3" class="so-in" placeholder="Observaciones sobre el concepto emitido…"></textarea>
+                        </div>
+
+                        <div style="margin-top:16px;">
                             <label class="so-lbl">Recomendaciones médicas y compromisos</label>
                             <textarea name="recomendaciones" rows="3" class="so-in" placeholder="Describe las recomendaciones y compromisos…"></textarea>
                         </div>
@@ -692,6 +711,7 @@
                                     <div style="font-size:10.5px;color:var(--so-brand);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px;">Concepto emitido</div>
                                     <div style="font-size:19px;font-weight:800;color:var(--so-brand);" id="rv-concepto">—</div>
                                 </div>
+                                <div style="margin-bottom:8px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;">Observaciones del concepto</div><div class="v" id="rv-obs" style="font-size:14px;color:#3a3e56;white-space:pre-wrap;">—</div></div>
                                 <div style="margin-bottom:8px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;">Recomendaciones</div><div class="v" id="rv-recom" style="font-size:14px;color:#3a3e56;white-space:pre-wrap;">—</div></div>
                                 <div style="margin-bottom:8px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;">Restricciones</div><div class="v" id="rv-restr" style="font-size:14px;color:#3a3e56;white-space:pre-wrap;">—</div></div>
                                 <div style="border-top:1px solid var(--so-line);margin-top:16px;padding-top:16px;">
@@ -895,6 +915,7 @@
     const TIPOS = @json($tipos);
     const ENFASIS = @json($enfasis);
     const CONCEPTOS = @json($conceptos);
+    const CONCEPTOS_ENF = @json($conceptosEnfasis);
     const GENERO = { F:'Femenino', M:'Masculino', O:'Otro' };
 
     /**
@@ -1086,11 +1107,76 @@
         renderPatientCard(p);
         updateProgress();
     }
+    // ─── Paso 4: secciones con varias filas (+ agregar / eliminar) ───
+    const REP = {
+        antecedentes_ocupacionales: [
+            {k:'empresa', lb:'Empresa'}, {k:'cargo', lb:'Cargo'},
+            {k:'tiempo', lb:'Tiempo de exposición'}, {k:'tarea', lb:'Descripción de la tarea'},
+        ],
+        accidentes_laborales: [
+            {k:'empresa', lb:'Empresa'}, {k:'cargo', lb:'Cargo'}, {k:'fecha', lb:'Fecha del evento', type:'date'},
+            {k:'descripcion', lb:'Descripción', area:true},
+        ],
+        enfermedad_laboral: [
+            {k:'empresa', lb:'Empresa'}, {k:'cargo', lb:'Cargo'}, {k:'fecha', lb:'Fecha del evento', type:'date'},
+            {k:'descripcion', lb:'Descripción', area:true},
+        ],
+    };
+    let repSeq = 0;   // índice único por fila (el servidor reordena la lista)
+    function repAddRow(rep, data){
+        const box = $('#rep-'+rep), i = repSeq++;
+        const row = document.createElement('div');
+        row.className = 'so-rep-row';
+        row.innerHTML = `<div class="hd"><span class="num"></span>
+                <button type="button" class="so-rep-del" title="Eliminar esta fila"><i class="fas fa-trash-alt"></i> Eliminar</button></div>
+            <div class="so-grid tight">${REP[rep].map(f=>{
+                const name = `${rep}[${i}][${f.k}]`, v = esc(data && data[f.k] != null ? data[f.k] : '');
+                return `<div class="${f.area?'wide':''}"><label class="so-lbl mut">${f.lb}</label>${f.area
+                    ? `<textarea name="${name}" rows="2" class="so-in">${v}</textarea>`
+                    : `<input type="${f.type||'text'}" name="${name}" class="so-in" value="${v}">`}</div>`;
+            }).join('')}</div>`;
+        row.querySelector('.so-rep-del').addEventListener('click', ()=> repDelRow(rep, row));
+        box.appendChild(row);
+        repRenumber(rep);
+        return row;
+    }
+    function repDelRow(rep, row){
+        const box = $('#rep-'+rep);
+        const conDatos = Array.from(row.querySelectorAll('input,textarea')).some(el=>el.value.trim()!=='');
+        const quitar = ()=>{
+            row.remove();
+            if(!box.children.length) repAddRow(rep);   // siempre queda al menos una fila para diligenciar
+            repRenumber(rep); updateProgress();
+        };
+        if(!conDatos){ quitar(); return; }
+        Swal.fire({icon:'question',title:'¿Eliminar esta fila?',text:'Se quitará de esta consulta. Las consultas anteriores no se modifican.',
+            showCancelButton:true,confirmButtonText:'Eliminar',cancelButtonText:'Cancelar',confirmButtonColor:'#b42318'})
+            .then(r=>{ if(r.isConfirmed) quitar(); });
+    }
+    function repRenumber(rep){
+        const rows = $('#rep-'+rep).children;
+        Array.from(rows).forEach((r,n)=>{ r.querySelector('.num').textContent = 'Registro '+(n+1); });
+    }
+    function setRepValues(campos){
+        Object.keys(REP).forEach(rep=>{
+            $('#rep-'+rep).innerHTML = '';
+            const filas = campos && Array.isArray(campos[rep]) ? campos[rep] : [];
+            if(filas.length) filas.forEach(f=> repAddRow(rep, f));
+            else repAddRow(rep);
+        });
+    }
+    $$('.so-rep-add').forEach(b=> b.addEventListener('click', ()=>{
+        const row = repAddRow(b.dataset.rep);
+        const first = row.querySelector('input,textarea'); if(first) first.focus();
+    }));
+    setRepValues(null);
+
     // ─── Paso 4: historia clínica precargada de la última consulta ───
     const HC_SECTION = document.querySelector('.so-step[data-step="3"]');
     let ultimaHistoria = null;
     function hcFields(){ return HC_SECTION.querySelectorAll('input[name], textarea[name], select[name]'); }
     function setHistoriaValues(campos){
+        setRepValues(campos);   // las filas usan nombres anidados y no entran al recorrido de abajo
         hcFields().forEach(el=>{
             const m = el.name.match(/^([a-z_]+)(?:\[([a-z_]*)\])?$/);
             if(!m) return;
@@ -1107,6 +1193,7 @@
         updateProgress();
     }
     function fillHistoria(h){
+        fillConcepto(h);   // pasos 5 y 6 se precargan de la misma consulta
         ultimaHistoria = h && h.campos ? h : null;
         setHistoriaValues(ultimaHistoria ? ultimaHistoria.campos : null);
         const box = $('#so-hc-prev');
@@ -1130,6 +1217,55 @@
         $('#so-hc-clear').style.display = '';
         $('#so-hc-restore').style.display = 'none';
     });
+
+    // ─── Paso 5: opciones del concepto según tipo de atención y énfasis ───
+    let ultimaConcepto = null;   // campos de los pasos 5 y 6 de la consulta anterior
+    const OBS_HINT = { egreso:'· requeridas para el concepto de egreso', brigada:'· requeridas para el concepto de brigada' };
+    function tipoActual(){ const r = $('input[name="tipo_atencion"]:checked'); return r ? r.value : ''; }
+    function grupoDe(t){ return (t==='egreso' || t==='brigada') ? t : 'general'; }
+    function radioPorValor(name, value){
+        if(value==null || value==='') return null;
+        return document.querySelector(`input[name="${name}"][value="${CSS.escape(String(value))}"]:not(:disabled)`);
+    }
+    function activarBloque(box, on){
+        box.style.display = on ? '' : 'none';
+        box.querySelectorAll('input').forEach(i=>{ i.disabled = !on; if(!on) i.checked = false; });
+    }
+    function aplicarConcepto(){
+        const t = tipoActual();
+        $$('.so-cc[data-grupo]').forEach(box=> activarBloque(box, box.dataset.grupo === grupoDe(t)));
+        const enfSel = Array.from(document.querySelectorAll('input[name="enfasis[]"]:checked')).map(i=>i.value);
+        $$('.so-enf-cc').forEach(box=> activarBloque(box, enfSel.includes(box.dataset.enfasis)));
+
+        // Si la opción de la consulta anterior aplica al tipo/énfasis actual, se vuelve a marcar
+        if(ultimaConcepto){
+            if(!$('input[name="concepto_resultado"]:checked')){
+                const r = radioPorValor('concepto_resultado', ultimaConcepto.concepto_resultado); if(r) r.checked = true;
+            }
+            Object.entries(ultimaConcepto.concepto_enfasis || {}).forEach(([e,v])=>{
+                if(!document.querySelector(`input[name="concepto_enfasis[${e}]"]:checked`)){
+                    const r = radioPorValor(`concepto_enfasis[${e}]`, v); if(r) r.checked = true;
+                }
+            });
+        }
+        $('#so-obs-hint').textContent = OBS_HINT[t] || '';
+        updateProgress();
+    }
+    $$('input[name="tipo_atencion"], input[name="enfasis[]"]').forEach(i=> i.addEventListener('change', aplicarConcepto));
+
+    // Precarga de los pasos 5 y 6 desde la consulta anterior (sobrescribibles)
+    const TEXTOS_CONCEPTO = ['observaciones_concepto','recomendaciones','restricciones','sst'];
+    function fillConcepto(h){
+        ultimaConcepto = h && h.campos ? h.campos : null;
+        $$('input[name="concepto_resultado"], input[name^="concepto_enfasis["]').forEach(i=> i.checked = false);
+        TEXTOS_CONCEPTO.forEach(n=>{ const el = $(`[name="${n}"]`); if(el) el.value = ultimaConcepto && ultimaConcepto[n] ? ultimaConcepto[n] : ''; });
+        $$('.so-prev-mini').forEach(n=>{
+            n.style.display = ultimaConcepto ? 'flex' : 'none';
+            const f = n.querySelector('.so-prev-fecha'); if(f) f.textContent = h ? ((h.fecha||'') + (h.tipo ? ' · '+h.tipo : '')) : '';
+        });
+        aplicarConcepto();
+    }
+    aplicarConcepto();
 
     function clearPatientFields(){
         renderPatientCard(null);
@@ -1624,7 +1760,12 @@
         setTxt('rv-eps', $('#f-eps').value);
         setTxt('rv-arl', $('#f-arl').value);
         const cc = $('input[name="concepto_resultado"]:checked');
-        setTxt('rv-concepto', cc ? (CONCEPTOS[cc.value]||'') : '—');
+        const ccEnf = $$('input[name^="concepto_enfasis["]:checked').map(i=>{
+            const enf = i.name.slice(17, -1), cfg = CONCEPTOS_ENF[enf];
+            return cfg && cfg.opciones[i.value] ? cfg.opciones[i.value][0] : '';
+        }).filter(Boolean);
+        setTxt('rv-concepto', (cc ? (CONCEPTOS[cc.value]||'') : '—') + (ccEnf.length ? ' · ' + ccEnf.join(' · ') : ''));
+        setTxt('rv-obs', $('[name="observaciones_concepto"]').value);
         setTxt('rv-recom', $('[name="recomendaciones"]').value);
         setTxt('rv-restr', $('[name="restricciones"]').value);
         setTxt('rv-medico', $('[name="medico"]').value);
@@ -1646,6 +1787,21 @@
             e.preventDefault();
             Swal.fire({icon:'warning',title:'Falta el concepto',text:'Selecciona el concepto médico emitido.'});
             showStep(4);
+            return;
+        }
+        const enfSinConcepto = $$('.so-enf-cc').filter(b=> b.style.display !== 'none' && !b.querySelector('input:checked'));
+        if(enfSinConcepto.length){
+            e.preventDefault();
+            const titulo = enfSinConcepto[0].querySelector('.so-lbl').textContent;
+            Swal.fire({icon:'warning',title:'Falta el concepto por énfasis',text:'Selecciona el concepto de: '+titulo+'.'});
+            showStep(4);
+            return;
+        }
+        const tipo = tipoActual();
+        if((tipo==='egreso' || tipo==='brigada') && !$('[name="observaciones_concepto"]').value.trim()){
+            e.preventDefault();
+            Swal.fire({icon:'warning',title:'Faltan las observaciones',text:'Registra las observaciones del concepto de '+(tipo==='egreso'?'egreso':'brigada')+'.'});
+            showStep(5);
             return;
         }
     });
