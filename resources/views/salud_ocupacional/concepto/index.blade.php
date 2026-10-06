@@ -373,6 +373,16 @@
                             </div>
                             @endforeach
                         </div>
+
+                        <label class="so-lbl" style="margin-top:20px;">Énfasis</label>
+                        <div class="so-opts">
+                            @foreach($enfasis as $k => $t)
+                            <div class="so-opt">
+                                <input type="checkbox" name="enfasis[]" id="enf-{{ $k }}" value="{{ $k }}">
+                                <label for="enf-{{ $k }}"><span class="tick">✓</span>{{ $t }}</label>
+                            </div>
+                            @endforeach
+                        </div>
                     </section>
 
                     {{-- PASO 2 · IDENTIFICACIÓN --}}
@@ -852,6 +862,7 @@
         entidades: "{{ url('salud-ocupacional/entidades') }}",
     };
     const TIPOS = @json($tipos);
+    const ENFASIS = @json($enfasis);
     const CONCEPTOS = @json($conceptos);
     const GENERO = { F:'Femenino', M:'Masculino', O:'Otro' };
 
@@ -1429,7 +1440,8 @@
     // ─── Revisión ───
     function fillReview(){
         const tipoR = $('input[name="tipo_atencion"]:checked');
-        setTxt('rv-tipo', tipoR ? (TIPOS[tipoR.value]||'') : '—');
+        const enfSel = Array.from(document.querySelectorAll('input[name="enfasis[]"]:checked')).map(i => ENFASIS[i.value] || i.value);
+        setTxt('rv-tipo', (tipoR ? (TIPOS[tipoR.value]||'') : '—') + (enfSel.length ? ' · ' + enfSel.join(', ') : ''));
         setTxt('rv-nombre', $('#f-paciente_nombre').value || $('#p-nombre').value);
         setTxt('rv-ident', identInput.value);
         setTxt('rv-edad', $('#p-edad').value);

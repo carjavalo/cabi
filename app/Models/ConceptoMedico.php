@@ -15,6 +15,7 @@ class ConceptoMedico extends Model
         'hora_atencion',
         'lugar_atencion',
         'tipo_atencion',
+        'enfasis',
         'paciente_nombre',
         'edad',
         'genero',
@@ -58,6 +59,7 @@ class ConceptoMedico extends Model
     {
         return [
             'fecha_atencion'              => 'date',
+            'enfasis'                     => 'array',
             'factores_riesgo'             => 'array',
             'antecedentes_ocupacionales'  => 'array',
             'accidentes_laborales'        => 'array',
@@ -81,10 +83,23 @@ class ConceptoMedico extends Model
     public const TIPOS = [
         'ingreso'     => 'Ingreso',
         'periodico'   => 'Periódico',
-        'seguimiento' => 'Seguimiento',
+        'seguimiento' => 'Especializado',
         'egreso'      => 'Egreso',
         'brigada'     => 'Brigada',
     ];
+
+    public const ENFASIS = [
+        'osteomuscular'        => 'Osteomuscular',
+        'alturas_confinados'   => 'Alturas y Espacios Confinados',
+        'manipulacion_alimentos' => 'Manipulación de Alimentos',
+        'radiacion_citotoxicos'  => 'Expuestos a Radiación y Citotóxicos',
+    ];
+
+    public function getEnfasisLabelAttribute(): string
+    {
+        $labels = array_map(fn ($k) => self::ENFASIS[$k] ?? $k, (array) ($this->enfasis ?? []));
+        return $labels ? implode(', ', $labels) : '';
+    }
 
     public function getConceptoLabelAttribute(): string
     {

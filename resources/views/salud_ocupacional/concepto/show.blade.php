@@ -56,7 +56,7 @@
         </div>
         <div style="text-align:right;font-size:12px;opacity:.9;">
             {{ optional($c->fecha_atencion)->format('d/m/Y') }} · {{ $c->hora_atencion ? \Carbon\Carbon::parse($c->hora_atencion)->format('h:i A') : '' }}<br>
-            <span style="opacity:.75;">{{ $c->tipo_label }} · {{ $dash($c->lugar_atencion) }}</span>
+            <span style="opacity:.75;">{{ $c->tipo_label }}@if($c->enfasis_label) · Énfasis: {{ $c->enfasis_label }}@endif · {{ $dash($c->lugar_atencion) }}</span>
         </div>
     </div>
     <div class="cert-b">

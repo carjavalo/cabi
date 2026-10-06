@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ConceptoMedicoController extends Controller implements HasMiddleware
 {
@@ -95,6 +96,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'nit'         => self::NIT,
             'medicoNombre'=> $medico !== '' ? $medico : (Auth::user()->name ?? ''),
             'tipos'       => ConceptoMedico::TIPOS,
+            'enfasis'     => ConceptoMedico::ENFASIS,
             'conceptos'   => ConceptoMedico::CONCEPTOS,
             'migracionesPendientes' => $migracionesPendientes,
         ]);
@@ -284,6 +286,8 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'user_id'            => ['nullable', 'integer', 'exists:users,id'],
             'identificacion'     => ['nullable', 'string', 'max:100'],
             'tipo_atencion'      => ['nullable', 'string', 'max:30'],
+            'enfasis'            => ['nullable', 'array'],
+            'enfasis.*'          => ['string', Rule::in(array_keys(ConceptoMedico::ENFASIS))],
             'lugar_atencion'     => ['nullable', 'string', 'max:150'],
             'concepto_resultado' => ['nullable', 'string', 'max:40'],
             'documentos.*'       => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,gif,webp', 'max:2048'],
@@ -306,6 +310,9 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         $concepto->hora_atencion  = now()->format('H:i:s');  // Hora automática (requisito 3)
         $concepto->lugar_atencion = $request->input('lugar_atencion', 'HUV');
         $concepto->tipo_atencion  = $validated['tipo_atencion'] ?? null;
+        if (Schema::hasColumn('conceptos_medicos', 'enfasis')) {
+            $concepto->enfasis = !empty($validated['enfasis']) ? array_values($validated['enfasis']) : null;
+        }
 
         // Snapshot del paciente
         $concepto->paciente_nombre = $user
