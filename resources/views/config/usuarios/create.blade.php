@@ -100,16 +100,10 @@
                             <label for="role" class="text-secondary font-weight-bold small">Perfil de Acceso (Rol) <span class="text-danger">*</span></label>
                             <select id="role" name="role" class="form-control" required style="border-radius: 6px; border: 1px solid #ced4da;">
                                 <option value="">Seleccione el rol</option>
-                                @if(Auth::check() && Auth::user()->role == 'Super Admin')
-                                <option value="Super Admin" {{ old('role')=='Super Admin' ? 'selected' : '' }}>Super Admin</option>
-                                @endif
-                                @if(Auth::check() && in_array(Auth::user()->role,['Super Admin','Administrador']))
-                                <option value="Administrador" {{ old('role')=='Administrador' ? 'selected' : '' }}>Administrador</option>
-                                @endif
-                                <option value="Instructor GYM" {{ old('role')=='Instructor GYM' ? 'selected' : '' }}>Instructor GYM</option>
-                                <option value="Coordinador" {{ old('role')=='Coordinador' ? 'selected' : '' }}>Coordinador</option>
-                                <option value="Operador" {{ old('role')=='Operador' ? 'selected' : '' }}>Operador</option>
-                                <option value="Usuario" {{ old('role')=='Usuario' ? 'selected' : '' }}>Usuario</option>
+                                {{-- Roles desde Gestión de Roles (filtrados por jerarquía en el controlador) --}}
+                                @foreach($roles as $rolNombre)
+                                <option value="{{ $rolNombre }}" {{ old('role')==$rolNombre ? 'selected' : '' }}>{{ $rolNombre }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>

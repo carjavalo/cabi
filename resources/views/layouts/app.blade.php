@@ -229,6 +229,7 @@
             </a>
             <ul class="nav nav-treeview">
               <li class="nav-item"><a href="{{ url('/configuracion/usuarios') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión de Usuarios</p></a></li>
+              <li class="nav-item"><a href="{{ route('config.roles.index') }}" class="nav-link {{ request()->routeIs('config.roles.*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Gestión de Roles</p></a></li>
               <li class="nav-item"><a href="{{ route('config.cargos.index') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión de Cargos</p></a></li>
               <li class="nav-item"><a href="{{ url('/configuracion/servicios') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión Servicios</p></a></li>
               <li class="nav-item"><a href="{{ url('/configuracion/vinculaciones') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión Vinculaciones</p></a></li>

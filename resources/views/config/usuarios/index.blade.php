@@ -76,15 +76,9 @@
                     <label for="role_filter" class="form-label text-muted small fw-bold mb-1">Filtrar por Rol</label>
                     <select id="role_filter" name="role_filter" class="form-select form-select-sm text-secondary">
                         <option value="">Todos los roles</option>
-                        @if(Auth::check() && Auth::user()->role == 'Super Admin')
-                        <option value="Super Admin" {{ request('role_filter') == 'Super Admin' ? 'selected' : '' }}>Super Admin</option>
-                        @endif
-                        @if(Auth::check() && in_array(Auth::user()->role, ['Super Admin','Administrador']))
-                        <option value="Administrador" {{ request('role_filter') == 'Administrador' ? 'selected' : '' }}>Administrador</option>
-                        @endif
-                        <option value="Operador" {{ request('role_filter') == 'Operador' ? 'selected' : '' }}>Operador</option>
-                        <option value="Instructor GYM" {{ request('role_filter') == 'Instructor GYM' ? 'selected' : '' }}>Instructor GYM</option>
-                        <option value="Usuario" {{ request('role_filter') == 'Usuario' ? 'selected' : '' }}>Usuario</option>
+                        @foreach($rolesFiltro as $rolNombre)
+                        <option value="{{ $rolNombre }}" {{ request('role_filter') == $rolNombre ? 'selected' : '' }}>{{ $rolNombre }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="col-md-3">

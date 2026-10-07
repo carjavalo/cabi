@@ -128,6 +128,9 @@ use App\Http\Controllers\Config\CargoController;
 Route::prefix('configuracion')->name('config.')->middleware(['auth', 'verified'])->group(function () {
     Route::resource('usuarios', UserController::class)->except(['show']);
     Route::post('usuarios/{id}/verify-email', [UserController::class, 'verifyEmail'])->name('usuarios.verify-email');
+    // Gestión de Roles
+    Route::get('roles/export', [App\Http\Controllers\Config\RoleController::class, 'exportExcel'])->name('roles.export');
+    Route::resource('roles', App\Http\Controllers\Config\RoleController::class)->except(['create', 'edit']);
     Route::resource('servicios', ServicioController::class)->except(['show']);
     Route::get('servicios-buscar', [ServicioController::class, 'buscar'])->name('servicios.buscar');
     Route::resource('vinculaciones', VinculacionController::class)->except(['show']);

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Vinculacion;
 use App\Models\Servicio;
+use App\Models\Role;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Http\Request;
@@ -67,7 +69,9 @@ class UserController extends Controller
 
         $users = $query->orderBy($sort, $direction)->paginate(15)->appends($request->all());
 
-        return view('config.usuarios.index', compact('users'));
+        $rolesFiltro = Role::filtrarPorJerarquia(Role::nombres(false), Auth::user()->role ?? null);
+
+        return view('config.usuarios.index', compact('users', 'rolesFiltro'));
     }
 
     public function create()
@@ -92,11 +96,14 @@ class UserController extends Controller
         }
 
         $cargos = \App\Models\Cargo::orderBy('nombre')->get();
-        return view('config.usuarios.create', compact('vinculaciones','servicios','cargos'));
+        $roles = Role::filtrarPorJerarquia(Role::nombres(), Auth::user()->role ?? null);
+        return view('config.usuarios.create', compact('vinculaciones','servicios','cargos','roles'));
     }
 
     public function store(Request $request)
     {
+        $rolesValidos = Role::nombres();
+
         $data = $request->validate([
             'name' => ['required','string','max:255'],
             'apellido1' => ['nullable','string','max:255'],
@@ -105,7 +112,7 @@ class UserController extends Controller
             'servicio_id' => ['nullable','integer','exists:servicios,id'],
             'tipo_vinculacion_id' => ['nullable','integer','exists:vinculaciones,id'],
             'cargo' => ['nullable', 'string', 'max:100'],
-            'role' => ['required','string','in:Super Admin,Administrador,Coordinador,Operador,Usuario,Instructor GYM'],
+            'role' => ['required','string',Rule::in($rolesValidos)],
             'email' => ['required','email','max:255','unique:users,email'],
             'password' => ['required','confirmed','min:6'],
             'genero' => ['nullable','in:M,F'],
@@ -176,7 +183,14 @@ class UserController extends Controller
             $cargos = collect();
         }
 
-        return view('config.usuarios.edit', compact('user','vinculaciones','servicios', 'cargos'));
+        // Roles activos + el rol actual del usuario (aunque esté inactivo), según la jerarquía
+        $roles = Role::nombres();
+        if ($user->role && !in_array($user->role, $roles, true)) {
+            $roles[] = $user->role;
+        }
+        $roles = Role::filtrarPorJerarquia($roles, Auth::user()->role ?? null);
+
+        return view('config.usuarios.edit', compact('user','vinculaciones','servicios', 'cargos', 'roles'));
     }
 
     public function update(Request $request, $id)
@@ -193,6 +207,9 @@ class UserController extends Controller
             return redirect()->route('config.usuarios.index')->with('error', 'No autorizado para modificar este usuario.');
         }
 
+        // Roles activos del catálogo + el rol que ya tiene el usuario (por si está inactivo)
+        $rolesValidos = array_unique(array_merge(Role::nombres(), array_filter([$user->role])));
+
         $data = $request->validate([
             'name' => ['required','string','max:255'],
             'apellido1' => ['nullable','string','max:255'],
@@ -201,7 +218,7 @@ class UserController extends Controller
             'servicio_id' => ['nullable','integer','exists:servicios,id'],
             'tipo_vinculacion_id' => ['nullable','integer','exists:vinculaciones,id'],
             'cargo' => ['nullable', 'string', 'max:100'],
-            'role' => ['required','string','in:Super Admin,Administrador,Coordinador,Operador,Usuario,Instructor GYM'],
+            'role' => ['required','string',Rule::in($rolesValidos)],
             'email' => ['required','email','max:255','unique:users,email,'.$user->id],
             'password' => ['nullable','confirmed','min:6'],
             'genero' => ['nullable','in:M,F'],
