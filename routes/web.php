@@ -65,6 +65,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/api/inscritos/{id}', [\App\Http\Controllers\Api\InscritoController::class, 'updateInscrito'])->name('api.inscritos.update');
     Route::delete('/api/inscritos/{id}', [\App\Http\Controllers\Api\InscritoController::class, 'deleteInscrito'])->name('api.inscritos.delete');
 
+    // ─── Salud Ocupacional · Agenda Médica ───
+    Route::prefix('salud-ocupacional/agenda')->name('salud.agenda.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SaludOcupacional\AgendaMedicaController::class, 'index'])->name('index');
+        Route::get('/citas', [\App\Http\Controllers\SaludOcupacional\AgendaMedicaController::class, 'citas'])->name('citas');
+        Route::get('/pacientes', [\App\Http\Controllers\SaludOcupacional\AgendaMedicaController::class, 'pacientes'])->name('pacientes');
+        Route::post('/citas', [\App\Http\Controllers\SaludOcupacional\AgendaMedicaController::class, 'store'])->name('store');
+        Route::put('/citas/{cita}', [\App\Http\Controllers\SaludOcupacional\AgendaMedicaController::class, 'update'])->name('update');
+        Route::put('/configuracion', [\App\Http\Controllers\SaludOcupacional\AgendaMedicaController::class, 'configuracion'])->name('configuracion');
+        Route::post('/bloqueos', [\App\Http\Controllers\SaludOcupacional\AgendaMedicaController::class, 'bloquear'])->name('bloquear');
+        Route::delete('/bloqueos/{bloqueo}', [\App\Http\Controllers\SaludOcupacional\AgendaMedicaController::class, 'desbloquear'])->name('desbloquear');
+    });
+
     // ─── Salud Ocupacional · Concepto Médico ───
     Route::prefix('salud-ocupacional/concepto')->name('salud.concepto.')->group(function () {
         Route::get('/', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'index'])->name('index');

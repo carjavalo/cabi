@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\SaludOcupacional;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\SaludOcupacional\Concerns\TrabajadoresPlanta;
+use App\Models\AgendaCita;
 use App\Models\ConceptoMedico;
 use App\Models\ConceptoDocumento;
 use App\Models\User;
@@ -25,12 +27,11 @@ use Illuminate\Validation\Rule;
 
 class ConceptoMedicoController extends Controller implements HasMiddleware
 {
+    use TrabajadoresPlanta;
+
     /** Datos institucionales del empleador (HUV). */
     private const EMPLEADOR = 'HOSPITAL UNIVERSITARIO DEL VALLE "EVARISTO GARCÍA" E.S.E';
     private const NIT       = '890303461-2';
-
-    /** Solo los trabajadores con esta vinculación pueden ser atendidos como pacientes. */
-    private const VINCULACION_ATENDIBLE = 'Planta';
 
     /** Tipos de documento de identificación del paciente. */
     public const TIPOS_IDENTIFICACION = [
@@ -41,34 +42,10 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         'PPT' => 'P.P.T.',
     ];
 
-    /** Cache del id de la vinculación "Planta" (columna tipo_vinculacion_id). */
-    private ?int $plantaId = null;
-    private bool $plantaIdResolved = false;
-
-    /**
-     * Control de acceso del módulo de Salud Ocupacional.
-     *
-     * Por ahora el ingreso está restringido EXCLUSIVAMENTE al rol "Super Admin".
-     * Cuando se construya el módulo de permisos por roles, este punto será el
-     * lugar donde se otorgará el acceso a los demás roles según sus permisos.
-     */
-    public static function middleware(): array
-    {
-        return [
-            function (Request $request, Closure $next) {
-                $user = Auth::user();
-                if (!$user || $user->role !== 'Super Admin') {
-                    abort(403, 'Acceso restringido al módulo de Salud Ocupacional.');
-                }
-                return $next($request);
-            },
-        ];
-    }
-
     /**
      * Vista principal: asistente para diligenciar un nuevo concepto médico.
      */
-    public function index()
+    public function index(Request $request)
     {
         $cargos    = $this->safeList(fn () => Cargo::orderBy('nombre')->pluck('nombre'));
         $servicios = $this->safeList(fn () => Servicio::orderBy('nombre')->pluck('nombre'));
@@ -114,6 +91,8 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'conceptosGrupos'  => ConceptoMedico::CONCEPTOS_GRUPOS,
             'conceptosEnfasis' => ConceptoMedico::CONCEPTOS_ENFASIS,
             'migracionesPendientes' => $migracionesPendientes,
+            'agendaHoy'   => $this->agendaHoy(),
+            'citaInicial' => (int) $request->query('cita', 0) ?: null,
         ]);
     }
 
@@ -262,6 +241,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'elegible' => true,
             'paciente' => $this->pacientePayload($user),
             'historial'=> $historial,
+            'cita_hoy' => ($cita = $this->citaPendienteHoy($user->id)) ? $this->citaResumen($cita) : null,
             'ultima_historia' => $ultima ? [
                 'id'     => $ultima->id,
                 'fecha'  => optional($ultima->fecha_atencion)->format('d/m/Y'),
@@ -299,12 +279,17 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             }
         }
 
-        $items = $query->orderBy('name')->take(10)->get()->map(fn (User $u) => [
+        $usuarios = $query->orderBy('name')->take(10)->get();
+        $agendados = $this->safeList(fn () => AgendaCita::porAtender()->whereDate('fecha', today())
+            ->whereIn('user_id', $usuarios->pluck('id'))->get()->keyBy('user_id'));
+
+        $items = $usuarios->map(fn (User $u) => [
             'identificacion'  => $u->identificacion,
             'nombre_completo' => trim($u->name . ' ' . ($u->apellido1 ?? '') . ' ' . ($u->apellido2 ?? '')),
             'vinculacion'     => $this->vinculacionNombre($u),
             'elegible'        => $this->esPlanta($u),
-        ]);
+            'cita_hoy'        => optional($agendados->get($u->id))->hora_corta,
+        ])->sortBy(fn ($i) => $i['cita_hoy'] ? '0' . $i['cita_hoy'] : '1')->values();
 
         return response()->json(['items' => $items]);
     }
@@ -370,6 +355,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'concepto_resultado' => ['nullable', 'string', 'max:40'],
             'concepto_enfasis'   => ['nullable', 'array'],
             'observaciones_concepto' => ['nullable', 'string', 'max:5000'],
+            'agenda_cita_id'     => ['nullable', 'integer'],
             'documentos.*'       => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,gif,webp', 'max:30720'],
         ], [
             'documentos.*.max'   => 'Cada documento adjunto puede pesar máximo 30 MB.',
@@ -472,6 +458,22 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
 
         $concepto->created_by = Auth::id();
         $concepto->save();
+
+        // La cita de la agenda queda atendida y enlazada a esta consulta. Si no se
+        // seleccionó desde la agenda, se enlaza la cita pendiente de hoy del paciente.
+        $cita = null;
+        if (!empty($validated['agenda_cita_id'])) {
+            $cita = AgendaCita::where('id', $validated['agenda_cita_id'])->where('user_id', $user->id)->whereNull('concepto_medico_id')->first();
+        }
+        $cita = $cita ?: $this->citaPendienteHoy($user->id);
+        if ($cita) {
+            $cita->forceFill([
+                'estado'             => 'completada',
+                'asistencia'         => 'asistio',
+                'concepto_medico_id' => $concepto->id,
+                'updated_by'         => Auth::id(),
+            ])->save();
+        }
 
         // Documentos adjuntos de la EPS
         if ($request->hasFile('documentos')) {
@@ -625,46 +627,54 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
     }
 
     /**
-     * ¿El trabajador es de vinculación "Planta"? Contempla tanto el nombre
-     * textual (tipo_vinculacion) como el id (tipo_vinculacion_id), pues en la
-     * base de datos existen registros con uno u otro.
+     * Pacientes agendados para hoy que aún no han sido atendidos, en orden de
+     * hora. Tienen prioridad en el paso 2 del Concepto Médico.
      */
-    private function esPlanta(User $u): bool
+    private function agendaHoy()
     {
-        if (strcasecmp(trim((string) $u->tipo_vinculacion), self::VINCULACION_ATENDIBLE) === 0) {
-            return true;
+        if (!Schema::hasTable('agenda_citas')) {
+            return collect();
         }
-        $pid = $this->plantaId();
-        return $pid !== null && (int) $u->tipo_vinculacion_id === $pid;
+
+        return $this->safeList(fn () => AgendaCita::with('user')
+            ->porAtender()
+            ->whereDate('fecha', today())
+            ->orderBy('hora')
+            ->get()
+            ->filter(fn ($c) => $c->user)
+            ->map(fn ($c) => $this->citaResumen($c) + [
+                'nombre'         => trim($c->user->name . ' ' . ($c->user->apellido1 ?? '') . ' ' . ($c->user->apellido2 ?? '')),
+                'identificacion' => $c->user->identificacion,
+            ])
+            ->values());
     }
 
-    /** Nombre de la vinculación: texto guardado o, en su defecto, el del catálogo. */
-    private function vinculacionNombre(User $u): ?string
+    /** Cita de hoy pendiente de atender para un paciente (la más temprana). */
+    private function citaPendienteHoy(int $userId): ?AgendaCita
     {
-        if (trim((string) $u->tipo_vinculacion) !== '') {
-            return $u->tipo_vinculacion;
-        }
-        try {
-            return $u->tipo_vinculacion_id ? optional(Vinculacion::find($u->tipo_vinculacion_id))->nombre : null;
-        } catch (\Throwable $e) {
+        if (!Schema::hasTable('agenda_citas')) {
             return null;
         }
+
+        return AgendaCita::porAtender()
+            ->where('user_id', $userId)
+            ->whereDate('fecha', today())
+            ->whereNull('concepto_medico_id')
+            ->orderBy('hora')
+            ->first();
     }
 
-    /** Id de la vinculación "Planta" en el catálogo (o null si no existe). */
-    private function plantaId(): ?int
+    private function citaResumen(AgendaCita $c): array
     {
-        if (!$this->plantaIdResolved) {
-            $this->plantaIdResolved = true;
-            try {
-                $this->plantaId = optional(
-                    Vinculacion::whereRaw('LOWER(nombre) = ?', [strtolower(self::VINCULACION_ATENDIBLE)])->first()
-                )->id;
-            } catch (\Throwable $e) {
-                $this->plantaId = null;
-            }
-        }
-        return $this->plantaId;
+        return [
+            'id'           => $c->id,
+            'hora'         => $c->hora_corta,
+            'motivo'       => $c->motivo,
+            'motivo_label' => $c->motivo_label,
+            'enfasis'      => $c->enfasis ?? [],
+            'estado'       => $c->estado,
+            'observaciones'=> $c->observaciones,
+        ];
     }
 
     private function decodeJsonField($value)

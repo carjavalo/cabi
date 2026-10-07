@@ -193,6 +193,15 @@
                 </ul>
               </li>
               <li class="nav-item"><a href="{{ route('recaudo.index') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Recaudo</p></a></li>
+              <!-- Capacitaciones (visible para Coordinador y admins si aplica) -->
+              @if(Auth::check() && in_array(Auth::user()->role, ['Coordinador', 'Super Admin', 'Administrador', 'Operador']))
+              <li class="nav-item">
+                <a href="{{ route('capacitaciones.index_user') }}" class="nav-link {{ request()->is('capacitaciones*') && !request()->is('configuracion/capacitaciones*') ? 'active' : '' }}">
+                  <i class="nav-icon fas fa-chalkboard-teacher"></i>
+                  <p>Capacitaciones</p>
+                </a>
+              </li>
+              @endif
             </ul>
           </li>
 
@@ -204,19 +213,10 @@
               <p>Salud Ocupacional <i class="right fas fa-angle-left"></i></p>
             </a>
             <ul class="nav nav-treeview">
+              <li class="nav-item"><a href="{{ route('salud.agenda.index') }}" class="nav-link {{ request()->routeIs('salud.agenda.*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Agenda Medica</p></a></li>
               <li class="nav-item"><a href="{{ route('salud.concepto.index') }}" class="nav-link {{ request()->routeIs('salud.concepto.*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Concepto Medico</p></a></li>
               <li class="nav-item"><a href="#" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Historia Clinica</p></a></li>
             </ul>
-          </li>
-          @endif
-
-          <!-- Capacitaciones (visible para Coordinador y admins si aplica) -->
-          @if(Auth::check() && in_array(Auth::user()->role, ['Coordinador', 'Super Admin', 'Administrador', 'Operador']))
-          <li class="nav-item">
-            <a href="{{ route('capacitaciones.index_user') }}" class="nav-link {{ request()->is('capacitaciones*') && !request()->is('configuracion/capacitaciones*') ? 'active' : '' }}">
-              <i class="nav-icon fas fa-chalkboard-teacher"></i>
-              <p>Capacitaciones</p>
-            </a>
           </li>
           @endif
 

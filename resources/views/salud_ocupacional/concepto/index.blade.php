@@ -62,6 +62,9 @@
     .so-sec{ font-family:'Courier New',monospace;font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--so-brand);
         font-weight:700;background:var(--so-bg);padding:9px 13px;border-radius:8px;margin:22px 0 13px; }
     .so-sec.dark{ background:var(--so-brand);color:#fff;text-align:center;letter-spacing:.14em; }
+    .so-agenda-hoy{ margin-top:18px;padding:14px 16px;background:var(--so-bg);border:1.5px solid #d6dbf0;border-radius:12px; }
+    .so-agenda-hoy select.so-in{ font-weight:600;color:var(--so-brand); }
+    .so-sug .ag{ display:inline-block;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:99px;background:#eaf7f0;color:var(--so-ok);margin-left:6px; }
     .so-sec-rep{ display:flex;justify-content:space-between;align-items:center;gap:10px; }
     .so-rep-add{ font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border:1.5px solid var(--so-brand);
         background:#fff;color:var(--so-brand);border-radius:8px;padding:5px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px; }
@@ -410,6 +413,25 @@
                         <div class="so-eyebrow">Paso 2 de 7</div>
                         <h2>Identificación del paciente</h2>
                         <p class="sub">Digita la cédula o el nombre para traer los datos del paciente. Usa el botón para crear o editar.</p>
+
+                        {{-- Pacientes agendados hoy: se atienden con prioridad --}}
+                        <div class="so-agenda-hoy">
+                            <label class="so-lbl" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                                <span><i class="far fa-calendar-check"></i> Pacientes agendados hoy · prioridad</span>
+                                <a href="{{ route('salud.agenda.index') }}" style="font-size:11px;text-transform:none;letter-spacing:0;">Ver agenda</a>
+                            </label>
+                            @if(count($agendaHoy))
+                            <select id="so-agenda-sel" class="so-in">
+                                <option value="">Selecciona un paciente agendado ({{ count($agendaHoy) }} pendiente{{ count($agendaHoy)===1?'':'s' }})…</option>
+                                @foreach($agendaHoy as $a)
+                                <option value="{{ $a['id'] }}">{{ $a['hora'] }} · {{ $a['nombre'] }} · {{ $a['identificacion'] }} · {{ $a['motivo_label'] }}</option>
+                                @endforeach
+                            </select>
+                            @else
+                            <div class="so-note" style="margin-top:0;"><i class="fas fa-info-circle" style="margin-top:2px;color:var(--so-brand);"></i> No hay pacientes agendados pendientes para hoy. Puedes atender buscando por cédula o nombre.</div>
+                            @endif
+                        </div>
+                        <input type="hidden" name="agenda_cita_id" id="f-agenda_cita_id">
 
                         <div class="so-grid" style="margin-top:20px;">
                             <div style="grid-column:1/-1;">
@@ -916,6 +938,8 @@
     const ENFASIS = @json($enfasis);
     const CONCEPTOS = @json($conceptos);
     const CONCEPTOS_ENF = @json($conceptosEnfasis);
+    const AGENDA_HOY = @json($agendaHoy);
+    const CITA_INICIAL = @json($citaInicial);
     const GENERO = { F:'Femenino', M:'Masculino', O:'Otro' };
 
     /**
@@ -986,9 +1010,39 @@
     let sugItems = [], sugIdx = -1, sugSeq = 0;
     let foundPatient = null;   // último usuario encontrado (sea o no de Planta), para editarlo con +
     const LABORALES = [['f-cargo','cargo'],['f-servicio','servicio'],['f-eps','eps'],['f-afp','afp'],['f-arl','arl']];
-    identInput.addEventListener('input', ()=>{
+
+    // ─── Agenda: los pacientes agendados hoy se atienden con prioridad ───
+    const agendaSel = $('#so-agenda-sel');
+    /** Enlaza la cita a la consulta y toma de ella el tipo de atención y los énfasis. */
+    function aplicarCita(cita, aplicarAtencion = true){
+        $('#f-agenda_cita_id').value = cita ? cita.id : '';
+        if(agendaSel) agendaSel.value = cita && agendaSel.querySelector(`option[value="${cita.id}"]`) ? String(cita.id) : '';
+        if(!cita || !aplicarAtencion) return;
+        const tipo = document.querySelector(`input[name="tipo_atencion"][value="${CSS.escape(cita.motivo||'')}"]`);
+        if(tipo) tipo.checked = true;
+        $$('input[name="enfasis[]"]').forEach(i=> i.checked = (cita.enfasis||[]).includes(i.value));
+        aplicarConcepto();
+    }
+    function avisarSinCita(nombre){
+        const pendientes = AGENDA_HOY.length;
+        Swal.fire({toast:true, position:'top-end', icon:'warning', timer:5000, showConfirmButton:false,
+            title: nombre+' no está agendado hoy',
+            text: 'Se atenderá sin cita.' + (pendientes ? ' Hay '+pendientes+' paciente'+(pendientes===1?'':'s')+' agendado'+(pendientes===1?'':'s')+' con prioridad.' : '')});
+    }
+    function cargarDesdeAgenda(id){
+        const c = AGENDA_HOY.find(a=> String(a.id) === String(id));
+        if(!c){ aplicarCita(null, false); return false; }
         clearTimeout(searchTimer);
         currentPatient = null; foundPatient = null; $('#f-user_id').value=''; clearPatientFields();
+        identInput.value = c.identificacion;
+        aplicarCita(c);
+        buscarPaciente(c.identificacion);
+        return true;
+    }
+    if(agendaSel) agendaSel.addEventListener('change', ()=> cargarDesdeAgenda(agendaSel.value));
+    identInput.addEventListener('input', ()=>{
+        clearTimeout(searchTimer);
+        currentPatient = null; foundPatient = null; $('#f-user_id').value=''; clearPatientFields(); aplicarCita(null, false);
         setPill('idle','Escribe la cédula o el nombre para buscar');
         const v = identInput.value.trim();
         if(v.length >= 3){ searchTimer = setTimeout(()=>sugerirPacientes(v), 350); }
@@ -1033,7 +1087,7 @@
                     setPill('new','No existe. Usa el botón + para crearlo');
                     return;
                 }
-                sugBox.innerHTML = sugItems.map((i,k)=>`<button type="button" data-k="${k}"><span class="n">${esc(i.nombre_completo)}</span><span class="m">${esc(i.identificacion)} · <span class="${i.elegible?'':'x'}">${esc(i.vinculacion||'Sin vinculación')}</span></span></button>`).join('');
+                sugBox.innerHTML = sugItems.map((i,k)=>`<button type="button" data-k="${k}"><span class="n">${esc(i.nombre_completo)}${i.cita_hoy?`<span class="ag">Agendado ${esc(i.cita_hoy)}</span>`:''}</span><span class="m">${esc(i.identificacion)} · <span class="${i.elegible?'':'x'}">${esc(i.vinculacion||'Sin vinculación')}</span></span></button>`).join('');
                 sugBox.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>pickSug(sugItems[+b.dataset.k])));
                 sugBox.style.display='block'; sugIdx=-1;
                 setPill('idle', sugItems.length+' coincidencias. Selecciona el paciente');
@@ -1062,8 +1116,14 @@
                 if(res.found && res.elegible){
                     currentPatient = foundPatient = res.paciente;
                     fillPatientFields(res.paciente);
+                    aplicarCita(res.cita_hoy || null);   // antes de la historia: define el tipo de atención
                     fillHistoria(res.ultima_historia || null);
-                    setPill('found','Paciente encontrado: '+res.paciente.nombre_completo);
+                    if(res.cita_hoy){
+                        setPill('found','Paciente agendado hoy a las '+res.cita_hoy.hora+' ('+res.cita_hoy.motivo_label+'): '+res.paciente.nombre_completo);
+                    } else {
+                        setPill('found','Paciente encontrado: '+res.paciente.nombre_completo+' · sin cita agendada hoy');
+                        avisarSinCita(res.paciente.nombre_completo);
+                    }
                     renderHistorial(res.historial||[]);
                 } else if(res.found && !res.elegible){
                     // Existe pero su vinculación NO es Planta → no puede ser atendido (sí editado)
@@ -1808,6 +1868,11 @@
 
     // init
     showStep(0);
+    // Atención iniciada desde la Agenda Médica (?cita=ID)
+    if(CITA_INICIAL){
+        if(cargarDesdeAgenda(CITA_INICIAL)) showStep(1);
+        else Swal.fire({icon:'info', title:'Cita no disponible', text:'La cita seleccionada no es de hoy o ya fue atendida. Puedes buscar al paciente por cédula o nombre.'});
+    }
 })();
 </script>
 @endpush
