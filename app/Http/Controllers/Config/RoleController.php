@@ -124,12 +124,15 @@ class RoleController extends Controller implements HasMiddleware
             'activo'      => ['nullable', 'boolean'],
         ], ['nombre.unique' => 'Ya existe un rol con ese nombre.', 'nombre.required' => 'El nombre del rol es obligatorio.'], ['nombre' => 'nombre del rol']);
 
-        Role::create([
+        $role = Role::create([
             'nombre'      => trim($data['nombre']),
             'descripcion' => $data['descripcion'] ?? null,
             'activo'      => $request->boolean('activo', true),
             'es_sistema'  => false,
         ]);
+
+        // Gestión de Permisos: el rol nuevo inicia con los permisos del rol "Usuario"
+        \App\Support\GestorPermisos::inicializarRol($role);
 
         return $this->responder($request, 'Rol creado correctamente.');
     }
@@ -178,6 +181,7 @@ class RoleController extends Controller implements HasMiddleware
             }
         });
 
+        \App\Support\GestorPermisos::limpiarCache();
         return $this->responder($request, 'Rol actualizado correctamente.');
     }
 
@@ -194,6 +198,7 @@ class RoleController extends Controller implements HasMiddleware
 
         $role->delete();
 
+        \App\Support\GestorPermisos::limpiarCache();
         return $this->responder($request, 'Rol eliminado correctamente.');
     }
 

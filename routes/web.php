@@ -131,6 +131,19 @@ Route::prefix('configuracion')->name('config.')->middleware(['auth', 'verified']
     // Gestión de Roles
     Route::get('roles/export', [App\Http\Controllers\Config\RoleController::class, 'exportExcel'])->name('roles.export');
     Route::resource('roles', App\Http\Controllers\Config\RoleController::class)->except(['create', 'edit']);
+    // Gestión de Permisos
+    Route::controller(App\Http\Controllers\Config\PermisoController::class)->prefix('permisos')->name('permisos.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('datos', 'refrescar')->name('datos');
+        Route::post('sincronizar', 'sincronizar')->name('sincronizar');
+        Route::post('asignar', 'asignar')->name('asignar');
+        Route::post('copiar', 'copiar')->name('copiar');
+        Route::post('asignables', 'asignables')->name('asignables');
+        Route::post('revisados', 'revisados')->name('revisados');
+        Route::post('/', 'store')->name('store');
+        Route::put('{permiso}', 'update')->name('update');
+        Route::delete('{permiso}', 'destroy')->name('destroy');
+    });
     Route::resource('servicios', ServicioController::class)->except(['show']);
     Route::get('servicios-buscar', [ServicioController::class, 'buscar'])->name('servicios.buscar');
     Route::resource('vinculaciones', VinculacionController::class)->except(['show']);

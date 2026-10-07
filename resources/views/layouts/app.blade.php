@@ -184,17 +184,25 @@
                 </a>
                 <ul class="nav nav-treeview">
                   @if(!Auth::check() || Auth::user()->role !== 'Instructor GYM')
+                  @puedeUrl(url('/bienestar/gym/inscripcion'))
                   <li class="nav-item"><a href="{{ url('/bienestar/gym/inscripcion') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Inscripción</p></a></li>
+                  @endpuedeUrl
                   @endif
                   @if(Auth::check() && Auth::user()->role === 'Super Admin')
+                  @puedeUrl(url('/bienestar/gym/agenda'))
                   <li class="nav-item"><a href="{{ url('/bienestar/gym/agenda') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Agenda tu Horario</p></a></li>
+                  @endpuedeUrl
                   @endif
+                  @puedeUrl(url('/bienestar/listados'))
                   <li class="nav-item"><a href="{{ url('/bienestar/listados') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Listado</p></a></li>
+                  @endpuedeUrl
                 </ul>
               </li>
+              @puedeUrl(route('recaudo.index'))
               <li class="nav-item"><a href="{{ route('recaudo.index') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Recaudo</p></a></li>
+              @endpuedeUrl
               <!-- Capacitaciones (visible para Coordinador y admins si aplica) -->
-              @if(Auth::check() && in_array(Auth::user()->role, ['Coordinador', 'Super Admin', 'Administrador', 'Operador']))
+              @if(Auth::check() && in_array(Auth::user()->role, ['Coordinador', 'Super Admin', 'Administrador', 'Operador']) && \App\Support\GestorPermisos::puede(Auth::user(), 'capacitaciones.index_user'))
               <li class="nav-item">
                 <a href="{{ route('capacitaciones.index_user') }}" class="nav-link {{ request()->is('capacitaciones*') && !request()->is('configuracion/capacitaciones*') ? 'active' : '' }}">
                   <i class="nav-icon fas fa-chalkboard-teacher"></i>
@@ -213,8 +221,12 @@
               <p>Salud Ocupacional <i class="right fas fa-angle-left"></i></p>
             </a>
             <ul class="nav nav-treeview">
+              @puedeUrl(route('salud.agenda.index'))
               <li class="nav-item"><a href="{{ route('salud.agenda.index') }}" class="nav-link {{ request()->routeIs('salud.agenda.*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Agenda Medica</p></a></li>
+              @endpuedeUrl
+              @puedeUrl(route('salud.concepto.index'))
               <li class="nav-item"><a href="{{ route('salud.concepto.index') }}" class="nav-link {{ request()->routeIs('salud.concepto.*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Concepto Medico</p></a></li>
+              @endpuedeUrl
               <li class="nav-item"><a href="#" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Historia Clinica</p></a></li>
             </ul>
           </li>
@@ -228,16 +240,41 @@
               <p>Configuración <i class="right fas fa-angle-left"></i></p>
             </a>
             <ul class="nav nav-treeview">
+              @puedeUrl(url('/configuracion/usuarios'))
               <li class="nav-item"><a href="{{ url('/configuracion/usuarios') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión de Usuarios</p></a></li>
+              @endpuedeUrl
+              @puedeUrl(route('config.roles.index'))
               <li class="nav-item"><a href="{{ route('config.roles.index') }}" class="nav-link {{ request()->routeIs('config.roles.*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Gestión de Roles</p></a></li>
+              @endpuedeUrl
+              @puedeUrl(route('config.cargos.index'))
               <li class="nav-item"><a href="{{ route('config.cargos.index') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión de Cargos</p></a></li>
+              @endpuedeUrl
+              @puedeUrl(url('/configuracion/servicios'))
               <li class="nav-item"><a href="{{ url('/configuracion/servicios') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión Servicios</p></a></li>
+              @endpuedeUrl
+              @puedeUrl(url('/configuracion/vinculaciones'))
               <li class="nav-item"><a href="{{ url('/configuracion/vinculaciones') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión Vinculaciones</p></a></li>
+              @endpuedeUrl
+              	@puedeUrl(url('/configuracion/publicidad'))
               	<li class="nav-item"><a href="{{ url('/configuracion/publicidad') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión de Publicidad</p></a></li>
+              	@endpuedeUrl
+              @puedeUrl(url('/configuracion/cursos'))
               <li class="nav-item"><a href="{{ url('/configuracion/cursos') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión Cursos</p></a></li>
+              @endpuedeUrl
+              @puedeUrl(url('/configuracion/encuestas'))
               <li class="nav-item"><a href="{{ url('/configuracion/encuestas') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión Encuestas</p></a></li>
+              @endpuedeUrl
+              @puedeUrl(url('/configuracion/eventos'))
               <li class="nav-item"><a href="{{ url('/configuracion/eventos') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión de Eventos</p></a></li>
+              @endpuedeUrl
+              @puedeUrl(url('/configuracion/capacitaciones'))
               <li class="nav-item"><a href="{{ url('/configuracion/capacitaciones') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestion Capacitaciones</p></a></li>
+              @endpuedeUrl
+              @if(in_array(Auth::user()->role, ['Super Admin','Administrador']))
+              @puedeUrl(route('config.permisos.index'))
+              <li class="nav-item"><a href="{{ route('config.permisos.index') }}" class="nav-link {{ request()->routeIs('config.permisos.*') ? 'active' : '' }}"><i class="fas fa-key nav-icon"></i><p>Gestión de Permisos</p></a></li>
+              @endpuedeUrl
+              @endif
             </ul>
           </li>
 

@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             \App\Http\Middleware\RestrictInstructorGym::class,
+            \App\Http\Middleware\VerificarPermiso::class,
         ]);
         $middleware->alias([
             'autorizado.inscripcion' => \App\Http\Middleware\CheckInscripcionAutorizada::class,

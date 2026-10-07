@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Vinculacion;
 use App\Models\Servicio;
 use App\Models\Role;
+use App\Support\GestorPermisos;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -96,7 +97,7 @@ class UserController extends Controller
         }
 
         $cargos = \App\Models\Cargo::orderBy('nombre')->get();
-        $roles = Role::filtrarPorJerarquia(Role::nombres(), Auth::user()->role ?? null);
+        $roles = GestorPermisos::rolesAsignables(Role::nombres(), Auth::user()->role ?? null);
         return view('config.usuarios.create', compact('vinculaciones','servicios','cargos','roles'));
     }
 
@@ -130,9 +131,9 @@ class UserController extends Controller
             return redirect()->back()->withInput()->with('error', 'No autorizado para asignar rol Super Admin.');
         }
 
-        // Prevent Operador from assigning Super Admin or Administrador
-        if (Auth::check() && Auth::user()->role === 'Operador' && in_array($data['role'] ?? '', ['Super Admin','Administrador'])) {
-            return redirect()->back()->withInput()->with('error', 'No autorizado para asignar un rol superior.');
+        // Solo se pueden asignar los roles configurados en Gestión de Permisos para el rol actual
+        if (!in_array($data['role'] ?? '', GestorPermisos::rolesAsignables($rolesValidos, Auth::user()->role ?? null), true)) {
+            return redirect()->back()->withInput()->with('error', 'Su rol no está autorizado para asignar el rol "' . ($data['role'] ?? '') . '".');
         }
 
         $userdata = [
@@ -188,7 +189,7 @@ class UserController extends Controller
         if ($user->role && !in_array($user->role, $roles, true)) {
             $roles[] = $user->role;
         }
-        $roles = Role::filtrarPorJerarquia($roles, Auth::user()->role ?? null);
+        $roles = GestorPermisos::rolesAsignables($roles, Auth::user()->role ?? null);
 
         return view('config.usuarios.edit', compact('user','vinculaciones','servicios', 'cargos', 'roles'));
     }
@@ -256,9 +257,9 @@ class UserController extends Controller
             if ($data['role'] === 'Super Admin' && (!Auth::check() || Auth::user()->role !== 'Super Admin')) {
                 return redirect()->back()->withInput()->with('error', 'No autorizado para asignar rol Super Admin.');
             }
-            // Prevent Operador from assigning Administrador or Super Admin
-            if (Auth::check() && Auth::user()->role === 'Operador' && in_array($data['role'], ['Super Admin','Administrador'])) {
-                return redirect()->back()->withInput()->with('error', 'No autorizado para asignar un rol superior.');
+            // Solo se pueden asignar los roles configurados en Gestión de Permisos (conservar el actual siempre es válido)
+            if ($data['role'] !== $user->role && !in_array($data['role'], GestorPermisos::rolesAsignables($rolesValidos, Auth::user()->role ?? null), true)) {
+                return redirect()->back()->withInput()->with('error', 'Su rol no está autorizado para asignar el rol "' . $data['role'] . '".');
             }
             $user->role = $data['role'];
         }

@@ -25,8 +25,9 @@ class Role extends Model
     ];
 
     protected $casts = [
-        'activo'     => 'boolean',
-        'es_sistema' => 'boolean',
+        'activo'            => 'boolean',
+        'es_sistema'        => 'boolean',
+        'config_asignables' => 'boolean',
     ];
 
     /**
@@ -46,6 +47,17 @@ class Role extends Model
     public function users()
     {
         return $this->hasMany(User::class, 'role', 'nombre');
+    }
+
+    public function permisos()
+    {
+        return $this->belongsToMany(Permiso::class, 'permiso_role')->withTimestamps();
+    }
+
+    /** Roles que este rol puede asignar al crear/editar usuarios. */
+    public function asignables()
+    {
+        return $this->belongsToMany(Role::class, 'role_asignable', 'role_id', 'asignable_id')->withTimestamps();
     }
 
     public function scopeActivos($query)
