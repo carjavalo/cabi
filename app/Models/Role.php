@@ -22,13 +22,27 @@ class Role extends Model
         'descripcion',
         'activo',
         'es_sistema',
+        'nivel',
     ];
 
     protected $casts = [
         'activo'            => 'boolean',
         'es_sistema'        => 'boolean',
         'config_asignables' => 'boolean',
+        'nivel'             => 'integer',
     ];
+
+    /**
+     * Nivel jerárquico (1 = más alto). Sirve para ordenar los roles y para la opción
+     * "Hasta su nivel" al configurar qué roles puede asignar cada rol.
+     */
+    public const NIVEL_POR_DEFECTO = 5;
+    public const NIVELES = [
+        'Super Admin' => 1, 'Administrador' => 2, 'Coordinador' => 3,
+        'Operador' => 3, 'Instructor GYM' => 4, 'Usuario' => 5,
+    ];
+
+    private static bool $tablaLista = false;
 
     /**
      * Roles base del aplicativo. Sus nombres están referenciados en el código
@@ -81,6 +95,7 @@ class Role extends Model
                         `descripcion` varchar(255) DEFAULT NULL,
                         `activo` tinyint(1) NOT NULL DEFAULT 1,
                         `es_sistema` tinyint(1) NOT NULL DEFAULT 0,
+                        `nivel` tinyint unsigned NOT NULL DEFAULT 5,
                         `created_at` timestamp NULL DEFAULT NULL,
                         `updated_at` timestamp NULL DEFAULT NULL,
                         PRIMARY KEY (`id`),
@@ -89,11 +104,18 @@ class Role extends Model
                 ");
             }
 
+            if (!static::$tablaLista && !Schema::hasColumn('roles', 'nivel')) {
+                DB::statement("ALTER TABLE `roles` ADD `nivel` tinyint unsigned NOT NULL DEFAULT " . static::NIVEL_POR_DEFECTO . " AFTER `es_sistema`");
+                foreach (static::NIVELES as $nombre => $nivel) {
+                    DB::table('roles')->where('nombre', $nombre)->update(['nivel' => $nivel]);
+                }
+            }
+
             if (static::count() === 0) {
                 static::sembrar();
             }
 
-            return true;
+            return static::$tablaLista = true;
         } catch (\Throwable $e) {
             report($e);
             return false;
@@ -106,6 +128,7 @@ class Role extends Model
     public static function sembrar(): void
     {
         $now = now();
+        $conNivel = Schema::hasColumn('roles', 'nivel');
 
         foreach (static::SISTEMA as $nombre => $descripcion) {
             if (!DB::table('roles')->where('nombre', $nombre)->exists()) {
@@ -113,7 +136,7 @@ class Role extends Model
                     'nombre' => $nombre, 'descripcion' => $descripcion,
                     'activo' => 1, 'es_sistema' => 1,
                     'created_at' => $now, 'updated_at' => $now,
-                ]);
+                ] + ($conNivel ? ['nivel' => static::NIVELES[$nombre] ?? static::NIVEL_POR_DEFECTO] : []));
             }
         }
 

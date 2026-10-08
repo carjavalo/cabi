@@ -156,24 +156,11 @@ class PermisoController extends Controller implements HasMiddleware
             'asignables.*'   => ['integer', 'exists:roles,id'],
         ]);
         $role = Role::findOrFail($data['role_id']);
-        if ($role->nombre === 'Super Admin') {
-            return response()->json(['success' => false, 'message' => 'El Super Admin siempre puede asignar todos los roles.'], 422);
+        if ($error = GestorPermisos::guardarAsignables($role, $data['asignables'] ?? [], Auth::user()->role)) {
+            return response()->json(['success' => false, 'message' => $error], 422);
         }
 
-        $superId = Role::where('nombre', 'Super Admin')->value('id');
-        $ids = collect($data['asignables'] ?? [])->unique()->reject(fn ($id) => (int) $id === (int) $superId)->values();
-
-        DB::transaction(function () use ($role, $ids) {
-            $now = now();
-            DB::table('role_asignable')->where('role_id', $role->id)->delete();
-            if ($ids->isNotEmpty()) {
-                DB::table('role_asignable')->insert($ids->map(fn ($id) => [
-                    'role_id' => $role->id, 'asignable_id' => $id, 'created_at' => $now, 'updated_at' => $now,
-                ])->all());
-            }
-            $role->forceFill(['config_asignables' => true])->save();
-        });
-
+        $ids = DB::table('role_asignable')->where('role_id', $role->id)->pluck('asignable_id');
         return response()->json(['success' => true, 'message' => "Roles asignables de {$role->nombre} actualizados.", 'asignables' => $ids]);
     }
 

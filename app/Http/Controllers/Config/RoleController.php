@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Config;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\GestorPermisos;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -75,7 +76,7 @@ class RoleController extends Controller implements HasMiddleware
         }
 
         $sort = $request->get('sort', 'id');
-        $allowedSorts = ['id', 'nombre', 'activo', 'es_sistema', 'users_count', 'created_at'];
+        $allowedSorts = ['id', 'nombre', 'nivel', 'activo', 'es_sistema', 'users_count', 'created_at'];
         if (!in_array($sort, $allowedSorts, true)) {
             $sort = 'id';
         }
@@ -87,18 +88,24 @@ class RoleController extends Controller implements HasMiddleware
     public function index(Request $request)
     {
         Role::asegurarTabla();
+        $conAsignables = GestorPermisos::asegurarTablas();
 
         $perPage = (int) $request->get('per_page', 10);
         if (!in_array($perPage, [10, 25, 50, 100], true)) {
             $perPage = 10;
         }
 
-        $roles = $this->filtrar($request)->paginate($perPage)->withQueryString();
+        $query = $this->filtrar($request);
+        if ($conAsignables) {
+            $query->with(['asignables' => fn ($q) => $q->select('roles.id', 'roles.nombre', 'roles.nivel')->orderBy('roles.nivel')->orderBy('roles.id')]);
+        }
+        $roles = $query->paginate($perPage)->withQueryString();
         $puedeEditar = in_array(Auth::user()->role, self::PUEDEN_EDITAR, true);
+        $soySuper = Auth::user()->role === 'Super Admin';
 
         if ($request->ajax()) {
             return response()->json([
-                'html'       => view('config.roles._table', compact('roles', 'puedeEditar'))->render(),
+                'html'       => view('config.roles._table', compact('roles', 'puedeEditar', 'soySuper'))->render(),
                 'pagination' => $roles->links()->toHtml(),
                 'resumen'    => 'Mostrando ' . ($roles->firstItem() ?? 0) . ' a ' . ($roles->lastItem() ?? 0) . ' de ' . $roles->total() . ' registros',
             ]);
@@ -111,7 +118,30 @@ class RoleController extends Controller implements HasMiddleware
             'usuarios'   => User::whereIn('role', Role::pluck('nombre'))->count(),
         ];
 
-        return view('config.roles.index', compact('roles', 'stats', 'puedeEditar'));
+        // Catálogo completo para configurar "roles que puede asignar"
+        $todosRoles = Role::orderBy('nivel')->orderBy('id')->get(['id', 'nombre', 'nivel', 'activo']);
+
+        return view('config.roles.index', compact('roles', 'stats', 'puedeEditar', 'soySuper', 'todosRoles'));
+    }
+
+    /** Reglas comunes de nivel y roles asignables. */
+    private function reglasExtra(): array
+    {
+        return [
+            'nivel'          => ['nullable', 'integer', 'min:1', 'max:10'],
+            'config_asig'    => ['nullable', 'boolean'],
+            'asignables'     => ['nullable', 'array'],
+            'asignables.*'   => ['integer', 'exists:roles,id'],
+        ];
+    }
+
+    /** Guarda los roles asignables si el formulario los envió. Devuelve mensaje de error o null. */
+    private function guardarAsignables(Request $request, Role $role): ?string
+    {
+        if (!$request->boolean('config_asig') || $role->nombre === 'Super Admin') {
+            return null;
+        }
+        return GestorPermisos::guardarAsignables($role, $request->input('asignables', []), Auth::user()->role);
     }
 
     public function store(Request $request)
@@ -122,17 +152,22 @@ class RoleController extends Controller implements HasMiddleware
             'nombre'      => ['required', 'string', 'max:60', Rule::unique('roles', 'nombre')],
             'descripcion' => ['nullable', 'string', 'max:255'],
             'activo'      => ['nullable', 'boolean'],
-        ], ['nombre.unique' => 'Ya existe un rol con ese nombre.', 'nombre.required' => 'El nombre del rol es obligatorio.'], ['nombre' => 'nombre del rol']);
+        ] + $this->reglasExtra(), ['nombre.unique' => 'Ya existe un rol con ese nombre.', 'nombre.required' => 'El nombre del rol es obligatorio.'], ['nombre' => 'nombre del rol']);
 
         $role = Role::create([
             'nombre'      => trim($data['nombre']),
             'descripcion' => $data['descripcion'] ?? null,
             'activo'      => $request->boolean('activo', true),
             'es_sistema'  => false,
+            'nivel'       => $data['nivel'] ?? Role::NIVEL_POR_DEFECTO,
         ]);
 
         // Gestión de Permisos: el rol nuevo inicia con los permisos del rol "Usuario"
-        \App\Support\GestorPermisos::inicializarRol($role);
+        GestorPermisos::inicializarRol($role);
+
+        if ($error = $this->guardarAsignables($request, $role)) {
+            return $this->error($request, 'Rol creado, pero no se guardaron los roles asignables: ' . $error);
+        }
 
         return $this->responder($request, 'Rol creado correctamente.');
     }
@@ -153,26 +188,39 @@ class RoleController extends Controller implements HasMiddleware
             'nombre'      => ['required', 'string', 'max:60', Rule::unique('roles', 'nombre')->ignore($role->id)],
             'descripcion' => ['nullable', 'string', 'max:255'],
             'activo'      => ['nullable', 'boolean'],
-        ], ['nombre.unique' => 'Ya existe un rol con ese nombre.', 'nombre.required' => 'El nombre del rol es obligatorio.'], ['nombre' => 'nombre del rol']);
+        ] + $this->reglasExtra(), ['nombre.unique' => 'Ya existe un rol con ese nombre.', 'nombre.required' => 'El nombre del rol es obligatorio.'], ['nombre' => 'nombre del rol']);
 
         $nuevoNombre = trim($data['nombre']);
+        $nivel = $data['nivel'] ?? $role->nivel;
 
         if ($role->es_sistema) {
-            // Los roles del sistema solo permiten cambiar la descripción
+            // Los roles del sistema solo permiten cambiar la descripción, el nivel y los roles que asignan
             if ($nuevoNombre !== $role->nombre || !$request->boolean('activo', true)) {
                 return $this->error($request, 'Los roles del sistema no se pueden renombrar ni desactivar.');
             }
-            $role->update(['descripcion' => $data['descripcion'] ?? null]);
+            if ($role->nombre === 'Super Admin') {
+                $nivel = 1;
+            }
+            $role->update(['descripcion' => $data['descripcion'] ?? null, 'nivel' => $nivel]);
+            if ($error = $this->guardarAsignables($request, $role)) {
+                return $this->error($request, $error);
+            }
+            GestorPermisos::limpiarCache();
             return $this->responder($request, 'Rol actualizado correctamente.');
         }
 
-        DB::transaction(function () use ($role, $data, $nuevoNombre, $request) {
+        if ($error = $this->guardarAsignables($request, $role)) {
+            return $this->error($request, $error);
+        }
+
+        DB::transaction(function () use ($role, $data, $nuevoNombre, $nivel, $request) {
             $anterior = $role->nombre;
 
             $role->update([
                 'nombre'      => $nuevoNombre,
                 'descripcion' => $data['descripcion'] ?? null,
                 'activo'      => $request->boolean('activo', true),
+                'nivel'       => $nivel,
             ]);
 
             // Mantener sincronizados a los usuarios que tienen asignado el rol
@@ -205,7 +253,8 @@ class RoleController extends Controller implements HasMiddleware
     public function exportExcel(Request $request)
     {
         Role::asegurarTabla();
-        $roles = $this->filtrar($request)->get();
+        GestorPermisos::asegurarTablas();
+        $roles = $this->filtrar($request)->with(['asignables' => fn ($q) => $q->select('roles.id', 'roles.nombre')])->get();
 
         $filename = 'roles_' . date('Y-m-d_His') . '.csv';
         $headers = [
@@ -216,15 +265,17 @@ class RoleController extends Controller implements HasMiddleware
         $callback = function () use ($roles) {
             $file = fopen('php://output', 'w');
             fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
-            fputcsv($file, ['ID', 'Nombre', 'Descripción', 'Tipo', 'Estado', 'Usuarios', 'Fecha de Creación'], ';');
+            fputcsv($file, ['ID', 'Nombre', 'Nivel', 'Descripción', 'Tipo', 'Estado', 'Usuarios', 'Puede asignar', 'Fecha de Creación'], ';');
             foreach ($roles as $r) {
                 fputcsv($file, [
                     $r->id,
                     $r->nombre,
+                    $r->nivel,
                     $r->descripcion ?? '',
                     $r->es_sistema ? 'Sistema' : 'Personalizado',
                     $r->activo ? 'Activo' : 'Inactivo',
                     $r->users_count,
+                    $r->nombre === 'Super Admin' ? 'Todos' : $r->asignables->pluck('nombre')->implode(', '),
                     $r->created_at ? $r->created_at->format('d/m/Y H:i') : '',
                 ], ';');
             }

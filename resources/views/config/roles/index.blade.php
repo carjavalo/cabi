@@ -35,6 +35,16 @@
     .detail-label { font-weight: 700; color: #2e3a75; font-size: 0.85rem; text-transform: uppercase; }
     .detail-value { font-size: 1rem; color: #333; }
     #rolesTableBody.loading { opacity: 0.5; pointer-events: none; }
+    .asig-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap:8px; }
+    .asig-item { border:2px solid #e4e7f1; border-radius:10px; padding:8px 12px; cursor:pointer; display:flex; align-items:center; gap:10px; user-select:none; transition:all .15s; background:#fff; }
+    .asig-item:hover { border-color:#b9c1e0; }
+    .asig-item.on { border-color:#1b9e55; background:linear-gradient(135deg, rgba(27,158,85,.08), #fff); }
+    .asig-item.locked { opacity:.5; cursor:not-allowed; }
+    .asig-item .asig-check { margin-left:auto; width:22px; height:22px; border-radius:50%; border:2px solid #cfd4e3; display:flex; align-items:center; justify-content:center; color:#fff; font-size:.7rem; flex-shrink:0; }
+    .asig-item.on .asig-check { background:#1b9e55; border-color:#1b9e55; }
+    .asig-item .asig-nivel { font-size:.7rem; color:#7a809b; }
+    #seccionAsignables.resaltar { animation: resaltar 1.2s ease; border-radius:10px; }
+    @keyframes resaltar { 0%,100% { background:transparent; } 30% { background:rgba(27,158,85,.12); } }
 </style>
 @endpush
 
@@ -162,15 +172,17 @@
                         <tr>
                             <th class="px-4 py-3 text-muted small sortable" data-sort="id" style="width:80px; font-weight:700;"># <i class="fas fa-sort"></i></th>
                             <th class="px-4 py-3 text-muted small sortable" data-sort="nombre" style="font-weight:700;">Rol <i class="fas fa-sort"></i></th>
+                            <th class="px-4 py-3 text-muted small text-center sortable" data-sort="nivel" style="font-weight:700;" title="1 = nivel más alto">Nivel <i class="fas fa-sort"></i></th>
                             <th class="px-4 py-3 text-muted small" style="font-weight:700;">Descripción</th>
                             <th class="px-4 py-3 text-muted small sortable" data-sort="es_sistema" style="font-weight:700;">Tipo <i class="fas fa-sort"></i></th>
                             <th class="px-4 py-3 text-muted small sortable" data-sort="activo" style="font-weight:700;">Estado <i class="fas fa-sort"></i></th>
+                            <th class="px-4 py-3 text-muted small" style="font-weight:700;" title="Roles que este rol puede asignar al crear o editar usuarios">Puede asignar</th>
                             <th class="px-4 py-3 text-muted small text-center sortable" data-sort="users_count" style="font-weight:700;">Usuarios <i class="fas fa-sort"></i></th>
                             <th class="px-4 py-3 text-muted small text-center" style="width:160px; font-weight:700;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="rolesTableBody">
-                        @include('config.roles._table', ['roles' => $roles, 'puedeEditar' => $puedeEditar])
+                        @include('config.roles._table', ['roles' => $roles, 'puedeEditar' => $puedeEditar, 'soySuper' => $soySuper])
                     </tbody>
                 </table>
             </div>
@@ -187,7 +199,7 @@
 @if($puedeEditar)
 <!-- MODAL: Crear / Editar Rol -->
 <div class="modal fade" id="modalRol" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content" style="border-radius:12px; overflow:hidden; border:none;">
             <div class="modal-header corporate">
                 <h5 class="modal-title" id="modalRolTitle"><i class="fas fa-user-tag mr-2"></i>Nuevo Rol</h5>
@@ -198,7 +210,7 @@
                 <input type="hidden" id="rolMethod" name="_method" value="POST">
                 <div class="modal-body px-4 py-4">
                     <div class="alert alert-info small d-none" id="avisoSistema">
-                        <i class="fas fa-lock mr-1"></i> Es un rol del sistema: el aplicativo usa su nombre para los permisos, por lo que solo se puede modificar la descripción.
+                        <i class="fas fa-lock mr-1"></i> Es un rol del sistema: el aplicativo usa su nombre para los permisos, por lo que no se puede renombrar ni desactivar. Sí puede cambiar la descripción, el nivel y los roles que puede asignar.
                     </div>
                     <div class="alert alert-warning small d-none" id="avisoRenombrar">
                         <i class="fas fa-info-circle mr-1"></i> Si cambia el nombre, se actualizará automáticamente en todos los usuarios que tienen asignado este rol.
@@ -217,6 +229,35 @@
                         <input type="hidden" name="activo" value="0">
                         <input type="checkbox" class="custom-control-input" id="rolActivo" name="activo" value="1" checked>
                         <label class="custom-control-label" for="rolActivo">Activo (disponible para asignar a usuarios)</label>
+                    </div>
+
+                    <div class="form-group mt-3 mb-0">
+                        <label for="rolNivel" class="detail-label">Nivel jerárquico</label>
+                        <select class="form-control" id="rolNivel" name="nivel" style="max-width:320px;">
+                            @for($n = 1; $n <= 10; $n++)
+                            <option value="{{ $n }}">Nivel {{ $n }}{{ $n === 1 ? ' (más alto)' : ($n === 10 ? ' (más bajo)' : '') }}</option>
+                            @endfor
+                        </select>
+                        <small class="text-muted">Indica la jerarquía del rol. Se usa para "Hasta su nivel" al elegir qué roles puede asignar.</small>
+                    </div>
+
+                    <!-- Roles que puede asignar al crear / editar usuarios -->
+                    <div class="mt-4 pt-3" id="seccionAsignables" style="border-top:1px dashed #d5d9ea;">
+                        <input type="hidden" name="config_asig" id="rolConfigAsig" value="0">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap mb-2" style="gap:8px;">
+                            <div>
+                                <label class="detail-label mb-0"><i class="fas fa-user-plus mr-1"></i>Roles que puede asignar al crear usuarios</label>
+                                <div class="small text-muted">Son los roles que verá en "Perfil de Acceso (Rol)" cuando cree o edite usuarios.</div>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary" id="asigNivel" title="Marcar los roles de su mismo nivel o inferior"><i class="fas fa-level-down-alt mr-1"></i>Hasta su nivel</button>
+                                <button type="button" class="btn btn-outline-secondary" id="asigTodos">Todos</button>
+                                <button type="button" class="btn btn-outline-secondary" id="asigNinguno">Ninguno</button>
+                            </div>
+                        </div>
+                        <div class="alert alert-light border small mb-2 d-none" id="avisoAsignables"></div>
+                        <div class="asig-grid" id="gridAsignablesRol"></div>
+                        <small class="text-muted d-block mt-2"><i class="fas fa-lock mr-1"></i>El rol <b>Super Admin</b> solo lo puede asignar otro Super Admin.</small>
                     </div>
                 </div>
                 <div class="modal-footer" style="border-top: 1px solid #eee;">
@@ -384,6 +425,38 @@ $(document).ready(function() {
         $('#avisoRenombrar').toggleClass('d-none', !nombreOriginal || $(this).val().trim() === nombreOriginal);
     });
 
+    // ---------- Roles que puede asignar ----------
+    var todosRoles = @json($todosRoles);
+    var asigSel = [], asigEditable = true;
+
+    function renderAsignablesRol() {
+        $('#gridAsignablesRol').html(todosRoles.map(function(r) {
+            var esSuper = r.nombre === 'Super Admin';
+            var on = !esSuper && asigSel.indexOf(r.id) !== -1;
+            var locked = esSuper || !asigEditable;
+            return '<div class="asig-item' + (on ? ' on' : '') + (locked ? ' locked' : '') + '" data-id="' + r.id + '">'
+                + '<div style="min-width:0;"><div class="font-weight-bold text-truncate" style="color:#1e2a55;">' + escapeHtml(r.nombre) + '</div>'
+                + '<div class="asig-nivel">Nivel ' + r.nivel + (r.activo ? '' : ' · <span class="text-danger">Inactivo</span>') + (esSuper ? ' · <i class="fas fa-lock"></i>' : '') + '</div></div>'
+                + '<div class="asig-check"><i class="fas fa-check"></i></div></div>';
+        }).join(''));
+        $('#asigNivel, #asigTodos, #asigNinguno').prop('disabled', !asigEditable);
+    }
+
+    function hastaSuNivel() {
+        var nivel = parseInt($('#rolNivel').val(), 10) || 5;
+        asigSel = todosRoles.filter(function(r) { return r.nombre !== 'Super Admin' && r.activo && r.nivel >= nivel; }).map(function(r) { return r.id; });
+        renderAsignablesRol();
+    }
+
+    $('#gridAsignablesRol').on('click', '.asig-item:not(.locked)', function() {
+        var id = Number($(this).data('id')), i = asigSel.indexOf(id);
+        if (i === -1) asigSel.push(id); else asigSel.splice(i, 1);
+        $(this).toggleClass('on', i === -1);
+    });
+    $('#asigNivel').on('click', hastaSuNivel);
+    $('#asigTodos').on('click', function() { asigSel = todosRoles.filter(function(r) { return r.nombre !== 'Super Admin'; }).map(function(r) { return r.id; }); renderAsignablesRol(); });
+    $('#asigNinguno').on('click', function() { asigSel = []; renderAsignablesRol(); });
+
     function prepararModal(titulo, accion, metodo, datos) {
         $('#modalRolTitle').html(titulo);
         $('#formRol').attr('action', accion);
@@ -391,16 +464,27 @@ $(document).ready(function() {
         $('#rolNombre').val(datos.nombre).prop('readonly', datos.sistema);
         $('#rolDescripcion').val(datos.descripcion);
         $('#rolActivo').prop('checked', datos.activo).prop('disabled', datos.sistema);
+        $('#rolNivel').val(String(datos.nivel || 5)).prop('disabled', datos.nombre === 'Super Admin');
         $('#avisoSistema').toggleClass('d-none', !datos.sistema);
         $('#avisoRenombrar').addClass('d-none');
         $('#charCountNombre').text(datos.nombre.length);
         $('#charCountDesc').text(datos.descripcion.length);
+
+        asigEditable = datos.asigConfig;
+        $('#rolConfigAsig').val(asigEditable ? '1' : '0');
+        var aviso = '';
+        if (datos.nombre === 'Super Admin') aviso = '<i class="fas fa-crown text-warning mr-1"></i> El Super Admin siempre puede asignar todos los roles.';
+        else if (!asigEditable) aviso = '<i class="fas fa-lock mr-1"></i> Solo el Super Admin puede cambiar los roles que asigna el Administrador.';
+        $('#avisoAsignables').html(aviso).toggleClass('d-none', !aviso);
+        if (datos.asignables === null) { hastaSuNivel(); } else { asigSel = datos.asignables.map(Number); renderAsignablesRol(); }
+
         $('#modalRol').modal('show');
     }
 
     $('#btnNuevoRol').on('click', function() {
         nombreOriginal = '';
-        prepararModal('<i class="fas fa-user-tag mr-2"></i>Nuevo Rol', baseUrl, 'POST', { nombre: '', descripcion: '', activo: true, sistema: false });
+        // Rol nuevo: por defecto puede asignar los roles de su nivel o inferior
+        prepararModal('<i class="fas fa-user-tag mr-2"></i>Nuevo Rol', baseUrl, 'POST', { nombre: '', descripcion: '', activo: true, sistema: false, nivel: 5, asignables: null, asigConfig: true });
     });
 
     $(document).on('click', '.btn-editar-rol', function() {
@@ -408,10 +492,23 @@ $(document).ready(function() {
         var sistema = String(b.data('sistema')) === '1';
         var usuarios = parseInt(b.closest('tr').find('.badge-light').text(), 10) || 0;
         nombreOriginal = (sistema || usuarios === 0) ? '' : String(b.data('nombre'));
+        var asignables = b.data('asignables');
         prepararModal('<i class="fas fa-edit mr-2"></i>Editar Rol', baseUrl + '/' + b.data('id'), 'PUT', {
             nombre: String(b.data('nombre')), descripcion: String(b.data('descripcion') || ''),
-            activo: String(b.data('activo')) === '1', sistema: sistema
+            activo: String(b.data('activo')) === '1', sistema: sistema,
+            nivel: b.data('nivel'), asignables: Array.isArray(asignables) ? asignables : [],
+            asigConfig: String(b.data('asig-config')) === '1'
         });
+    });
+
+    // Acceso directo: abre el rol en la sección "Roles que puede asignar"
+    $(document).on('click', '.btn-asignables-rol', function() {
+        $('#modalRol').one('shown.bs.modal', function() {
+            var sec = document.getElementById('seccionAsignables');
+            sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            $(sec).removeClass('resaltar'); void sec.offsetWidth; $(sec).addClass('resaltar');
+        });
+        $(this).closest('tr').find('.btn-editar-rol').trigger('click');
     });
 
     $('#formRol').on('submit', function(e) {
@@ -422,6 +519,9 @@ $(document).ready(function() {
         if ($('#rolActivo').prop('disabled')) {
             data = data.filter(function(f) { return f.name !== 'activo'; });
             data.push({ name: 'activo', value: '1' });
+        }
+        if (asigEditable) {
+            asigSel.forEach(function(id) { data.push({ name: 'asignables[]', value: id }); });
         }
         $.ajax({
             url: $(this).attr('action'),

@@ -408,6 +408,41 @@ class GestorPermisos
         return array_values(array_filter($nombres, fn ($n) => $n !== self::ROL_TOTAL && in_array($n, $permitidos, true)));
     }
 
+    /**
+     * Guarda los roles que $role puede asignar. Lo usan Gestión de Roles y Gestión de Permisos.
+     * Devuelve un mensaje de error si no está permitido, o null si se guardó.
+     *
+     * @param array<int,int|string> $ids
+     */
+    public static function guardarAsignables(Role $role, array $ids, ?string $rolActual): ?string
+    {
+        if (!self::asegurarTablas()) {
+            return 'No fue posible preparar las tablas de permisos.';
+        }
+        if ($role->nombre === self::ROL_TOTAL) {
+            return 'El Super Admin siempre puede asignar todos los roles.';
+        }
+        if ($role->nombre === 'Administrador' && $rolActual !== self::ROL_TOTAL) {
+            return 'Solo el Super Admin puede cambiar los roles que asigna el Administrador.';
+        }
+
+        $superId = Role::where('nombre', self::ROL_TOTAL)->value('id');
+        $ids = Role::whereIn('id', array_map('intval', $ids))->where('id', '!=', $superId)->pluck('id');
+
+        DB::transaction(function () use ($role, $ids) {
+            $now = now();
+            DB::table('role_asignable')->where('role_id', $role->id)->delete();
+            if ($ids->isNotEmpty()) {
+                DB::table('role_asignable')->insert($ids->map(fn ($id) => [
+                    'role_id' => $role->id, 'asignable_id' => $id, 'created_at' => $now, 'updated_at' => $now,
+                ])->all());
+            }
+            $role->forceFill(['config_asignables' => true])->save();
+        });
+
+        return null;
+    }
+
     /** Al crear un rol nuevo, hereda los permisos del rol "Usuario" (mismo acceso que tenía antes). */
     public static function inicializarRol(Role $role, string $desde = 'Usuario'): void
     {
