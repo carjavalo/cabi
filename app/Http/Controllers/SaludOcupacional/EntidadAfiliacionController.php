@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Afp;
 use App\Models\Arl;
 use App\Models\Eps;
+use App\Support\GestorPermisos;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
@@ -34,15 +35,14 @@ class EntidadAfiliacionController extends Controller implements HasMiddleware
     ];
 
     /**
-     * Mismo control de acceso que el módulo de Salud Ocupacional: por ahora,
-     * exclusivo del rol "Super Admin".
+     * Mismo control de acceso que el módulo de Salud Ocupacional: el acceso se
+     * otorga según los permisos configurados por rol (GestorPermisos).
      */
     public static function middleware(): array
     {
         return [
             function (Request $request, Closure $next) {
-                $user = Auth::user();
-                if (!$user || $user->role !== 'Super Admin') {
+                if (!GestorPermisos::puedeRuta(Auth::user(), $request->route())) {
                     abort(403, 'Acceso restringido al módulo de Salud Ocupacional.');
                 }
                 return $next($request);

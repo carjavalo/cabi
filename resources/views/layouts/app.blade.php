@@ -213,8 +213,8 @@
             </ul>
           </li>
 
-          <!-- Salud Ocupacional submenu (SOLO Super Admin; el acceso se ampliará con el módulo de permisos por roles) -->
-          @if(Auth::check() && Auth::user()->role === 'Super Admin')
+          <!-- Salud Ocupacional submenu (visible según los permisos configurados por rol) -->
+          @if(Auth::check() && (\App\Support\GestorPermisos::puedeUrl(Auth::user(), route('salud.agenda.index')) || \App\Support\GestorPermisos::puedeUrl(Auth::user(), route('salud.concepto.index'))))
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-briefcase-medical"></i>

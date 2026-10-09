@@ -4,6 +4,7 @@ namespace App\Http\Controllers\SaludOcupacional\Concerns;
 
 use App\Models\User;
 use App\Models\Vinculacion;
+use App\Support\GestorPermisos;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -26,16 +27,15 @@ trait TrabajadoresPlanta
     /**
      * Control de acceso del módulo de Salud Ocupacional.
      *
-     * Por ahora el ingreso está restringido EXCLUSIVAMENTE al rol "Super Admin".
-     * Cuando se construya el módulo de permisos por roles, este punto será el
-     * lugar donde se otorgará el acceso a los demás roles según sus permisos.
+     * El acceso se otorga según los permisos configurados por rol en Gestión de
+     * Permisos (GestorPermisos): "Super Admin" siempre entra y los demás roles
+     * entran si el administrador les asignó la función correspondiente.
      */
     public static function middleware(): array
     {
         return [
             function (Request $request, Closure $next) {
-                $user = Auth::user();
-                if (!$user || $user->role !== 'Super Admin') {
+                if (!GestorPermisos::puedeRuta(Auth::user(), $request->route())) {
                     abort(403, 'Acceso restringido al módulo de Salud Ocupacional.');
                 }
                 return $next($request);
