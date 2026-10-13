@@ -510,9 +510,15 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
     /**
      * Muestra un concepto guardado en formato certificado (imprimible).
      */
-    public function show(ConceptoMedico $concepto)
+    public function show(Request $request, ConceptoMedico $concepto)
     {
         $concepto->load('user', 'documentos', 'creador');
+
+        // Documento del certificado para imprimir / guardar en PDF: página independiente,
+        // sin el diseño del aplicativo (sin menú, barras de desplazamiento ni nombre "CABI").
+        if ($request->boolean('documento')) {
+            return view('salud_ocupacional.concepto.certificado', ['c' => $concepto]);
+        }
 
         return view('salud_ocupacional.concepto.show', [
             'c'         => $concepto,
