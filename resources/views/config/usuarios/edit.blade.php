@@ -168,7 +168,7 @@
                         <a href="{{ route('config.usuarios.index') }}" class="btn btn-outline-secondary font-weight-bold mr-3 rounded-pill px-4" style="border-width: 2px;">
                             <i class="fas fa-times mr-1"></i> Cancelar
                         </a>
-                        <button type="submit" class="btn text-white font-weight-bold rounded-pill px-4 shadow-sm" style="background-color: #2e3a75;">
+                        <button type="submit" data-permiso="config.usuarios.update" class="btn text-white font-weight-bold rounded-pill px-4 shadow-sm" style="background-color: #2e3a75;">
                             <i class="fas fa-save mr-1"></i> Actualizar Usuario
                         </button>
                     </div>

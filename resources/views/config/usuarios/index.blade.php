@@ -34,7 +34,7 @@
                 </h2>
                 <p class="text-white-50 mb-0 small">Administra los usuarios del sistema</p>
             </div>
-            <a href="{{ route('config.usuarios.create') }}" class="btn btn-light btn-lg shadow-sm hover-scale">
+            <a href="{{ route('config.usuarios.create') }}" data-permiso="config.usuarios.create config.usuarios.store" class="btn btn-light btn-lg shadow-sm hover-scale">
                 <i class="fas fa-user-plus me-2"></i>Crear Usuario
             </a>
         </div>
@@ -171,7 +171,7 @@
                             </td>
                             <td class="px-4 py-3 text-center">
                                 <div class="btn-group" role="group">
-                                    <a href="{{ route('config.usuarios.edit',$u->id) }}" 
+                                    <a href="{{ route('config.usuarios.edit',$u->id) }}" data-permiso="config.usuarios.edit config.usuarios.update" 
                                        class="btn btn-sm btn-outline-primary" 
                                        data-bs-toggle="tooltip" 
                                        title="Editar usuario">
@@ -183,7 +183,7 @@
                                           style="display:inline-block" 
                                           onsubmit="return confirm('¿Aprobar verificación de correo para {{ $u->name }}?');">
                                         @csrf
-                                        <button class="btn btn-sm btn-outline-success" 
+                                        <button class="btn btn-sm btn-outline-success" data-permiso="config.usuarios.verify-email" 
                                                 data-bs-toggle="tooltip" 
                                                 title="Aprobar verificación de correo">
                                             <i class="fas fa-check-circle"></i>
@@ -204,7 +204,7 @@
                                           onsubmit="return confirm('¿Está seguro de eliminar este usuario?');">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="btn btn-sm btn-outline-danger" 
+                                        <button class="btn btn-sm btn-outline-danger" data-permiso="config.usuarios.destroy" 
                                                 data-bs-toggle="tooltip" 
                                                 title="Eliminar usuario">
                                             <i class="fas fa-trash-alt"></i>

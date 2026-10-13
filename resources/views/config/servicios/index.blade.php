@@ -28,7 +28,7 @@
                 </h2>
                 <p class="text-white-50 mb-0 small">Administra los servicios y unidades del hospital</p>
             </div>
-            <a href="{{ route('config.servicios.create') }}" class="btn btn-light btn-lg shadow-sm hover-scale">
+            <a href="{{ route('config.servicios.create') }}" data-permiso="config.servicios.create config.servicios.store" class="btn btn-light btn-lg shadow-sm hover-scale">
                 <i class="fas fa-plus me-2"></i>Crear Servicio
             </a>
         </div>
@@ -95,7 +95,7 @@
                             </td>
                             <td class="px-4 py-3 text-center">
                                 <div class="btn-group" role="group">
-                                    <a href="{{ route('config.servicios.edit',$s->id) }}" 
+                                    <a href="{{ route('config.servicios.edit',$s->id) }}" data-permiso="config.servicios.edit config.servicios.update" 
                                        class="btn btn-sm btn-outline-primary" 
                                        data-bs-toggle="tooltip" 
                                        title="Editar servicio">
@@ -107,7 +107,7 @@
                                           onsubmit="return confirm('¿Está seguro de eliminar este servicio?');">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="btn btn-sm btn-outline-danger" 
+                                        <button class="btn btn-sm btn-outline-danger" data-permiso="config.servicios.destroy" 
                                                 data-bs-toggle="tooltip" 
                                                 title="Eliminar servicio">
                                             <i class="fas fa-trash-alt"></i>

@@ -53,11 +53,11 @@
     </td>
     <td class="px-4 py-3 text-center">
         <div class="btn-group" role="group">
-            <button type="button" class="btn btn-sm btn-outline-info btn-ver-rol" data-id="{{ $rol->id }}" title="Ver detalle">
+            <button type="button" class="btn btn-sm btn-outline-info btn-ver-rol" data-permiso="config.roles.show" data-id="{{ $rol->id }}" title="Ver detalle">
                 <i class="fas fa-eye"></i>
             </button>
             @if($puedeEditar)
-            <button type="button" class="btn btn-sm btn-outline-primary btn-editar-rol"
+            <button type="button" class="btn btn-sm btn-outline-primary btn-editar-rol" data-permiso="config.roles.update"
                 data-id="{{ $rol->id }}" data-nombre="{{ $rol->nombre }}" data-descripcion="{{ $rol->descripcion }}"
                 data-activo="{{ $rol->activo ? 1 : 0 }}" data-sistema="{{ $rol->es_sistema ? 1 : 0 }}"
                 data-nivel="{{ $rol->nivel }}" data-asignables="{{ $asignablesIds->toJson() }}"
@@ -65,12 +65,12 @@
                 <i class="fas fa-edit"></i>
             </button>
             @if($configurableAsig)
-            <button type="button" class="btn btn-sm btn-outline-success btn-asignables-rol" data-id="{{ $rol->id }}" title="Roles que puede asignar al crear usuarios">
+            <button type="button" class="btn btn-sm btn-outline-success btn-asignables-rol" data-permiso="config.roles.update" data-id="{{ $rol->id }}" title="Roles que puede asignar al crear usuarios">
                 <i class="fas fa-user-plus"></i>
             </button>
             @endif
             @if(!$rol->es_sistema)
-            <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-rol"
+            <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-rol" data-permiso="config.roles.destroy"
                 data-id="{{ $rol->id }}" data-nombre="{{ $rol->nombre }}" data-usuarios="{{ $rol->users_count }}" title="Eliminar">
                 <i class="fas fa-trash-alt"></i>
             </button>

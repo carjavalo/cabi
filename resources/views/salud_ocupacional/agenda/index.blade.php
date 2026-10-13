@@ -179,11 +179,11 @@
             </select>
         </div>
         <div class="right">
-            <button type="button" class="so-btn ghost" id="ag-config" title="Tiempo de atención y jornada"><i class="fas fa-cog"></i> Configurar</button>
-            <button type="button" class="so-btn ghost" id="ag-bloquear" style="color:var(--so-bad);"><i class="fas fa-lock"></i> Bloquear horario</button>
+            <button type="button" class="so-btn ghost" id="ag-config" data-permiso="salud.agenda.configuracion" title="Tiempo de atención y jornada"><i class="fas fa-cog"></i> Configurar</button>
+            <button type="button" class="so-btn ghost" id="ag-bloquear" data-permiso="salud.agenda.bloquear" style="color:var(--so-bad);"><i class="fas fa-lock"></i> Bloquear horario</button>
             <button type="button" class="so-btn ghost" onclick="window.print()"><i class="fas fa-print"></i> Imprimir</button>
             <button type="button" class="so-btn ghost" id="ag-export"><i class="fas fa-file-excel"></i> Exportar Excel</button>
-            <button type="button" class="so-btn prim" id="ag-nueva"><i class="fas fa-plus-circle"></i> Agendar funcionario</button>
+            <button type="button" class="so-btn prim" id="ag-nueva" data-permiso="salud.agenda.store"><i class="fas fa-plus-circle"></i> Agendar funcionario</button>
         </div>
     </div>
 
@@ -247,7 +247,7 @@
             <div id="cf-sel" class="ag-sel-user">
                 <div class="ag-av" id="cf-sel-av">—</div>
                 <div style="flex:1;min-width:0;"><div style="font-weight:700;color:var(--so-brand);" id="cf-sel-nombre"></div><div style="font-size:12px;color:var(--so-mut);" id="cf-sel-doc"></div></div>
-                <button type="button" class="ag-useredit" id="cf-sel-edit" title="Editar o corregir datos del funcionario"><i class="fas fa-plus"></i></button>
+                <button type="button" class="ag-useredit" id="cf-sel-edit" data-permiso="salud.concepto.paciente.buscar salud.concepto.paciente.update" title="Editar o corregir datos del funcionario"><i class="fas fa-plus"></i></button>
             </div>
         </div>
 
@@ -317,7 +317,7 @@
       </div>
       <div class="modal-footer" style="border-top:1px solid var(--so-line);">
         <button type="button" class="so-btn ghost" data-dismiss="modal">Cancelar</button>
-        <button type="button" class="so-btn prim" id="cg-guardar"><i class="fas fa-save"></i> Guardar configuración</button>
+        <button type="button" class="so-btn prim" id="cg-guardar" data-permiso="salud.agenda.configuracion"><i class="fas fa-save"></i> Guardar configuración</button>
       </div>
     </div>
   </div>
@@ -347,7 +347,7 @@
       </div>
       <div class="modal-footer" style="border-top:1px solid var(--so-line);">
         <button type="button" class="so-btn ghost" data-dismiss="modal">Cerrar</button>
-        <button type="button" class="so-btn prim" id="bf-guardar" style="background:var(--so-bad);"><i class="fas fa-lock"></i> Bloquear</button>
+        <button type="button" class="so-btn prim" id="bf-guardar" data-permiso="salud.agenda.bloquear" style="background:var(--so-bad);"><i class="fas fa-lock"></i> Bloquear</button>
       </div>
     </div>
   </div>
@@ -383,7 +383,7 @@
       </div>
       <div class="modal-footer" style="border-top:1px solid var(--so-line);">
         <button type="button" class="so-btn ghost" data-dismiss="modal">Cancelar</button>
-        <button type="button" class="so-btn prim" id="uf-guardar"><i class="fas fa-save"></i> Guardar datos</button>
+        <button type="button" class="so-btn prim" id="uf-guardar" data-permiso="salud.concepto.paciente.update"><i class="fas fa-save"></i> Guardar datos</button>
       </div>
     </div>
   </div>
@@ -455,29 +455,29 @@
     }
 
     function filaCita(c){
-        const sel = (cls, campo, opciones, valor) => `<select class="ag-sel ${cls}-${valor}" data-id="${c.id}" data-campo="${campo}">${
+        const sel = (cls, campo, opciones, valor) => `<select class="ag-sel ${cls}-${valor}" data-id="${c.id}" data-campo="${campo}" ${CABI.puede('salud.agenda.update') ? '' : 'disabled'}>${
             Object.entries(opciones).map(([k,v])=>`<option value="${k}" ${k===valor?'selected':''}>${esc(v)}</option>`).join('')}</select>`;
         const enf = (c.enfasis||[]).map(e=>`<span class="ag-chip">${esc(ENFASIS[e]||e)}</span>`).join('');
         const acciones = c.concepto_url
-            ? `<a class="ag-act" href="${c.concepto_url}" target="_blank" title="Ver concepto emitido"><i class="fas fa-file-medical"></i></a>`
-            : (c.estado!=='cancelada' ? `<a class="ag-act go" href="${c.atender_url}" title="Atender en Concepto Médico"><i class="fas fa-stethoscope"></i> Atender</a>` : '');
+            ? `<a class="ag-act" data-permiso="salud.concepto.show" href="${c.concepto_url}" target="_blank" title="Ver concepto emitido"><i class="fas fa-file-medical"></i></a>`
+            : (c.estado!=='cancelada' ? `<a class="ag-act go" data-permiso="salud.concepto.index salud.concepto.store" href="${c.atender_url}" title="Atender en Concepto Médico"><i class="fas fa-stethoscope"></i> Atender</a>` : '');
         return `<tr class="${c.estado==='cancelada'?'ag-cancel':''}" data-id="${c.id}" data-motivo="${c.motivo}" data-estado="${c.estado}">
             <td class="c ag-fecha">${fmtFecha(c.fecha)}</td>
             <td class="c ag-hora">${esc(c.hora)}<div style="font-size:10.5px;font-weight:600;color:var(--so-mut);">a ${esc(c.hora_fin||'')}</div></td>
             <td><div class="ag-func">
                 <div class="ag-av">${esc(iniciales(c.nombre))}</div>
                 <div style="flex:1;min-width:0;"><div class="n">${esc(c.nombre)}</div><div class="s">${esc(c.tipo_identificacion||'CC')} ${esc(c.identificacion||'')}${c.cargo?' · '+esc(c.cargo):''}</div></div>
-                <button type="button" class="ag-useredit ag-noprint" data-user="${esc(c.identificacion||'')}" title="Editar o corregir datos del funcionario"><i class="fas fa-plus"></i></button>
+                <button type="button" class="ag-useredit ag-noprint" data-permiso="salud.concepto.paciente.buscar salud.concepto.paciente.update" data-user="${esc(c.identificacion||'')}" title="Editar o corregir datos del funcionario"><i class="fas fa-plus"></i></button>
             </div></td>
             <td>${c.telefono ? `<a class="ag-link" href="tel:${esc(c.telefono)}"><i class="fas fa-phone-alt" style="font-size:11px;"></i> ${esc(c.telefono)}</a>` : '<span style="color:#aab0c6">—</span>'}</td>
             <td>${c.email ? `<a class="ag-mail" href="mailto:${esc(c.email)}" title="${esc(c.email)}">${esc(c.email)}</a>` : '<span style="color:#aab0c6">—</span>'}</td>
             <td><div style="font-weight:600;">${esc(c.motivo_label)}</div>${enf}</td>
             <td class="c">${sel('as','asistencia',ASISTENCIAS,c.asistencia)}</td>
             <td class="c">${sel('st','estado',ESTADOS,c.estado)}</td>
-            <td class="c"><button type="button" class="ag-mx mx-${c.ingreso_matriz}" data-id="${c.id}" data-valor="${c.ingreso_matriz}" title="Clic para cambiar"><i class="fas ${MATRIZ_ICON[c.ingreso_matriz]||'fa-minus'}"></i> ${esc(MATRIZ[c.ingreso_matriz]||c.ingreso_matriz)}</button></td>
+            <td class="c"><button type="button" class="ag-mx mx-${c.ingreso_matriz}" ${CABI.puede('salud.agenda.update') ? '' : 'disabled'} data-id="${c.id}" data-valor="${c.ingreso_matriz}" title="Clic para cambiar"><i class="fas ${MATRIZ_ICON[c.ingreso_matriz]||'fa-minus'}"></i> ${esc(MATRIZ[c.ingreso_matriz]||c.ingreso_matriz)}</button></td>
             <td><div class="ag-obs" title="${esc(c.observaciones||'')}">${esc(c.observaciones||'—')}</div></td>
             <td class="c ag-noprint" style="white-space:nowrap;">${acciones}
-                <button type="button" class="ag-act" data-editar="${c.id}" title="Editar cita"><i class="fas fa-pen"></i></button></td>
+                <button type="button" class="ag-act" data-permiso="salud.agenda.update" data-editar="${c.id}" title="Editar cita"><i class="fas fa-pen"></i></button></td>
         </tr>`;
     }
     function filaLibre(t){
@@ -489,8 +489,8 @@
             <td class="c"><span class="ag-chip" style="background:var(--so-soft);color:var(--so-mut);">Libre</span></td>
             <td class="c">—</td><td class="lib">Espacio asignable</td>
             <td class="c ag-noprint" style="white-space:nowrap;">
-                <button type="button" class="ag-asignar" data-hora="${t.hora}">+ Asignar</button>
-                <button type="button" class="ag-act" data-bloquear="${t.hora}" data-fin="${t.fin}" title="Bloquear este horario"><i class="fas fa-lock"></i></button>
+                <button type="button" class="ag-asignar" data-permiso="salud.agenda.store" data-hora="${t.hora}">+ Asignar</button>
+                <button type="button" class="ag-act" data-permiso="salud.agenda.bloquear" data-bloquear="${t.hora}" data-fin="${t.fin}" title="Bloquear este horario"><i class="fas fa-lock"></i></button>
             </td>
         </tr>`;
     }
@@ -501,7 +501,7 @@
             <td class="c ag-hora" style="color:var(--so-bad);">${b.dia_completo ? '<i class="fas fa-ban"></i>' : esc(b.hora_inicio)+'<div style="font-size:10.5px;font-weight:600;">a '+esc(b.hora_fin)+'</div>'}</td>
             <td colspan="8"><div class="ag-func"><div class="ag-av" style="background:#fbebe9;color:var(--so-bad);"><i class="fas fa-lock"></i></div>
                 <div><div class="n" style="color:var(--so-bad);">Horario bloqueado · ${esc(rango)}</div><div class="s">${esc(b.motivo || 'Sin motivo registrado')} · no se pueden agendar citas</div></div></div></td>
-            <td class="c ag-noprint"><button type="button" class="ag-act" data-desbloquear="${b.id}" title="Desbloquear horario" style="color:var(--so-bad);"><i class="fas fa-lock-open"></i> Desbloquear</button></td>
+            <td class="c ag-noprint"><button type="button" class="ag-act" data-permiso="salud.agenda.desbloquear" data-desbloquear="${b.id}" title="Desbloquear horario" style="color:var(--so-bad);"><i class="fas fa-lock-open"></i> Desbloquear</button></td>
         </tr>`;
     }
 
@@ -777,7 +777,7 @@
             const lista = f === fecha ? bloqueos : ((await api(ROUTES.citas+'?fecha='+encodeURIComponent(f))).bloqueos || []);
             box.innerHTML = lista.length ? lista.map(b=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--so-line);">
                     <span><strong style="color:var(--so-bad);">${b.dia_completo ? 'Todo el día' : esc(b.hora_inicio)+' a '+esc(b.hora_fin)}</strong> · ${esc(b.motivo||'Sin motivo')}</span>
-                    <button type="button" class="ag-act" data-desbloquear-modal="${b.id}" style="color:var(--so-bad);"><i class="fas fa-lock-open"></i> Desbloquear</button></div>`).join('')
+                    <button type="button" class="ag-act" data-permiso="salud.agenda.desbloquear" data-desbloquear-modal="${b.id}" style="color:var(--so-bad);"><i class="fas fa-lock-open"></i> Desbloquear</button></div>`).join('')
                 : 'No hay horarios bloqueados en esta fecha.';
             $$('[data-desbloquear-modal]', box).forEach(b=> b.addEventListener('click', async ()=>{ if(await desbloquear(b.dataset.desbloquearModal)) pintarBloqueosModal(); }));
         } catch(_) { box.textContent = '—'; }

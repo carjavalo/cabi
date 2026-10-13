@@ -28,7 +28,7 @@
                 </h2>
                 <p class="text-white-50 mb-0 small">Administra los tipos de vinculación laboral</p>
             </div>
-            <a href="{{ route('config.vinculaciones.create') }}" class="btn btn-light btn-lg shadow-sm hover-scale">
+            <a href="{{ route('config.vinculaciones.create') }}" data-permiso="config.vinculaciones.create config.vinculaciones.store" class="btn btn-light btn-lg shadow-sm hover-scale">
                 <i class="fas fa-plus me-2"></i>Crear Vinculación
             </a>
         </div>
@@ -69,7 +69,7 @@
                             </td>
                             <td class="px-4 py-3 text-center">
                                 <div class="btn-group" role="group">
-                                    <a href="{{ route('config.vinculaciones.edit',$v->id) }}" 
+                                    <a href="{{ route('config.vinculaciones.edit',$v->id) }}" data-permiso="config.vinculaciones.edit config.vinculaciones.update" 
                                        class="btn btn-sm btn-outline-primary" 
                                        data-bs-toggle="tooltip" 
                                        title="Editar vinculación">
@@ -81,7 +81,7 @@
                                           onsubmit="return confirm('¿Está seguro de eliminar esta vinculación?');">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="btn btn-sm btn-outline-danger" 
+                                        <button class="btn btn-sm btn-outline-danger" data-permiso="config.vinculaciones.destroy" 
                                                 data-bs-toggle="tooltip" 
                                                 title="Eliminar vinculación">
                                             <i class="fas fa-trash-alt"></i>

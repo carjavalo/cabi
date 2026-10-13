@@ -26,7 +26,8 @@ class AppServiceProvider extends ServiceProvider
         Paginator::useBootstrapFive();
 
         // Gestión de Permisos en vistas: @puede('clave.permiso') ... @endpuede / @puedeUrl('/ruta') ... @endpuedeUrl
-        Blade::if('puede', fn (string $clave) => GestorPermisos::puede(Auth::user(), $clave));
+        // @puede('a', 'b') exige todas las claves (p. ej. formulario de creación + guardar).
+        Blade::if('puede', fn (string ...$claves) => collect($claves)->every(fn ($c) => GestorPermisos::puede(Auth::user(), $c)));
         Blade::if('puedeUrl', fn (string $url) => GestorPermisos::puedeUrl(Auth::user(), $url));
     }
 }

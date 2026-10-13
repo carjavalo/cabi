@@ -481,7 +481,7 @@
             <h5>Gestión de Encuestas</h5>
             <p>Crea y administra encuestas para el Hospital Universitario del Valle</p>
         </div>
-        <button id="btnCreateEncuesta" class="btn btn-nueva-encuesta" data-toggle="modal" data-target="#createEncuestaModal">
+        <button id="btnCreateEncuesta" class="btn btn-nueva-encuesta" data-permiso="config.encuestas.store" data-toggle="modal" data-target="#createEncuestaModal">
             <i class="fas fa-plus-circle mr-2"></i>Nueva Encuesta
         </button>
     </div>
@@ -986,13 +986,13 @@ document.addEventListener('DOMContentLoaded', function(){
                     </button>
                 </td>
                 <td class="text-center">
-                    <button class="btn btn-sm btn-action btn-edit" data-id="${it.id}">
+                    <button class="btn btn-sm btn-action btn-edit" data-permiso="config.encuestas.show config.encuestas.update" data-id="${it.id}">
                         <i class="fas fa-edit mr-1"></i>Editar
                     </button>
-                    <button class="btn btn-sm btn-action btn-delete ml-1" data-id="${it.id}">
+                    <button class="btn btn-sm btn-action btn-delete ml-1" data-permiso="config.encuestas.destroy" data-id="${it.id}">
                         <i class="fas fa-trash mr-1"></i>Eliminar
                     </button>
-                    <button class="btn btn-sm btn-respuestas ml-1" data-id="${it.id}" data-titulo="${escapeHtml(it.titulo)}" style="background: #28a745; color: white; border-radius: 6px; padding: 0.4rem 0.8rem;">
+                    <button class="btn btn-sm btn-respuestas ml-1" data-permiso="config.encuestas.show config.encuestas.respuestas" data-id="${it.id}" data-titulo="${escapeHtml(it.titulo)}" style="background: #28a745; color: white; border-radius: 6px; padding: 0.4rem 0.8rem;">
                         <i class="fas fa-chart-line mr-1"></i>Ver Respuestas
                     </button>
                 </td>
@@ -1473,7 +1473,7 @@ document.addEventListener('DOMContentLoaded', function(){
             const tdAcciones = document.createElement('td');
             tdAcciones.className = 'text-center';
             tdAcciones.innerHTML = `
-                <button class="btn btn-sm btn-permitir-repetir" 
+                <button class="btn btn-sm btn-permitir-repetir" data-permiso="config.encuestas.permitir-repetir"
                         data-respuesta-id="${resp.id}" 
                         data-usuario-nombre="${resp.usuario_nombre || 'Anónimo'}"
                         data-encuesta-id="${encuestaId}"

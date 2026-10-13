@@ -53,7 +53,7 @@
 
 @section('content')
 <div class="toolbar">
-    <a href="{{ route('salud.concepto.index') }}" class="b ghost"><i class="fas fa-plus"></i> Nuevo concepto</a>
+    <a href="{{ route('salud.concepto.index') }}" class="b ghost" data-permiso="salud.concepto.index salud.concepto.store"><i class="fas fa-plus"></i> Nuevo concepto</a>
     <button onclick="window.print()" class="b prim"><i class="fas fa-print"></i> Imprimir / Guardar PDF</button>
 </div>
 

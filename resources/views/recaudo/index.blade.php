@@ -63,7 +63,7 @@
                     <input type="hidden" name="numero_recibo" id="input_numero_recibo" value="{{ $nextRecibo }}">
                     
                     <div class="d-flex mb-4">
-                        <button type="submit" class="btn btn-primary mr-2"><i class="fas fa-save"></i> Guardar</button>
+                        <button type="submit" class="btn btn-primary mr-2" data-permiso="recaudo.store"><i class="fas fa-save"></i> Guardar</button>
                         <button type="reset" class="btn btn-light border mr-2"><i class="fas fa-eraser"></i> Limpiar</button>
                     </div>
 
@@ -157,7 +157,7 @@
                                 <form action="{{ route('recaudo.destroy', $rec->id) }}" method="POST" onsubmit="return confirm('¿Eliminar este recibo?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                    <button type="submit" class="btn btn-sm btn-danger" data-permiso="recaudo.destroy"><i class="fas fa-trash"></i></button>
                                 </form>
                             </td>
                         </tr>

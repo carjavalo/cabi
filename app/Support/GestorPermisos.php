@@ -318,6 +318,27 @@ class GestorPermisos
     }
 
     /**
+     * Claves de las funciones que el usuario NO puede usar (para ocultar botones en las vistas).
+     * @return array<int,string>
+     */
+    public static function denegados(?User $user): array
+    {
+        if (!$user || $user->role === self::ROL_TOTAL) {
+            return [];
+        }
+        try {
+            if (!self::tablasListas()) {
+                return [];
+            }
+            $propios = self::permisosDeRol((string) $user->role);
+            return array_keys(array_filter(self::mapaControlados(), fn ($id) => !isset($propios[$id])));
+        } catch (\Throwable $e) {
+            report($e);
+            return [];
+        }
+    }
+
+    /**
      * Controles de rol fijos del código (menú y controladores).
      * - Roles del sistema: conservan la regla original (deben estar en $rolesBase).
      * - Roles personalizados (p. ej. "Auxiliar SST"): no están en esas listas fijas,

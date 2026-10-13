@@ -9,7 +9,7 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0">Publicidad</h5>
             <div>
-                <button id="btnCreatePublicidad" class="btn" style="background:var(--brand);color:#fff;" data-toggle="modal" data-target="#createPublicidadModal">Crear Publicidad</button>
+                <button id="btnCreatePublicidad" data-permiso="config.publicidad.store" class="btn" style="background:var(--brand);color:#fff;" data-toggle="modal" data-target="#createPublicidadModal">Crear Publicidad</button>
             </div>
         </div>
 
@@ -237,10 +237,10 @@ document.addEventListener('DOMContentLoaded', function(){
                 <td>${i.tag || ''}</td>
                 <td>${i.link ? `<a href="${i.link}" target="_blank">Abrir</a>` : ''}</td>
                 <td>
-                    <button class="btn btn-sm btn-primary btn-edit" data-id="${i.id}">
+                    <button class="btn btn-sm btn-primary btn-edit" data-permiso="config.publicidad.show config.publicidad.update" data-id="${i.id}">
                         <i class="fas fa-edit mr-1"></i>Editar
                     </button>
-                    <button class="btn btn-sm btn-danger btn-delete ml-1" data-id="${i.id}">
+                    <button class="btn btn-sm btn-danger btn-delete ml-1" data-permiso="config.publicidad.destroy" data-id="${i.id}">
                         <i class="fas fa-trash mr-1"></i>Eliminar
                     </button>
                 </td>

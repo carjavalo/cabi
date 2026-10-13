@@ -111,6 +111,9 @@
       }
     </style>
 
+    @auth
+    @include('partials.permisos')
+    @endauth
     @stack('head')
 </head>
 <body class="hold-transition sidebar-mini">

@@ -208,7 +208,7 @@
                         <a href="{{ route('config.usuarios.index') }}" class="btn btn-light shadow-sm border mr-2 font-weight-bold" style="border-radius: 6px; padding: 10px 20px;">
                             <i class="fas fa-times mr-1"></i> Cancelar
                         </a>
-                        <button type="submit" class="btn text-white shadow-sm font-weight-bold" style="background-color: #2e3a75; border-radius: 6px; padding: 10px 25px;">
+                        <button type="submit" data-permiso="config.usuarios.store" class="btn text-white shadow-sm font-weight-bold" style="background-color: #2e3a75; border-radius: 6px; padding: 10px 25px;">
                             <i class="fas fa-save mr-1"></i> Guardar Usuario
                         </button>
                     </div>

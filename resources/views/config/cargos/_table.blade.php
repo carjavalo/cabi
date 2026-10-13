@@ -16,13 +16,13 @@
     </td>
     <td class="px-4 py-3 text-center">
         <div class="btn-group" role="group">
-            <button type="button" class="btn btn-sm btn-outline-info btn-ver-cargo" data-id="{{ $cargo->id }}" title="Ver detalle">
+            <button type="button" class="btn btn-sm btn-outline-info btn-ver-cargo" data-permiso="config.cargos.show" data-id="{{ $cargo->id }}" title="Ver detalle">
                 <i class="fas fa-eye"></i>
             </button>
-            <button type="button" class="btn btn-sm btn-outline-primary btn-editar-cargo" data-id="{{ $cargo->id }}" data-nombre="{{ $cargo->nombre }}" data-descripcion="{{ $cargo->descripcion }}" title="Editar">
+            <button type="button" class="btn btn-sm btn-outline-primary btn-editar-cargo" data-permiso="config.cargos.update" data-id="{{ $cargo->id }}" data-nombre="{{ $cargo->nombre }}" data-descripcion="{{ $cargo->descripcion }}" title="Editar">
                 <i class="fas fa-edit"></i>
             </button>
-            <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-cargo" data-id="{{ $cargo->id }}" data-nombre="{{ $cargo->nombre }}" title="Eliminar">
+            <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-cargo" data-permiso="config.cargos.destroy" data-id="{{ $cargo->id }}" data-nombre="{{ $cargo->nombre }}" title="Eliminar">
                 <i class="fas fa-trash-alt"></i>
             </button>
         </div>

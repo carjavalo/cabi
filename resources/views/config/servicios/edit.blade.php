@@ -14,7 +14,7 @@
                 <label>Nombre</label>
                 <input type="text" name="nombre" class="form-control" value="{{ old('nombre', $servicio->nombre) }}" maxlength="150" required>
             </div>
-            <button class="btn btn-primary">Guardar</button>
+            <button class="btn btn-primary" data-permiso="config.servicios.update">Guardar</button>
             <a href="{{ route('config.servicios.index') }}" class="btn btn-secondary">Cancelar</a>
         </form>
     </div>

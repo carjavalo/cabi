@@ -60,7 +60,7 @@
                 <p class="mb-0 small" style="color:rgba(255,255,255,0.7);">Administra los roles que se asignan a los usuarios del aplicativo</p>
             </div>
             @if($puedeEditar)
-            <button class="btn btn-light btn-lg shadow-sm hover-scale" id="btnNuevoRol" style="font-weight:600;">
+            <button class="btn btn-light btn-lg shadow-sm hover-scale" id="btnNuevoRol" data-permiso="config.roles.store" style="font-weight:600;">
                 <i class="fas fa-plus mr-2"></i>Nuevo Rol
             </button>
             @endif
@@ -155,7 +155,7 @@
                 </div>
                 <div class="d-flex justify-content-end flex-wrap mt-2" style="gap:10px;">
                     <button type="button" class="btn btn-outline-secondary" id="btnLimpiar"><i class="fas fa-eraser mr-1"></i> Limpiar filtros</button>
-                    <a href="{{ route('config.roles.export', request()->query()) }}" class="btn btn-export" id="btnExportExcel">
+                    <a href="{{ route('config.roles.export', request()->query()) }}" class="btn btn-export" id="btnExportExcel" data-permiso="config.roles.export">
                         <i class="fas fa-file-excel mr-1"></i> Exportar Excel
                     </a>
                 </div>
@@ -284,7 +284,7 @@
             </div>
             <div class="modal-footer" style="border-top: 1px solid #eee;">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar"><i class="fas fa-trash-alt mr-1"></i> Eliminar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar" data-permiso="config.roles.destroy"><i class="fas fa-trash-alt mr-1"></i> Eliminar</button>
             </div>
         </div>
     </div>

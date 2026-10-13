@@ -20,7 +20,7 @@
                 </h2>
                 <p class="text-white-50 mb-0 small">Administra los eventos institucionales</p>
             </div>
-            <button id="btnNuevoEvento" class="btn btn-light btn-lg shadow-sm hover-scale" data-toggle="modal" data-target="#modalEvento">
+            <button id="btnNuevoEvento" data-permiso="config.eventos.store" class="btn btn-light btn-lg shadow-sm hover-scale" data-toggle="modal" data-target="#modalEvento">
                 <i class="fas fa-plus-circle me-2"></i>Nuevo Evento
             </button>
         </div>
@@ -358,7 +358,7 @@ Guardar Evento
             <span class="material-symbols-outlined text-lg">refresh</span>
             <span class="hidden sm:inline">Actualizar</span>
         </button>
-        <button type="button" id="btnEliminarSeleccionados" onclick="eliminarInscritosSeleccionados()" class="hidden items-center gap-2 px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-all shadow-sm whitespace-nowrap text-sm">
+        <button type="button" id="btnEliminarSeleccionados" data-permiso="eventos.inscripciones.eliminar" onclick="eliminarInscritosSeleccionados()" class="hidden items-center gap-2 px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-all shadow-sm whitespace-nowrap text-sm">
             <span class="material-symbols-outlined text-lg">delete</span>
             <span class="hidden sm:inline">Eliminar</span> (<span id="countSeleccionados">0</span>)
         </button>
@@ -650,11 +650,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td class="px-4 py-3 text-center">${estadoBadge}</td>
                 <td class="px-4 py-3 text-center">
                     <div class="btn-group" role="group">
-                        <button class="btn btn-sm btn-outline-primary btn-edit" data-id="${evento.id}">
+                        <button class="btn btn-sm btn-outline-primary btn-edit" data-permiso="config.eventos.show config.eventos.update" data-id="${evento.id}">
                             <i class="fas fa-edit"></i>
                         </button>
                         @if(auth()->check() && !in_array(auth()->user()->role, ['Operador', 'Administrador']))
-                        <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${evento.id}">
+                        <button class="btn btn-sm btn-outline-danger btn-delete" data-permiso="config.eventos.destroy" data-id="${evento.id}">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                         @endif
@@ -1670,15 +1670,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     </td>
                     <td class="px-6 py-4 text-center">
                         <div class="flex items-center justify-center gap-2">
-                            <button type="button" onclick="editarInscrito(${ins.id})" id="btn-edit-${ins.id}"
+                            <button type="button" onclick="editarInscrito(${ins.id})" id="btn-edit-${ins.id}" data-permiso="eventos.inscripciones.actualizar"
                                 class="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="Editar inscripción">
                                 <span class="material-symbols-outlined text-base">edit</span>
                             </button>
-                            <button type="button" onclick="guardarEdicion(${ins.id})" id="btn-save-${ins.id}"
+                            <button type="button" onclick="guardarEdicion(${ins.id})" id="btn-save-${ins.id}" data-permiso="eventos.inscripciones.actualizar"
                                 class="hidden inline-flex items-center gap-1 px-2 py-1 text-xs font-bold text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors" title="Guardar cambios">
                                 <span class="material-symbols-outlined text-base">save</span>
                             </button>
-                            <button type="button" onclick="eliminarInscritoIndividual(${ins.id}, '${ins.nombre_completo.replace(/'/g, "\\'")}')"
+                            <button type="button" data-permiso="eventos.inscripciones.eliminar" onclick="eliminarInscritoIndividual(${ins.id}, '${ins.nombre_completo.replace(/'/g, "\\'")}')"
                                 class="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Eliminar inscripción">
                                 <span class="material-symbols-outlined text-base">delete</span>
                             </button>

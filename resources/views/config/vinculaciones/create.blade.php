@@ -13,7 +13,7 @@
                 <label>Nombre</label>
                 <input type="text" name="nombre" class="form-control" value="{{ old('nombre') }}" maxlength="150" required>
             </div>
-            <button class="btn btn-primary">Crear</button>
+            <button class="btn btn-primary" data-permiso="config.vinculaciones.store">Crear</button>
             <a href="{{ route('config.vinculaciones.index') }}" class="btn btn-secondary">Cancelar</a>
         </form>
     </div>

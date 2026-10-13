@@ -14,7 +14,7 @@
                 <label>Nombre</label>
                 <input type="text" name="nombre" class="form-control" value="{{ old('nombre', $vinculacion->nombre) }}" maxlength="150" required>
             </div>
-            <button class="btn btn-primary">Guardar</button>
+            <button class="btn btn-primary" data-permiso="config.vinculaciones.update">Guardar</button>
             <a href="{{ route('config.vinculaciones.index') }}" class="btn btn-secondary">Cancelar</a>
         </form>
     </div>

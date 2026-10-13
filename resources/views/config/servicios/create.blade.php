@@ -49,7 +49,7 @@
                     Ya existe un servicio con este nombre.
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary" id="btnCrear">Crear</button>
+            <button type="submit" class="btn btn-primary" id="btnCrear" data-permiso="config.servicios.store">Crear</button>
             <a href="{{ route('config.servicios.index') }}" class="btn btn-secondary">Cancelar</a>
         </form>
     </div>

@@ -31,7 +31,7 @@
                 </h2>
                 <p class="text-white-50 mb-0 small">Crea capacitaciones, cita usuarios y registra asistencia</p>
             </div>
-            <a href="{{ route('config.capacitaciones.create') }}" class="btn btn-light btn-lg shadow-sm">
+            <a href="{{ route('config.capacitaciones.create') }}" class="btn btn-light btn-lg shadow-sm" data-permiso="config.capacitaciones.create config.capacitaciones.store">
                 <i class="fas fa-plus me-2"></i>Nueva Capacitación
             </a>
         </div>
@@ -179,18 +179,18 @@
                             </td>
                             <td class="px-4 py-3 text-center">
                                 <div class="btn-group" role="group">
-                                    <a href="{{ route('config.capacitaciones.show', $cap->id) }}" class="btn btn-sm btn-outline-primary" title="Ver / Asistencia">
+                                    <a href="{{ route('config.capacitaciones.show', $cap->id) }}" class="btn btn-sm btn-outline-primary" title="Ver / Asistencia" data-permiso="config.capacitaciones.show">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ route('config.capacitaciones.edit', $cap->id) }}" class="btn btn-sm btn-outline-warning" title="Editar">
+                                    <a href="{{ route('config.capacitaciones.edit', $cap->id) }}" class="btn btn-sm btn-outline-warning" title="Editar" data-permiso="config.capacitaciones.edit config.capacitaciones.update">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     @if(!empty($hasSesiones))
-                                    <button type="button" class="btn btn-sm btn-outline-info btn-informes" data-cap-id="{{ $cap->id }}" data-cap-titulo="{{ $cap->titulo }}" title="Informes">
+                                    <button type="button" class="btn btn-sm btn-outline-info btn-informes" data-permiso="config.capacitaciones.informes" data-cap-id="{{ $cap->id }}" data-cap-titulo="{{ $cap->titulo }}" title="Informes">
                                         <i class="fas fa-chart-bar"></i>
                                     </button>
                                     @endif
-                                    <form action="{{ route('config.capacitaciones.destroy', $cap->id) }}" method="POST" style="display:inline-block" onsubmit="return confirm('¿Eliminar esta capacitación?');">
+                                    <form action="{{ route('config.capacitaciones.destroy', $cap->id) }}" method="POST" style="display:inline-block" data-permiso="config.capacitaciones.destroy" onsubmit="return confirm('¿Eliminar esta capacitación?');">
                                         @csrf @method('DELETE')
                                         <button class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
                                     </form>
@@ -323,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '</div>';
 
             // Export button
-            html += '<div class="mb-3"><a href="/configuracion/capacitaciones/' + capId + '/sesiones/' + s.id + '/excel" class="btn btn-sm btn-success"><i class="fas fa-file-excel me-1"></i> Exportar Excel</a>';
+            html += '<div class="mb-3"><a href="/configuracion/capacitaciones/' + capId + '/sesiones/' + s.id + '/excel" class="btn btn-sm btn-success" data-permiso="config.capacitaciones.exportar-sesion"><i class="fas fa-file-excel me-1"></i> Exportar Excel</a>';
             html += '<small class="text-muted ml-2">Sesión creada: ' + s.created_at + '</small></div>';
 
             // Tabs

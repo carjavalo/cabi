@@ -136,7 +136,7 @@
                 </h2>
                 <p class="mb-0 small" style="color:rgba(255,255,255,0.7);">Administra los cargos y posiciones del hospital</p>
             </div>
-            <button class="btn btn-light btn-lg shadow-sm hover-scale" id="btnNuevoCargo" style="font-weight:600;">
+            <button class="btn btn-light btn-lg shadow-sm hover-scale" id="btnNuevoCargo" data-permiso="config.cargos.store" style="font-weight:600;">
                 <i class="fas fa-plus mr-2"></i>Nuevo Cargo
             </button>
         </div>
@@ -182,7 +182,7 @@
                     <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre o descripción..." value="{{ request('search') }}">
                 </div>
                 <div class="toolbar-actions mt-2 mt-md-0">
-                    <a href="{{ route('config.cargos.export', ['search' => request('search')]) }}" class="btn btn-export" id="btnExportExcel">
+                    <a href="{{ route('config.cargos.export', ['search' => request('search')]) }}" class="btn btn-export" id="btnExportExcel" data-permiso="config.cargos.export">
                         <i class="fas fa-file-excel mr-1"></i> Exportar Excel
                     </a>
                     <button class="btn btn-outline-secondary" id="btnRefresh" title="Refrescar">
@@ -314,7 +314,7 @@
             </div>
             <div class="modal-footer" style="border-top: 1px solid #eee;">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar" data-permiso="config.cargos.destroy">
                     <i class="fas fa-trash-alt mr-1"></i> Eliminar
                 </button>
             </div>
