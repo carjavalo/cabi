@@ -142,7 +142,7 @@
                         <p class="text-xs leading-tight">Al realizar la inscripción, acepto el reglamento interno y el tratamiento de datos personales de la institución.</p>
                     </div>
                     <div class="flex items-center gap-3">
-                        @if(auth()->check() && in_array(auth()->user()->role, ['Operador', 'Super Admin', 'Administrador']))
+                        @if(auth()->check() && \App\Support\GestorPermisos::accede(auth()->user(), ['Operador', 'Super Admin', 'Administrador'], 'api.inscritos.autorizar'))
                             <button id="autorizarAgendaBtn" type="button" class="hidden md:inline-flex items-center gap-2 px-4 py-2 bg-white text-primary border border-primary rounded-lg font-semibold shadow-sm hover:bg-primary/5 transition" title="Autorizar agenda" onclick="abrirModalAutorizacion()">
                                 <span class="material-symbols-outlined">check_circle</span>
                                 Autorizar Agenda
@@ -195,7 +195,7 @@
     </footer>
 </div>
 
-@if(auth()->check() && in_array(auth()->user()->role, ['Operador', 'Super Admin', 'Administrador']))
+@if(auth()->check() && \App\Support\GestorPermisos::accede(auth()->user(), ['Operador', 'Super Admin', 'Administrador'], 'api.inscritos.autorizar'))
 <!-- Modal Autorización de Agenda -->
 <div id="modalAutorizacion" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity" style="z-index: 9999;">
     <div class="bg-white dark:bg-slate-900 w-full max-w-6xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">

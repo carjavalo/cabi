@@ -317,6 +317,32 @@ class GestorPermisos
         }
     }
 
+    /**
+     * Controles de rol fijos del código (menú y controladores).
+     * - Roles del sistema: conservan la regla original (deben estar en $rolesBase).
+     * - Roles personalizados (p. ej. "Auxiliar SST"): no están en esas listas fijas,
+     *   así que su acceso lo decide únicamente Gestión de Permisos.
+     *
+     * @param array<int,string> $rolesBase
+     */
+    public static function rolPermitido(?User $user, array $rolesBase): bool
+    {
+        if (!$user) {
+            return false;
+        }
+        $rol = (string) $user->role;
+        if ($rol === self::ROL_TOTAL || in_array($rol, $rolesBase, true)) {
+            return true;
+        }
+        return !array_key_exists($rol, Role::SISTEMA);
+    }
+
+    /** rolPermitido() + permiso de la función en Gestión de Permisos. */
+    public static function accede(?User $user, array $rolesBase, string $clave): bool
+    {
+        return self::rolPermitido($user, $rolesBase) && self::puede($user, $clave);
+    }
+
     public static function puedeRuta(?User $user, ?LaravelRoute $route): bool
     {
         if (!$route || !self::rutaControlable($route)) {

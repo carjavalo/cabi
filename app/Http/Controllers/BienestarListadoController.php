@@ -14,7 +14,7 @@ class BienestarListadoController extends Controller
     private function verificarRolAsistencia()
     {
         $rolesPermitidos = ['Super Admin', 'Administrador', 'Operador', 'Instructor GYM'];
-        if (!Auth::check() || !in_array(Auth::user()->role, $rolesPermitidos)) {
+        if (!\App\Support\GestorPermisos::rolPermitido(Auth::user(), $rolesPermitidos)) {
             return false;
         }
         return true;

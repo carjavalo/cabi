@@ -26,7 +26,7 @@ class RoleController extends Controller implements HasMiddleware
         return [
             function (Request $request, Closure $next) {
                 $rol = Auth::user()->role ?? null;
-                if (!in_array($rol, self::PUEDEN_VER, true)) {
+                if (!GestorPermisos::rolPermitido(Auth::user(), self::PUEDEN_VER)) {
                     abort(403, 'No autorizado.');
                 }
                 if (!$request->isMethod('get') && !in_array($rol, self::PUEDEN_EDITAR, true)) {

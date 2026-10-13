@@ -188,7 +188,7 @@
                   <li class="nav-item"><a href="{{ url('/bienestar/gym/inscripcion') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Inscripción</p></a></li>
                   @endpuedeUrl
                   @endif
-                  @if(Auth::check() && Auth::user()->role === 'Super Admin')
+                  @if(\App\Support\GestorPermisos::rolPermitido(Auth::user(), ['Super Admin']))
                   @puedeUrl(url('/bienestar/gym/agenda'))
                   <li class="nav-item"><a href="{{ url('/bienestar/gym/agenda') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Agenda tu Horario</p></a></li>
                   @endpuedeUrl
@@ -202,7 +202,7 @@
               <li class="nav-item"><a href="{{ route('recaudo.index') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Recaudo</p></a></li>
               @endpuedeUrl
               <!-- Capacitaciones (visible para Coordinador y admins si aplica) -->
-              @if(Auth::check() && in_array(Auth::user()->role, ['Coordinador', 'Super Admin', 'Administrador', 'Operador']) && \App\Support\GestorPermisos::puede(Auth::user(), 'capacitaciones.index_user'))
+              @if(\App\Support\GestorPermisos::accede(Auth::user(), ['Coordinador', 'Super Admin', 'Administrador', 'Operador'], 'capacitaciones.index_user'))
               <li class="nav-item">
                 <a href="{{ route('capacitaciones.index_user') }}" class="nav-link {{ request()->is('capacitaciones*') && !request()->is('configuracion/capacitaciones*') ? 'active' : '' }}">
                   <i class="nav-icon fas fa-chalkboard-teacher"></i>
@@ -232,8 +232,16 @@
           </li>
           @endif
 
-          <!-- Configuración submenu (visible para Super Admin, Administrador y Operador) -->
-          @if(Auth::check() && in_array(Auth::user()->role, ['Super Admin','Administrador','Operador']))
+          <!-- Configuración submenu (roles del sistema: Super Admin, Administrador y Operador; roles personalizados: según Gestión de Permisos) -->
+          @php
+            $menuConfigUrls = [url('/configuracion/usuarios'), route('config.roles.index'), route('config.cargos.index'), url('/configuracion/servicios'),
+              url('/configuracion/vinculaciones'), url('/configuracion/publicidad'), url('/configuracion/cursos'), url('/configuracion/encuestas'),
+              url('/configuracion/eventos'), url('/configuracion/capacitaciones')];
+            $verMenuConfig = Auth::check() && \App\Support\GestorPermisos::rolPermitido(Auth::user(), ['Super Admin','Administrador','Operador'])
+              && (in_array(Auth::user()->role, ['Super Admin','Administrador','Operador'], true)
+                  || collect($menuConfigUrls)->contains(fn ($u) => \App\Support\GestorPermisos::puedeUrl(Auth::user(), $u)));
+          @endphp
+          @if($verMenuConfig)
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-cog"></i>
@@ -277,8 +285,9 @@
               @endif
             </ul>
           </li>
+          @endif
 
-          @if(Auth::check() && Auth::user()->role === 'Super Admin')
+          @if(Auth::check() && \App\Support\GestorPermisos::accede(Auth::user(), ['Super Admin'], 'otros.ciau1'))
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-ellipsis-h"></i>
@@ -288,7 +297,6 @@
               <li class="nav-item"><a href="{{ route('otros.ciau1') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>ciau1</p></a></li>
             </ul>
           </li>
-          @endif
           @endif
         </ul>
       </nav>

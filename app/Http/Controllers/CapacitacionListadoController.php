@@ -16,8 +16,7 @@ class CapacitacionListadoController extends Controller
 {
     private function checkAccess()
     {
-        $role = auth()->user()->role ?? '';
-        if (!in_array($role, ['Coordinador', 'Super Admin', 'Administrador', 'Operador'])) {
+        if (!\App\Support\GestorPermisos::rolPermitido(auth()->user(), ['Coordinador', 'Super Admin', 'Administrador', 'Operador'])) {
             abort(403, 'No tiene permisos para acceder a esta sección.');
         }
     }
