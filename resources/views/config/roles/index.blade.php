@@ -257,7 +257,7 @@
                         </div>
                         <div class="alert alert-light border small mb-2 d-none" id="avisoAsignables"></div>
                         <div class="asig-grid" id="gridAsignablesRol"></div>
-                        <small class="text-muted d-block mt-2"><i class="fas fa-lock mr-1"></i>El rol <b>Super Admin</b> solo lo puede asignar otro Super Admin.</small>
+                        @if($soySuper)<small class="text-muted d-block mt-2"><i class="fas fa-lock mr-1"></i>El rol <b>Super Admin</b> solo lo puede asignar otro Super Admin.</small>@endif
                     </div>
                 </div>
                 <div class="modal-footer" style="border-top: 1px solid #eee;">
@@ -474,7 +474,7 @@ $(document).ready(function() {
         $('#rolConfigAsig').val(asigEditable ? '1' : '0');
         var aviso = '';
         if (datos.nombre === 'Super Admin') aviso = '<i class="fas fa-crown text-warning mr-1"></i> El Super Admin siempre puede asignar todos los roles.';
-        else if (!asigEditable) aviso = '<i class="fas fa-lock mr-1"></i> Solo el Super Admin puede cambiar los roles que asigna el Administrador.';
+        else if (!asigEditable) aviso = '<i class="fas fa-lock mr-1"></i> No tiene autorización para cambiar los roles que asigna el Administrador.';
         $('#avisoAsignables').html(aviso).toggleClass('d-none', !aviso);
         if (datos.asignables === null) { hastaSuNivel(); } else { asigSel = datos.asignables.map(Number); renderAsignablesRol(); }
 

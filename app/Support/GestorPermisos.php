@@ -232,6 +232,10 @@ class GestorPermisos
         });
 
         self::sembrarAsignables();
+        // La descripción original del Administrador mencionaba al Super Admin, que debe ser invisible para los demás roles
+        DB::table('roles')->where('nombre', 'Administrador')
+            ->where('descripcion', 'Administra la configuración y los usuarios (excepto Super Admin).')
+            ->update(['descripcion' => Role::SISTEMA['Administrador']]);
         self::limpiarCache();
         Cache::forever('permisos.huella', md5(implode("\n", array_keys($descubiertos))));
 

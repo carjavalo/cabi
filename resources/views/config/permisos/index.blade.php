@@ -234,7 +234,7 @@
                         </div>
                         <div class="alert alert-info small d-none" id="avisoAsig"></div>
                         <div class="gp-asig-grid" id="gridAsignables"></div>
-                        <div class="small text-muted mt-3"><i class="fas fa-lock mr-1"></i> Por seguridad, el rol <b>Super Admin</b> solo lo puede asignar otro Super Admin.</div>
+                        @if($soySuper)<div class="small text-muted mt-3"><i class="fas fa-lock mr-1"></i> Por seguridad, el rol <b>Super Admin</b> solo lo puede asignar otro Super Admin.</div>@endif
                     </div>
 
                     {{-- ============ MATRIZ ============ --}}
@@ -451,7 +451,7 @@
         $('#rolRing').css('--p', pct); $('#rolPct').text(pct + '%');
         var aviso = '';
         if (r.total) aviso = '<i class="fas fa-crown mr-1"></i> El rol <b>Super Admin</b> tiene acceso total a todas las funciones y no se puede restringir.';
-        else if (!editable(r)) aviso = '<i class="fas fa-lock mr-1"></i> Solo el Super Admin puede cambiar los permisos del rol <b>Administrador</b>.';
+        else if (!editable(r)) aviso = '<i class="fas fa-lock mr-1"></i> No tiene autorización para cambiar los permisos del rol <b>Administrador</b>.';
         $('#avisoRol').html(aviso).toggleClass('d-none', !aviso);
         $('#accionesRol').toggle(editable(r));
     }

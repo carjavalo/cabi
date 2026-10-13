@@ -51,7 +51,7 @@ class Role extends Model
      */
     public const SISTEMA = [
         'Super Admin'    => 'Acceso total al aplicativo.',
-        'Administrador'  => 'Administra la configuración y los usuarios (excepto Super Admin).',
+        'Administrador'  => 'Administra la configuración y los usuarios del aplicativo.',
         'Coordinador'    => 'Gestiona capacitaciones y su asistencia.',
         'Operador'       => 'Opera los módulos de configuración con permisos limitados.',
         'Instructor GYM' => 'Gestiona las inscripciones y listados del gimnasio.',
