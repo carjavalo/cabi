@@ -206,6 +206,8 @@
 
     /* Signature */
     #so-sign{ width:100%;height:150px;border:1.5px dashed #c1c7dd;border-radius:12px;background:#fbfbfe;touch-action:none;cursor:crosshair;display:block; }
+    #so-sign-img{ height:150px;border:1.5px dashed #c1c7dd;border-radius:12px;background:#fbfbfe;display:flex;align-items:center;justify-content:center;padding:10px 18px; }
+    #so-sign-img img{ max-height:128px;max-width:100%;object-fit:contain; }
 
     /* Footer nav */
     .so-nav{ display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px;flex-wrap:wrap; }
@@ -689,8 +691,19 @@
                         <div style="margin-top:22px;border-top:1px dashed var(--so-line);padding-top:18px;">
                             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:9px;">
                                 <label class="so-lbl" style="margin:0;">Firma del médico</label>
-                                <button type="button" id="so-sign-clear" class="so-btn ghost" style="padding:6px 13px;font-size:13px;">Borrar firma</button>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                    @if($firmaRegistrada)
+                                    <button type="button" id="so-sign-usar" class="so-btn ghost" style="padding:6px 13px;font-size:13px;display:none;"><i class="fas fa-signature"></i> Usar mi firma registrada</button>
+                                    <button type="button" id="so-sign-manual" class="so-btn ghost" style="padding:6px 13px;font-size:13px;"><i class="fas fa-pen"></i> Firmar a mano</button>
+                                    @endif
+                                    <button type="button" id="so-sign-clear" class="so-btn ghost" style="padding:6px 13px;font-size:13px;">Borrar firma</button>
+                                </div>
                             </div>
+                            {{-- Firma registrada en el usuario del médico (Gestión de Usuarios): se usa automáticamente --}}
+                            @if($firmaRegistrada)
+                            <div id="so-sign-img"><img src="{{ $firmaRegistrada }}" alt="Firma registrada del médico"></div>
+                            <div id="so-sign-nota" style="font-size:12.5px;color:var(--so-mut);margin-top:6px;"><i class="fas fa-check-circle" style="color:var(--so-ok);"></i> Firma registrada en su usuario. Se incluirá automáticamente en el certificado.</div>
+                            @endif
                             <canvas id="so-sign" width="640" height="180"></canvas>
                             <div class="so-grid" style="margin-top:16px;">
                                 <div><label class="so-lbl">Nombre del médico</label><input type="text" name="medico" class="so-in" value="{{ $medicoNombre }}"></div>
@@ -1816,6 +1829,24 @@
     canvas.addEventListener('pointermove', e=>{ if(!drawing)return; const p=pt(e); ctx.strokeStyle='#1a1d2e'; ctx.lineWidth=2.4; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(p.x,p.y); ctx.stroke(); px=p.x; py=p.y; });
     canvas.addEventListener('pointerup', ()=>{ if(!drawing)return; drawing=false; try{ $('#f-firma').value = canvas.toDataURL(); }catch(_){} });
     $('#so-sign-clear').addEventListener('click', ()=>{ ctx.clearRect(0,0,canvas.width,canvas.height); $('#f-firma').value=''; });
+
+    // Firma registrada del médico: se usa por defecto; puede cambiar a firmar a mano y volver a ella
+    const FIRMA_REGISTRADA = $('#so-sign-img img') ? $('#so-sign-img img').getAttribute('src') : '';
+    function usarFirmaRegistrada(usar){
+        $('#so-sign-img').style.display  = usar ? '' : 'none';
+        $('#so-sign-nota').style.display = usar ? '' : 'none';
+        canvas.style.display             = usar ? 'none' : '';
+        $('#so-sign-clear').style.display  = usar ? 'none' : '';
+        $('#so-sign-manual').style.display = usar ? '' : 'none';
+        $('#so-sign-usar').style.display   = usar ? 'none' : '';
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        $('#f-firma').value = usar ? FIRMA_REGISTRADA : '';
+    }
+    if(FIRMA_REGISTRADA){
+        usarFirmaRegistrada(true);
+        $('#so-sign-manual').addEventListener('click', ()=> usarFirmaRegistrada(false));
+        $('#so-sign-usar').addEventListener('click', ()=> usarFirmaRegistrada(true));
+    }
 
     // ─── Revisión ───
     function fillReview(){

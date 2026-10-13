@@ -179,6 +179,15 @@ class Role extends Model
     }
 
     /**
+     * Roles de los profesionales que firman los conceptos médicos (p. ej. "Medico SST" o
+     * "Medico S Ocupacional"): al crear o editar sus usuarios se pide la imagen de la firma.
+     */
+    public static function requiereFirma(?string $nombre): bool
+    {
+        return $nombre !== null && str_contains(\Illuminate\Support\Str::lower(\Illuminate\Support\Str::ascii($nombre)), 'medic');
+    }
+
+    /**
      * Roles que el usuario autenticado puede asignar / ver según la jerarquía actual:
      * - Solo Super Admin puede asignar "Super Admin".
      * - Solo Super Admin y Administrador pueden asignar "Administrador".

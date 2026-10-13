@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Config;
 
 use App\Http\Controllers\Controller;
+use App\Models\FirmaUsuario;
 use App\Models\User;
 use App\Models\Vinculacion;
 use App\Models\Servicio;
@@ -98,7 +99,27 @@ class UserController extends Controller
 
         $cargos = \App\Models\Cargo::orderBy('nombre')->get();
         $roles = GestorPermisos::rolesAsignables(Role::nombres(), Auth::user()->role ?? null);
-        return view('config.usuarios.create', compact('vinculaciones','servicios','cargos','roles'));
+        $rolesConFirma = array_values(array_filter($roles, [Role::class, 'requiereFirma']));
+        return view('config.usuarios.create', compact('vinculaciones','servicios','cargos','roles','rolesConFirma'));
+    }
+
+    /** Reglas del campo "Firma del profesional" (roles de médico). */
+    private function reglasFirma(): array
+    {
+        return [
+            'firma_archivo'   => ['nullable', 'file', 'mimes:png,jpg,jpeg,pdf', 'max:' . FirmaUsuario::MAX_KB],
+            'firma_procesada' => ['nullable', 'string', 'max:4000000'],
+            'quitar_firma'    => ['nullable', 'boolean'],
+        ];
+    }
+
+    private function mensajesFirma(): array
+    {
+        return [
+            'firma_archivo.mimes'    => 'La firma debe ser una imagen PNG o JPG, o un archivo PDF.',
+            'firma_archivo.max'      => 'El archivo de la firma no puede superar 5 MB.',
+            'firma_archivo.uploaded' => 'No fue posible subir el archivo de la firma. Intente nuevamente.',
+        ];
     }
 
     public function store(Request $request)
@@ -124,7 +145,10 @@ class UserController extends Controller
             'estracto' => ['nullable','string','max:5'],
             'tvivienda' => ['nullable','string','max:5'],
             'escivil' => ['nullable','string','max:5'],
-        ]);
+        ] + $this->reglasFirma(), $this->mensajesFirma());
+
+        // Firma del profesional (solo roles de médico); se valida antes de crear el usuario
+        $firma = Role::requiereFirma($data['role']) ? FirmaUsuario::desdeSolicitud($request) : null;
 
         // Prevent non-super-admins from assigning Super Admin role
         if (($data['role'] ?? '') === 'Super Admin' && (!Auth::check() || Auth::user()->role !== 'Super Admin')) {
@@ -161,6 +185,10 @@ class UserController extends Controller
 
         $user = User::create($userdata);
 
+        if ($firma && !FirmaUsuario::guardar($user->id, $firma)) {
+            return redirect()->route('config.usuarios.index')->with('error', 'Usuario creado, pero no fue posible guardar la firma. Inténtelo de nuevo editando el usuario.');
+        }
+
         return redirect()->route('config.usuarios.index')->with('success','Usuario creado correctamente.');
     }
 
@@ -190,8 +218,10 @@ class UserController extends Controller
             $roles[] = $user->role;
         }
         $roles = GestorPermisos::rolesAsignables($roles, Auth::user()->role ?? null);
+        $rolesConFirma = array_values(array_filter($roles, [Role::class, 'requiereFirma']));
+        $firmaActual = FirmaUsuario::imagenDe($user->id);
 
-        return view('config.usuarios.edit', compact('user','vinculaciones','servicios', 'cargos', 'roles'));
+        return view('config.usuarios.edit', compact('user','vinculaciones','servicios', 'cargos', 'roles', 'rolesConFirma', 'firmaActual'));
     }
 
     public function update(Request $request, $id)
@@ -230,7 +260,15 @@ class UserController extends Controller
             'estracto' => ['nullable','string','max:5'],
             'tvivienda' => ['nullable','string','max:5'],
             'escivil' => ['nullable','string','max:5'],
-        ]);
+        ] + $this->reglasFirma(), $this->mensajesFirma());
+
+        // Firma del profesional (solo roles de médico): reemplazar, quitar o dejar la actual
+        $firma = null;
+        $quitarFirma = false;
+        if (Role::requiereFirma($data['role'])) {
+            $firma = FirmaUsuario::desdeSolicitud($request);
+            $quitarFirma = !$firma && $request->boolean('quitar_firma');
+        }
 
         $user->name = $data['name'];
         $user->apellido1 = $data['apellido1'] ?? null;
@@ -264,6 +302,13 @@ class UserController extends Controller
             $user->role = $data['role'];
         }
         $user->save();
+
+        if ($firma && !FirmaUsuario::guardar($user->id, $firma)) {
+            return redirect()->route('config.usuarios.index')->with('error', 'Usuario actualizado, pero no fue posible guardar la firma. Inténtelo de nuevo.');
+        }
+        if ($quitarFirma) {
+            FirmaUsuario::quitar($user->id);
+        }
 
         return redirect()->route('config.usuarios.index')->with('success','Usuario actualizado correctamente.');
     }

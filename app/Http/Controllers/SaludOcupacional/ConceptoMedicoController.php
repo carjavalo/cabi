@@ -84,6 +84,8 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'empleador'   => self::EMPLEADOR,
             'nit'         => self::NIT,
             'medicoNombre'=> $medico !== '' ? $medico : (Auth::user()->name ?? ''),
+            // Firma registrada del profesional (Gestión de Usuarios): se coloca sola en el paso 6
+            'firmaRegistrada' => \App\Models\FirmaUsuario::imagenDe(Auth::id()),
             'tipos'       => ConceptoMedico::TIPOS,
             'tiposIdentificacion' => self::TIPOS_IDENTIFICACION,
             'enfasis'     => ConceptoMedico::ENFASIS,

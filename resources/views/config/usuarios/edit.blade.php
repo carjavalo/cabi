@@ -13,7 +13,7 @@
             </div>
             
             <div class="card-body p-4 bg-white">
-                <form method="POST" action="{{ route('config.usuarios.update',$user->id) }}">
+                <form method="POST" action="{{ route('config.usuarios.update',$user->id) }}" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     
@@ -92,6 +92,8 @@
                             </select>
                         </div>
                     </div>
+
+                    @include('config.usuarios._firma', ['rolSeleccionado' => old('role', $user->role), 'firmaActual' => $firmaActual ?? null])
 
                     <h6 class="text-secondary border-bottom pb-2 mb-3"><i class="fas fa-id-badge mr-1"></i> Información Demográfica</h6>
 
