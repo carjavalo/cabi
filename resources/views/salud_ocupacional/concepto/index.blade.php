@@ -684,6 +684,15 @@
                             <textarea name="restricciones" rows="3" class="so-in" placeholder="Describe las restricciones ocupacionales…"></textarea>
                         </div>
                         <div style="margin-top:16px;">
+                            <label class="so-lbl" for="f-temporalidad">Temporalidad <span style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--so-mut);">· tiempo que duran las restricciones</span></label>
+                            <select name="restricciones_temporalidad" id="f-temporalidad" class="so-in" style="max-width:360px;">
+                                <option value="">Seleccione la temporalidad…</option>
+                                @foreach($temporalidades as $k => $t)
+                                <option value="{{ $k }}">{{ $t }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div style="margin-top:16px;">
                             <label class="so-lbl">Recomendaciones para el área de SST</label>
                             <textarea name="sst" rows="3" class="so-in" placeholder="Recomendaciones para Seguridad y Salud en el Trabajo…"></textarea>
                         </div>
@@ -749,6 +758,7 @@
                                 <div style="margin-bottom:8px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;">Observaciones del concepto</div><div class="v" id="rv-obs" style="font-size:14px;color:#3a3e56;white-space:pre-wrap;">—</div></div>
                                 <div style="margin-bottom:8px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;">Recomendaciones</div><div class="v" id="rv-recom" style="font-size:14px;color:#3a3e56;white-space:pre-wrap;">—</div></div>
                                 <div style="margin-bottom:8px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;">Restricciones</div><div class="v" id="rv-restr" style="font-size:14px;color:#3a3e56;white-space:pre-wrap;">—</div></div>
+                                <div style="margin-bottom:8px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;">Temporalidad de las restricciones</div><div class="v" id="rv-temporalidad" style="font-size:14px;color:#3a3e56;">—</div></div>
                                 <div style="border-top:1px solid var(--so-line);margin-top:16px;padding-top:16px;">
                                     <img id="rv-firma" alt="Firma" style="height:64px;object-fit:contain;display:none;">
                                     <div style="width:260px;border-top:1.5px solid var(--so-text);padding-top:6px;margin-top:4px;">
@@ -1327,7 +1337,7 @@
     $$('input[name="tipo_atencion"], input[name="enfasis[]"]').forEach(i=> i.addEventListener('change', aplicarConcepto));
 
     // Precarga de los pasos 5 y 6 desde la consulta anterior (sobrescribibles)
-    const TEXTOS_CONCEPTO = ['observaciones_concepto','recomendaciones','restricciones','sst'];
+    const TEXTOS_CONCEPTO = ['observaciones_concepto','recomendaciones','restricciones','restricciones_temporalidad','sst'];
     function fillConcepto(h){
         ultimaConcepto = h && h.campos ? h.campos : null;
         $$('input[name="concepto_resultado"], input[name^="concepto_enfasis["]').forEach(i=> i.checked = false);
@@ -1870,6 +1880,8 @@
         setTxt('rv-obs', $('[name="observaciones_concepto"]').value);
         setTxt('rv-recom', $('[name="recomendaciones"]').value);
         setTxt('rv-restr', $('[name="restricciones"]').value);
+        const temporalidad = $('#f-temporalidad');
+        setTxt('rv-temporalidad', temporalidad.value ? temporalidad.options[temporalidad.selectedIndex].text : '');
         setTxt('rv-medico', $('[name="medico"]').value);
         setTxt('rv-registro', $('[name="registro"]').value);
         const firma = $('#f-firma').value;

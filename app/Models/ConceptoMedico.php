@@ -50,6 +50,7 @@ class ConceptoMedico extends Model
         'observaciones_concepto',
         'recomendaciones',
         'restricciones',
+        'restricciones_temporalidad',
         'sst',
         'firma',
         'medico',
@@ -184,7 +185,30 @@ class ConceptoMedico extends Model
     ];
 
     /** Campos de los pasos 5 y 6 que se precargan desde la consulta anterior. */
-    public const CAMPOS_CONCEPTO = ['concepto_resultado', 'concepto_enfasis', 'observaciones_concepto', 'recomendaciones', 'restricciones', 'sst'];
+    public const CAMPOS_CONCEPTO = ['concepto_resultado', 'concepto_enfasis', 'observaciones_concepto', 'recomendaciones', 'restricciones', 'restricciones_temporalidad', 'sst'];
+
+    /**
+     * Temporalidad de las restricciones médicas ocupacionales (paso 6): de 1 a 12 meses;
+     * más de 12 meses se registra como "indefinido".
+     */
+    public const TEMPORALIDADES = [
+        '1' => '1 mes',   '2' => '2 meses',  '3' => '3 meses',   '4' => '4 meses',
+        '5' => '5 meses', '6' => '6 meses',  '7' => '7 meses',   '8' => '8 meses',
+        '9' => '9 meses', '10' => '10 meses', '11' => '11 meses', '12' => '12 meses',
+        'indefinido' => 'Indefinido (más de 12 meses)',
+    ];
+
+    public function getTemporalidadLabelAttribute(): string
+    {
+        return self::TEMPORALIDADES[$this->restricciones_temporalidad ?? ''] ?? '';
+    }
+
+    /** Fecha hasta la que rigen las restricciones (null si son indefinidas o no se indicó la temporalidad). */
+    public function getRestriccionesHastaAttribute(): ?\Carbon\CarbonInterface
+    {
+        $meses = (int) $this->restricciones_temporalidad;
+        return $meses > 0 && $this->fecha_atencion ? $this->fecha_atencion->copy()->addMonthsNoOverflow($meses) : null;
+    }
 
     /** Grupo de opciones de concepto que corresponde a un tipo de atención. */
     public static function grupoConcepto(?string $tipo): string

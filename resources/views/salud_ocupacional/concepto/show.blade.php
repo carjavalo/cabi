@@ -150,6 +150,9 @@
             @if($c->{$k})
             <div style="margin-bottom:12px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">{{ $lb }}</div><div class="blk">{{ $c->{$k} }}</div></div>
             @endif
+            @if($k === 'restricciones' && $c->temporalidad_label)
+            <div style="margin-bottom:12px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Temporalidad de las restricciones</div><div class="blk">{{ $c->temporalidad_label }}@if($c->restricciones_hasta) · vigentes hasta el {{ $c->restricciones_hasta->format('d/m/Y') }}@endif</div></div>
+            @endif
         @endforeach
 
         @if($c->documentos->count())

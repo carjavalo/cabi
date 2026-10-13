@@ -61,7 +61,8 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             || !Schema::hasColumn('users', 'eps')
             || !Schema::hasColumn('users', 'tipo_identificacion')
             || !Schema::hasColumn('conceptos_medicos', 'enfasis')
-            || !Schema::hasColumn('conceptos_medicos', 'concepto_enfasis');
+            || !Schema::hasColumn('conceptos_medicos', 'concepto_enfasis')
+            || !Schema::hasColumn('conceptos_medicos', 'restricciones_temporalidad');
 
         $recientes = $this->safeList(fn () => ConceptoMedico::with('user')
             ->orderByDesc('created_at')
@@ -92,6 +93,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'conceptos'   => ConceptoMedico::CONCEPTOS,
             'conceptosGrupos'  => ConceptoMedico::CONCEPTOS_GRUPOS,
             'conceptosEnfasis' => ConceptoMedico::CONCEPTOS_ENFASIS,
+            'temporalidades'   => ConceptoMedico::TEMPORALIDADES,
             'migracionesPendientes' => $migracionesPendientes,
             'agendaHoy'   => $this->agendaHoy(),
             'citaInicial' => (int) $request->query('cita', 0) ?: null,
@@ -357,11 +359,13 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'concepto_resultado' => ['nullable', 'string', 'max:40'],
             'concepto_enfasis'   => ['nullable', 'array'],
             'observaciones_concepto' => ['nullable', 'string', 'max:5000'],
+            'restricciones_temporalidad' => ['nullable', 'string', Rule::in(array_map('strval', array_keys(ConceptoMedico::TEMPORALIDADES)))],
             'agenda_cita_id'     => ['nullable', 'integer'],
             'documentos.*'       => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,gif,webp', 'max:30720'],
         ], [
             'documentos.*.max'   => 'Cada documento adjunto puede pesar máximo 30 MB.',
             'documentos.*.mimes' => 'Los documentos adjuntos deben ser PDF o imágenes.',
+            'restricciones_temporalidad.in' => 'La temporalidad de las restricciones debe ser de 1 a 12 meses o indefinida.',
         ]);
 
         $user = !empty($validated['user_id']) ? User::find($validated['user_id']) : null;
@@ -445,6 +449,10 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         if (Schema::hasColumn('conceptos_medicos', 'concepto_enfasis')) {
             $concepto->concepto_enfasis       = $conceptoEnfasis ?: null;
             $concepto->observaciones_concepto = $validated['observaciones_concepto'] ?? null;
+        }
+        // Temporalidad de las restricciones: 1 a 12 meses o "indefinido" (más de 12 meses)
+        if (Schema::hasColumn('conceptos_medicos', 'restricciones_temporalidad')) {
+            $concepto->restricciones_temporalidad = $validated['restricciones_temporalidad'] ?? null;
         }
 
         // Grupos estructurados (se guardan como JSON)
