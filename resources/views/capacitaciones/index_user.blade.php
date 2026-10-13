@@ -121,10 +121,10 @@
                             </td>
                             <td class="px-4 py-3 text-center">
                                 <div class="btn-group" role="group">
-                                    <a href="{{ route('config.capacitaciones.show', $cap->id) }}" class="btn btn-sm btn-outline-primary" title="Ver Detalles">
+                                    <a href="{{ route('config.capacitaciones.show', $cap->id) }}" class="btn btn-sm btn-outline-primary" title="Ver Detalles" data-permiso="config.capacitaciones.show">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ route('capacitaciones.edit_user', $cap->id) }}" class="btn btn-sm btn-outline-warning" title="Asignar Participantes">
+                                    <a href="{{ route('capacitaciones.edit_user', $cap->id) }}" class="btn btn-sm btn-outline-warning" title="Asignar Participantes" data-permiso="capacitaciones.edit_user capacitaciones.update_user">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                 </div>

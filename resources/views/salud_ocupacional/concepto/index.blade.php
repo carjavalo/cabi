@@ -344,7 +344,7 @@
                         <div class="lbl so-mono" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--so-mut);font-weight:700;margin-bottom:9px;">Conceptos recientes</div>
                         <div class="so-hist">
                             @foreach($recientes as $r)
-                            <a href="{{ route('salud.concepto.show', $r->id) }}">
+                            <a href="{{ route('salud.concepto.show', $r->id) }}" data-permiso="salud.concepto.show">
                                 <span class="c">{{ $r->paciente_nombre ?: ($r->user->name ?? 'Paciente') }}</span>
                                 <span class="d">{{ optional($r->fecha_atencion)->format('d/m/Y') }} · {{ $r->concepto_label }}</span>
                             </a>
@@ -418,7 +418,7 @@
                         <div class="so-agenda-hoy">
                             <label class="so-lbl" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
                                 <span><i class="far fa-calendar-check"></i> Pacientes agendados hoy · prioridad</span>
-                                <a href="{{ route('salud.agenda.index') }}" style="font-size:11px;text-transform:none;letter-spacing:0;">Ver agenda</a>
+                                <a href="{{ route('salud.agenda.index') }}" data-permiso="salud.agenda.index" style="font-size:11px;text-transform:none;letter-spacing:0;">Ver agenda</a>
                             </label>
                             @if(count($agendaHoy))
                             <select id="so-agenda-sel" class="so-in">
@@ -486,19 +486,19 @@
                             <div><label class="so-lbl">NIT</label><input type="text" name="nit" class="so-in ro so-mono" value="{{ $nit }}"></div>
                             <div>
                                 <label class="so-lbl">EPS
-                                    <button type="button" class="so-cat-btn" data-cat="eps" title="Administrar EPS (crear, editar o eliminar)"><i class="fas fa-plus"></i></button>
+                                    <button type="button" class="so-cat-btn" data-permiso="salud.entidades.index" data-cat="eps" title="Administrar EPS (crear, editar o eliminar)"><i class="fas fa-plus"></i></button>
                                 </label>
                                 <input type="text" name="eps" id="f-eps" list="dl-eps" class="so-in" placeholder="Escribe o selecciona…">
                             </div>
                             <div>
                                 <label class="so-lbl">AFP
-                                    <button type="button" class="so-cat-btn" data-cat="afp" title="Administrar AFP (crear, editar o eliminar)"><i class="fas fa-plus"></i></button>
+                                    <button type="button" class="so-cat-btn" data-permiso="salud.entidades.index" data-cat="afp" title="Administrar AFP (crear, editar o eliminar)"><i class="fas fa-plus"></i></button>
                                 </label>
                                 <input type="text" name="afp" id="f-afp" list="dl-afp" class="so-in" placeholder="Fondo de pensiones">
                             </div>
                             <div>
                                 <label class="so-lbl">ARL
-                                    <button type="button" class="so-cat-btn" data-cat="arl" title="Administrar ARL (crear, editar o eliminar)"><i class="fas fa-plus"></i></button>
+                                    <button type="button" class="so-cat-btn" data-permiso="salud.entidades.index" data-cat="arl" title="Administrar ARL (crear, editar o eliminar)"><i class="fas fa-plus"></i></button>
                                 </label>
                                 <input type="text" name="arl" id="f-arl" list="dl-arl" class="so-in" placeholder="Escribe o selecciona…">
                             </div>
@@ -526,7 +526,7 @@
                             <i class="fas fa-history" style="margin-top:3px;color:var(--so-brand);"></i>
                             <div style="flex:1;">
                                 Información precargada de la consulta anterior del <strong id="so-hc-prev-fecha" style="color:var(--so-brand)"></strong>
-                                (<a href="#" id="so-hc-prev-link" target="_blank">ver consulta</a>).
+                                (<a href="#" id="so-hc-prev-link" target="_blank" data-permiso="salud.concepto.show">ver consulta</a>).
                                 Puedes modificarla: al guardar se registra como una <strong>nueva consulta</strong> y la anterior queda intacta.
                                 <button type="button" id="so-hc-clear" class="so-btn ghost" style="padding:4px 11px;font-size:12.5px;margin-left:6px;"><i class="fas fa-eraser"></i> Empezar en blanco</button>
                                 <button type="button" id="so-hc-restore" class="so-btn ghost" style="padding:4px 11px;font-size:12.5px;margin-left:4px;display:none;"><i class="fas fa-undo"></i> Volver a cargar la anterior</button>
@@ -753,7 +753,7 @@
                             <button type="button" class="so-btn ghost" id="so-prev" style="display:none;"><i class="fas fa-arrow-left"></i> Anterior</button>
                             <div style="flex:1;"></div>
                             <button type="button" class="so-btn prim" id="so-next">Continuar <i class="fas fa-arrow-right"></i></button>
-                            <button type="submit" class="so-btn ok" id="so-save" style="display:none;"><i class="fas fa-save"></i> Guardar y generar certificado</button>
+                            <button type="submit" class="so-btn ok" id="so-save" data-permiso="salud.concepto.store" style="display:none;"><i class="fas fa-save"></i> Guardar y generar certificado</button>
                         </div>
                     </div>
 
@@ -814,9 +814,9 @@
             <div><label class="so-lbl">Profesión</label><input type="text" id="pf-profesion" class="so-in"></div>
             <div><label class="so-lbl">Cargo</label><input type="text" id="pf-cargo" list="dl-cargo" class="so-in"></div>
             <div><label class="so-lbl">Servicio</label><input type="text" id="pf-servicio" list="dl-serv" class="so-in"></div>
-            <div><label class="so-lbl">EPS <button type="button" class="so-cat-btn" data-cat="eps" data-target="pf-eps" title="Administrar EPS"><i class="fas fa-plus"></i></button></label><input type="text" id="pf-eps" list="dl-eps" class="so-in"></div>
-            <div><label class="so-lbl">AFP <button type="button" class="so-cat-btn" data-cat="afp" data-target="pf-afp" title="Administrar AFP"><i class="fas fa-plus"></i></button></label><input type="text" id="pf-afp" list="dl-afp" class="so-in"></div>
-            <div><label class="so-lbl">ARL <button type="button" class="so-cat-btn" data-cat="arl" data-target="pf-arl" title="Administrar ARL"><i class="fas fa-plus"></i></button></label><input type="text" id="pf-arl" list="dl-arl" class="so-in"></div>
+            <div><label class="so-lbl">EPS <button type="button" class="so-cat-btn" data-permiso="salud.entidades.index" data-cat="eps" data-target="pf-eps" title="Administrar EPS"><i class="fas fa-plus"></i></button></label><input type="text" id="pf-eps" list="dl-eps" class="so-in"></div>
+            <div><label class="so-lbl">AFP <button type="button" class="so-cat-btn" data-permiso="salud.entidades.index" data-cat="afp" data-target="pf-afp" title="Administrar AFP"><i class="fas fa-plus"></i></button></label><input type="text" id="pf-afp" list="dl-afp" class="so-in"></div>
+            <div><label class="so-lbl">ARL <button type="button" class="so-cat-btn" data-permiso="salud.entidades.index" data-cat="arl" data-target="pf-arl" title="Administrar ARL"><i class="fas fa-plus"></i></button></label><input type="text" id="pf-arl" list="dl-arl" class="so-in"></div>
           </div>
         </form>
       </div>
@@ -1339,7 +1339,7 @@
         if(!list.length){ card.style.display='none'; return; }
         card.style.display='block';
         $('#so-hist-count').textContent = list.length;
-        box.innerHTML = list.map(h=>`<a href="${h.url}" target="_blank"><span class="c">${h.concepto}</span><span class="d">${h.fecha||''} · ${h.tipo||''}</span></a>`).join('');
+        box.innerHTML = list.map(h=>`<a href="${h.url}" target="_blank" data-permiso="salud.concepto.show"><span class="c">${h.concepto}</span><span class="d">${h.fecha||''} · ${h.tipo||''}</span></a>`).join('');
     }
 
     // Ilustra los datos del paciente seleccionado (tarjeta lateral persistente)
@@ -1409,7 +1409,14 @@
         } finally { btn.disabled = false; }
     });
 
+    // Sin permiso para crear ni editar pacientes, el botón + no se muestra
+    if(!CABI.puede('salud.concepto.paciente.store') && !CABI.puede('salud.concepto.paciente.update')) $('#so-ident-action').style.display = 'none';
+
     function openPatientModal(mode, data){
+        if(!CABI.puede(mode==='edit' ? 'salud.concepto.paciente.update' : 'salud.concepto.paciente.store')){
+            Swal.fire({icon:'warning',title:'Sin permiso',text:'Tu rol no tiene permiso para '+(mode==='edit'?'editar':'crear')+' pacientes.'});
+            return;
+        }
         $('#pf-id').value = (mode==='edit' && data) ? (data.id||'') : '';
         PF.forEach(k=>{ const el=$('#pf-'+k); if(el) el.value = (data && data[k]!=null) ? data[k] : ''; });
         if(!$('#pf-tipo_identificacion').value) $('#pf-tipo_identificacion').value = 'CC';
@@ -1548,6 +1555,8 @@
         $('#cat-save').innerHTML = '<i class="fas fa-save"></i> Guardar';
         $('#cat-cancel').style.display = 'none';
         $('#cat-hint').textContent = 'Registra una entidad nueva o usa los botones de cada fila para seleccionarla, editarla o eliminarla.';
+        // El formulario en modo creación solo se muestra con permiso de crear entidades
+        $('.so-cat-form').style.display = CABI.puede('salud.entidades.store') ? '' : 'none';
     }
 
     function catCargar(){
@@ -1585,8 +1594,8 @@
                 + '</div>'
                 + '<div class="acts">'
                 +   '<button type="button" class="use" data-i="'+i+'" title="Usar en el formulario"><i class="fas fa-check"></i></button>'
-                +   '<button type="button" class="ed"  data-i="'+i+'" title="Editar"><i class="fas fa-pen"></i></button>'
-                +   '<button type="button" class="del" data-i="'+i+'" title="Eliminar"><i class="fas fa-trash"></i></button>'
+                +   '<button type="button" class="ed" data-permiso="salud.entidades.update" data-i="'+i+'" title="Editar"><i class="fas fa-pen"></i></button>'
+                +   '<button type="button" class="del" data-permiso="salud.entidades.destroy" data-i="'+i+'" title="Eliminar"><i class="fas fa-trash"></i></button>'
                 + '</div></div>';
         }).join('');
 
@@ -1609,7 +1618,8 @@
     }
 
     function catEditar(e){
-        if(!e) return;
+        if(!e || !CABI.puede('salud.entidades.update')) return;
+        $('.so-cat-form').style.display = '';
         $('#cat-id').value     = e.id;
         $('#cat-nombre').value = e.nombre || '';
         $('#cat-codigo').value = e.codigo || '';
@@ -1673,6 +1683,7 @@
             return;
         }
         const id     = $('#cat-id').value;
+        if(!CABI.puede(id ? 'salud.entidades.update' : 'salud.entidades.store')) return;
         const url    = catUrl(catTipo, id || null);
         const method = id ? 'PUT' : 'POST';
 
@@ -1837,6 +1848,7 @@
 
     // ─── Validación al guardar ───
     $('#so-form').addEventListener('submit', function(e){
+        if(!CABI.puede('salud.concepto.store')){ e.preventDefault(); return; }
         if(!$('#f-user_id').value){
             e.preventDefault();
             Swal.fire({icon:'warning',title:'Paciente no válido',text:'Debes seleccionar un paciente de vinculación Planta. Búscalo por identificación o créalo con el botón +.'});

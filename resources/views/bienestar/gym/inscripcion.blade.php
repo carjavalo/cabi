@@ -238,7 +238,7 @@
                         <option value="1">Autorizar seleccionados</option>
                         <option value="0">Revocar seleccionados</option>
                     </select>
-                    <button onclick="aplicarAccionMasiva()" class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-2 h-[42px]">
+                    <button onclick="aplicarAccionMasiva()" data-permiso="api.inscritos.autorizar" class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-2 h-[42px]">
                         <span class="material-symbols-outlined text-[18px]">published_with_changes</span>
                         Cambiar Estado
                     </button>
@@ -349,7 +349,7 @@
             </div>
             <div class="mt-6 flex justify-end gap-3">
                 <button type="button" onclick="cerrarModalEditar()" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">Cancelar</button>
-                <button type="button" onclick="guardarEdicion()" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors shadow-sm">Guardar Cambios</button>
+                <button type="button" onclick="guardarEdicion()" data-permiso="api.inscritos.update" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors shadow-sm">Guardar Cambios</button>
             </div>
         </div>
     </div>
@@ -458,7 +458,7 @@
                 <td class="px-4 py-3 text-center">${estadoBadge}</td>
                 <td class="px-4 py-3">
                     <div class="flex justify-center items-center gap-2">
-                        <button onclick="toggleAutorizacion(${i.id})" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${btnClass}">
+                        <button onclick="toggleAutorizacion(${i.id})" data-permiso="api.inscritos.autorizar" class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${btnClass}">
                             <span class="material-symbols-outlined text-sm">${btnIcon}</span>
                             ${btnText}
                         </button>
@@ -646,10 +646,10 @@
                 <td class="px-3 py-3 text-slate-500">${escapeHtml(i.tipo_vinculacion) || '<span class="text-slate-300">—</span>'}</td>
                 <td class="px-3 py-3 text-center">
                     <div class="flex justify-center items-center gap-1">
-                        <button onclick="abrirModalEditar(${i.id})" class="p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors" title="Editar">
+                        <button onclick="abrirModalEditar(${i.id})" data-permiso="api.inscritos.update" class="p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors" title="Editar">
                             <span class="material-symbols-outlined text-[16px]">edit</span>
                         </button>
-                        <button onclick="eliminarInscrito(${i.id})" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
+                        <button onclick="eliminarInscrito(${i.id})" data-permiso="api.inscritos.delete" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Eliminar">
                             <span class="material-symbols-outlined text-[16px]">delete</span>
                         </button>
                     </div>

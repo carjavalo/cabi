@@ -45,7 +45,7 @@
             <p class="text-muted mb-0">{{ $capacitacion->descripcion ?: 'Sin descripción' }}</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('config.capacitaciones.edit', $capacitacion->id) }}" class="btn btn-outline-warning">
+            <a href="{{ route('config.capacitaciones.edit', $capacitacion->id) }}" class="btn btn-outline-warning" data-permiso="config.capacitaciones.edit config.capacitaciones.update">
                 <i class="fas fa-edit me-1"></i> Editar
             </a>
             <a href="{{ route('config.capacitaciones.index') }}" class="btn btn-outline-secondary">
@@ -114,7 +114,7 @@
             </div>
 
             <!-- Agregar usuario -->
-            <div class="cap-card mt-4">
+            <div class="cap-card mt-4" data-permiso="config.capacitaciones.agregar-usuario">
                 <h6 class="cap-header fw-bold mb-3" style="color:#2f4185;">
                     <i class="fas fa-user-plus me-2"></i>Agregar Participante
                 </h6>
@@ -178,7 +178,7 @@
                                     </span>
                                 </td>
                                 <td class="py-3 px-4 text-center">
-                                    <button type="button" class="btn btn-sm btn-outline-danger btn-remover" data-cap="{{ $capacitacion->id }}" data-user="{{ $a->user_id }}" title="Quitar">
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-remover" data-permiso="config.capacitaciones.remover-usuario" data-cap="{{ $capacitacion->id }}" data-user="{{ $a->user_id }}" title="Quitar">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </td>
@@ -206,6 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Toggle asistencia
     document.querySelectorAll('.toggle-asistencia').forEach(function(toggle) {
         toggle.addEventListener('click', function() {
+            if (window.CABI && !CABI.puede('config.capacitaciones.toggle-asistencia')) return;
             const dot = this.querySelector('.toggle-dot');
             const capId = this.dataset.cap;
             const userId = this.dataset.user;

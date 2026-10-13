@@ -123,7 +123,7 @@
           </section>
 
           <div class="pt-8 border-t border-slate-100">
-            <button type="submit" class="w-full bg-corporate hover:bg-corporate/90 text-white font-bold py-5 rounded-2xl shadow-xl flex items-center justify-center gap-3">
+            <button type="submit" data-permiso="agenda.horario.store" class="w-full bg-corporate hover:bg-corporate/90 text-white font-bold py-5 rounded-2xl shadow-xl flex items-center justify-center gap-3">
               <span class="text-lg">CONFIRMAR MI CITA DE ENTRENO</span>
               <span class="material-symbols-outlined">check_circle</span>
             </button>

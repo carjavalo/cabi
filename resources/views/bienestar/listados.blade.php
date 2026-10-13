@@ -45,9 +45,11 @@
                         <button type="submit" class="btn btn-sm text-white font-weight-bold px-3 mr-2" style="background-color: var(--brand);">
                             <i class="fas fa-search mr-2"></i>Buscar
                         </button>
+                        @if(\App\Support\GestorPermisos::puede(auth()->user(), 'bienestar.asistencia.cargar') || \App\Support\GestorPermisos::puede(auth()->user(), 'bienestar.asistencia.consultar'))
                         <button type="button" class="btn btn-sm btn-success font-weight-bold px-3" onclick="abrirModalAsistencia()">
                             <i class="fas fa-user-check mr-2"></i>Asistencia
                         </button>
+                        @endif
                     </div>
                 </form>
             </div>
@@ -90,10 +92,10 @@
                                 </td>
                                 <td>
                                     <div class="d-flex justify-content-center gap-2">
-                                        <button class="btn btn-sm btn-outline-primary shadow-sm" onclick="abrirModalCrearObs('{{ $item->identificacion }}')">
+                                        <button class="btn btn-sm btn-outline-primary shadow-sm" data-permiso="bienestar.observaciones.store" onclick="abrirModalCrearObs('{{ $item->identificacion }}')">
                                             <i class="fas fa-plus-circle mr-1"></i>Observar
                                         </button>
-                                        <button class="btn btn-sm btn-outline-info shadow-sm ml-1" onclick="abrirModalVerObs('{{ $item->identificacion }}', '{{ $item->nombre_completo }}')">
+                                        <button class="btn btn-sm btn-outline-info shadow-sm ml-1" data-permiso="bienestar.observaciones.get" onclick="abrirModalVerObs('{{ $item->identificacion }}', '{{ $item->nombre_completo }}')">
                                             <i class="fas fa-eye mr-1"></i>Ver
                                         </button>
                                         @if($item->contacto_emergencia)
@@ -192,7 +194,7 @@
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link font-weight-bold" id="tab-consultar" data-toggle="tab" href="#pane-consultar" role="tab">
+          <a class="nav-link font-weight-bold" id="tab-consultar" data-permiso="bienestar.asistencia.consultar" data-toggle="tab" href="#pane-consultar" role="tab">
             <i class="fas fa-search mr-1"></i>Consultar Historial
           </a>
         </li>
@@ -218,7 +220,7 @@
                   </select>
               </div>
               <div class="col-md-2 d-flex align-items-end">
-                  <button type="button" class="btn btn-primary w-100 font-weight-bold" onclick="cargarAsistencia()"><i class="fas fa-sync mr-1"></i>Cargar</button>
+                  <button type="button" class="btn btn-primary w-100 font-weight-bold" data-permiso="bienestar.asistencia.cargar" onclick="cargarAsistencia()"><i class="fas fa-sync mr-1"></i>Cargar</button>
               </div>
           </div>
 
@@ -245,7 +247,7 @@
           </div>
 
           <div class="text-right mt-3">
-            <button type="button" class="btn btn-success font-weight-bold" onclick="guardarAsistencia()" id="btnGuardarAsistencia" style="display: none;">
+            <button type="button" class="btn btn-success font-weight-bold" data-permiso="bienestar.asistencia.guardar" onclick="guardarAsistencia()" id="btnGuardarAsistencia" style="display: none;">
               <i class="fas fa-save mr-1"></i>Guardar Asistencia
             </button>
           </div>
@@ -279,7 +281,7 @@
               </div>
           </div>
           <div class="d-flex justify-content-end mb-3">
-              <button type="button" class="btn btn-primary font-weight-bold mr-2" onclick="consultarAsistencia()">
+              <button type="button" class="btn btn-primary font-weight-bold mr-2" data-permiso="bienestar.asistencia.consultar" onclick="consultarAsistencia()">
                   <i class="fas fa-search mr-1"></i>Consultar
               </button>
               <button type="button" class="btn font-weight-bold text-white" id="btnExportarExcel" style="display: none; background-color: #217346;" onclick="exportarAsistenciaExcel()">

@@ -187,7 +187,7 @@
         <!-- Submit -->
         <div class="d-flex justify-content-end mt-4 mb-4">
             <a href="{{ route('capacitaciones.index_user') }}" class="btn btn-outline-secondary me-2 px-4">Cancelar</a>
-            <button type="submit" class="cap-gradient-btn">
+            <button type="submit" class="cap-gradient-btn" data-permiso="capacitaciones.update_user">
                 <i class="fas fa-save me-2"></i>Guardar Asistentes
             </button>
         </div>
