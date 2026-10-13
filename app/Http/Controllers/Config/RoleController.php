@@ -35,6 +35,11 @@ class RoleController extends Controller implements HasMiddleware
                     }
                     abort(403, 'No autorizado para modificar roles.');
                 }
+                // El rol Super Admin no existe para quien no sea Super Admin
+                $objetivo = $request->route('role');
+                if ($objetivo instanceof Role && GestorPermisos::rolOculto($objetivo->nombre, Auth::user())) {
+                    abort(404);
+                }
                 return $next($request);
             },
         ];
@@ -46,6 +51,9 @@ class RoleController extends Controller implements HasMiddleware
             User::selectRaw('count(*)')->whereColumn('users.role', 'roles.nombre'),
             'users_count'
         );
+        if (!GestorPermisos::esSuper(Auth::user())) {
+            $query->where('roles.nombre', '!=', 'Super Admin');
+        }
 
         if ($search = trim((string) $request->get('search'))) {
             $query->where(function ($q) use ($search) {
@@ -111,15 +119,17 @@ class RoleController extends Controller implements HasMiddleware
             ]);
         }
 
+        // Super Admin solo es visible para otro Super Admin
+        $visibles = fn () => Role::query()->when(!$soySuper, fn ($q) => $q->where('nombre', '!=', 'Super Admin'));
         $stats = [
-            'total'      => Role::count(),
-            'activos'    => Role::where('activo', true)->count(),
-            'sistema'    => Role::where('es_sistema', true)->count(),
-            'usuarios'   => User::whereIn('role', Role::pluck('nombre'))->count(),
+            'total'      => $visibles()->count(),
+            'activos'    => $visibles()->where('activo', true)->count(),
+            'sistema'    => $visibles()->where('es_sistema', true)->count(),
+            'usuarios'   => User::whereIn('role', $visibles()->pluck('nombre'))->count(),
         ];
 
         // Catálogo completo para configurar "roles que puede asignar"
-        $todosRoles = Role::orderBy('nivel')->orderBy('id')->get(['id', 'nombre', 'nivel', 'activo']);
+        $todosRoles = $visibles()->orderBy('nivel')->orderBy('id')->get(['id', 'nombre', 'nivel', 'activo']);
 
         return view('config.roles.index', compact('roles', 'stats', 'puedeEditar', 'soySuper', 'todosRoles'));
     }

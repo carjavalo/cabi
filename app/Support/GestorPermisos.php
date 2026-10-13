@@ -318,6 +318,20 @@ class GestorPermisos
     }
 
     /**
+     * El rol Super Admin es invisible para los demás roles: no aparece en listados,
+     * conteos, exportaciones ni mensajes. Solo otro Super Admin sabe que existe.
+     */
+    public static function esSuper(?User $user): bool
+    {
+        return $user !== null && $user->role === self::ROL_TOTAL;
+    }
+
+    public static function rolOculto(string $nombre, ?User $user): bool
+    {
+        return $nombre === self::ROL_TOTAL && !self::esSuper($user);
+    }
+
+    /**
      * Claves de las funciones que el usuario NO puede usar (para ocultar botones en las vistas).
      * @return array<int,string>
      */
@@ -340,9 +354,9 @@ class GestorPermisos
 
     /**
      * Controles de rol fijos del código (menú y controladores).
-     * - Roles del sistema: conservan la regla original (deben estar en $rolesBase).
-     * - Roles personalizados (p. ej. "Auxiliar SST"): no están en esas listas fijas,
-     *   así que su acceso lo decide únicamente Gestión de Permisos.
+     * Con Gestión de Permisos disponible, el acceso lo decide únicamente la configuración
+     * de permisos de cada rol; la lista fija $rolesBase solo se usa como respaldo si las
+     * tablas de permisos no existen.
      *
      * @param array<int,string> $rolesBase
      */
@@ -352,10 +366,10 @@ class GestorPermisos
             return false;
         }
         $rol = (string) $user->role;
-        if ($rol === self::ROL_TOTAL || in_array($rol, $rolesBase, true)) {
+        if ($rol === self::ROL_TOTAL || self::tablasListas()) {
             return true;
         }
-        return !array_key_exists($rol, Role::SISTEMA);
+        return in_array($rol, $rolesBase, true) || !array_key_exists($rol, Role::SISTEMA);
     }
 
     /** rolPermitido() + permiso de la función en Gestión de Permisos. */
@@ -470,7 +484,7 @@ class GestorPermisos
             return 'El Super Admin siempre puede asignar todos los roles.';
         }
         if ($role->nombre === 'Administrador' && $rolActual !== self::ROL_TOTAL) {
-            return 'Solo el Super Admin puede cambiar los roles que asigna el Administrador.';
+            return 'No tiene autorización para cambiar los roles que asigna el Administrador.';
         }
 
         $superId = Role::where('nombre', self::ROL_TOTAL)->value('id');

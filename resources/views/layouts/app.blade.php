@@ -173,131 +173,117 @@
               <p>Dashboard</p>
             </a>
           </li>
+          @php
+            // Menú según Gestión de Permisos: cada opción aparece solo si el rol tiene permiso
+            // para abrir su vista, y cada grupo solo si tiene al menos una opción visible.
+            $gpUser = Auth::user();
+            $gpVer = fn (array $items) => array_values(array_filter($items, fn ($i) => ($i['si'] ?? true) && \App\Support\GestorPermisos::puedeUrl($gpUser, $i['url'])));
+            $gpEsInstructor = $gpUser && $gpUser->role === 'Instructor GYM';
+
+            $menuGym = $gpVer([
+              ['url' => url('/bienestar/gym/inscripcion'), 'txt' => 'Inscripción', 'si' => !$gpEsInstructor],
+              ['url' => url('/bienestar/gym/agenda'), 'txt' => 'Agenda tu Horario'],
+              ['url' => url('/bienestar/listados'), 'txt' => 'Listado'],
+            ]);
+            $menuBienestar = $gpVer([
+              ['url' => route('recaudo.index'), 'txt' => 'Recaudo', 'activo' => request()->routeIs('recaudo.*')],
+              ['url' => route('capacitaciones.index_user'), 'txt' => 'Capacitaciones', 'icono' => 'nav-icon fas fa-chalkboard-teacher',
+               'activo' => request()->is('capacitaciones*') && !request()->is('configuracion/capacitaciones*')],
+            ]);
+            $menuSalud = $gpVer([
+              ['url' => route('salud.agenda.index'), 'txt' => 'Agenda Medica', 'activo' => request()->routeIs('salud.agenda.*')],
+              ['url' => route('salud.concepto.index'), 'txt' => 'Concepto Medico', 'activo' => request()->routeIs('salud.concepto.*')],
+            ]);
+            $menuConfig = $gpVer([
+              ['url' => url('/configuracion/usuarios'), 'txt' => 'Gestión de Usuarios', 'activo' => request()->is('configuracion/usuarios*')],
+              ['url' => route('config.roles.index'), 'txt' => 'Gestión de Roles', 'activo' => request()->routeIs('config.roles.*')],
+              ['url' => route('config.cargos.index'), 'txt' => 'Gestión de Cargos', 'activo' => request()->routeIs('config.cargos.*')],
+              ['url' => url('/configuracion/servicios'), 'txt' => 'Gestión Servicios', 'activo' => request()->is('configuracion/servicios*')],
+              ['url' => url('/configuracion/vinculaciones'), 'txt' => 'Gestión Vinculaciones', 'activo' => request()->is('configuracion/vinculaciones*')],
+              ['url' => url('/configuracion/publicidad'), 'txt' => 'Gestión de Publicidad', 'activo' => request()->is('configuracion/publicidad*')],
+              ['url' => url('/configuracion/cursos'), 'txt' => 'Gestión Cursos', 'activo' => request()->is('configuracion/cursos*')],
+              ['url' => url('/configuracion/encuestas'), 'txt' => 'Gestión Encuestas', 'activo' => request()->is('configuracion/encuestas*')],
+              ['url' => url('/configuracion/eventos'), 'txt' => 'Gestión de Eventos', 'activo' => request()->is('configuracion/eventos*')],
+              ['url' => url('/configuracion/capacitaciones'), 'txt' => 'Gestion Capacitaciones', 'activo' => request()->is('configuracion/capacitaciones*')],
+              // La administración de permisos se reserva a Super Admin y Administrador (evita que un rol se otorgue permisos a sí mismo)
+              ['url' => route('config.permisos.index'), 'txt' => 'Gestión de Permisos', 'icono' => 'fas fa-key nav-icon',
+               'si' => $gpUser && in_array($gpUser->role, ['Super Admin', 'Administrador'], true), 'activo' => request()->routeIs('config.permisos.*')],
+            ]);
+            $menuOtros = $gpVer([
+              ['url' => route('otros.ciau1'), 'txt' => 'ciau1'],
+            ]);
+          @endphp
+
           <!-- Bienestar submenu -->
+          @if($menuGym || $menuBienestar)
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-folder"></i>
               <p>Bienestar <i class="right fas fa-angle-left"></i></p>
             </a>
             <ul class="nav nav-treeview">
+              @if($menuGym)
               <li class="nav-item has-treeview">
                 <a href="#" class="nav-link">
                   <i class="nav-icon fas fa-dumbbell"></i>
                   <p>GYM <i class="right fas fa-angle-left"></i></p>
                 </a>
                 <ul class="nav nav-treeview">
-                  @if(!Auth::check() || Auth::user()->role !== 'Instructor GYM')
-                  @puedeUrl(url('/bienestar/gym/inscripcion'))
-                  <li class="nav-item"><a href="{{ url('/bienestar/gym/inscripcion') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Inscripción</p></a></li>
-                  @endpuedeUrl
-                  @endif
-                  @if(\App\Support\GestorPermisos::rolPermitido(Auth::user(), ['Super Admin']))
-                  @puedeUrl(url('/bienestar/gym/agenda'))
-                  <li class="nav-item"><a href="{{ url('/bienestar/gym/agenda') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Agenda tu Horario</p></a></li>
-                  @endpuedeUrl
-                  @endif
-                  @puedeUrl(url('/bienestar/listados'))
-                  <li class="nav-item"><a href="{{ url('/bienestar/listados') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Listado</p></a></li>
-                  @endpuedeUrl
+                  @foreach($menuGym as $item)
+                  <li class="nav-item"><a href="{{ $item['url'] }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>{{ $item['txt'] }}</p></a></li>
+                  @endforeach
                 </ul>
               </li>
-              @puedeUrl(route('recaudo.index'))
-              <li class="nav-item"><a href="{{ route('recaudo.index') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Recaudo</p></a></li>
-              @endpuedeUrl
-              <!-- Capacitaciones (visible para Coordinador y admins si aplica) -->
-              @if(\App\Support\GestorPermisos::accede(Auth::user(), ['Coordinador', 'Super Admin', 'Administrador', 'Operador'], 'capacitaciones.index_user'))
-              <li class="nav-item">
-                <a href="{{ route('capacitaciones.index_user') }}" class="nav-link {{ request()->is('capacitaciones*') && !request()->is('configuracion/capacitaciones*') ? 'active' : '' }}">
-                  <i class="nav-icon fas fa-chalkboard-teacher"></i>
-                  <p>Capacitaciones</p>
-                </a>
-              </li>
               @endif
+              @foreach($menuBienestar as $item)
+              <li class="nav-item"><a href="{{ $item['url'] }}" class="nav-link {{ !empty($item['activo']) ? 'active' : '' }}"><i class="{{ $item['icono'] ?? 'far fa-circle nav-icon' }}"></i><p>{{ $item['txt'] }}</p></a></li>
+              @endforeach
             </ul>
           </li>
+          @endif
 
-          <!-- Salud Ocupacional submenu (visible según los permisos configurados por rol) -->
-          @if(Auth::check() && (\App\Support\GestorPermisos::puedeUrl(Auth::user(), route('salud.agenda.index')) || \App\Support\GestorPermisos::puedeUrl(Auth::user(), route('salud.concepto.index'))))
+          <!-- Salud Ocupacional submenu -->
+          @if($menuSalud)
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-briefcase-medical"></i>
               <p>Salud Ocupacional <i class="right fas fa-angle-left"></i></p>
             </a>
             <ul class="nav nav-treeview">
-              @puedeUrl(route('salud.agenda.index'))
-              <li class="nav-item"><a href="{{ route('salud.agenda.index') }}" class="nav-link {{ request()->routeIs('salud.agenda.*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Agenda Medica</p></a></li>
-              @endpuedeUrl
-              @puedeUrl(route('salud.concepto.index'))
-              <li class="nav-item"><a href="{{ route('salud.concepto.index') }}" class="nav-link {{ request()->routeIs('salud.concepto.*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Concepto Medico</p></a></li>
-              @endpuedeUrl
+              @foreach($menuSalud as $item)
+              <li class="nav-item"><a href="{{ $item['url'] }}" class="nav-link {{ !empty($item['activo']) ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>{{ $item['txt'] }}</p></a></li>
+              @endforeach
               <li class="nav-item"><a href="#" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Historia Clinica</p></a></li>
             </ul>
           </li>
           @endif
 
-          <!-- Configuración submenu (roles del sistema: Super Admin, Administrador y Operador; roles personalizados: según Gestión de Permisos) -->
-          @php
-            $menuConfigUrls = [url('/configuracion/usuarios'), route('config.roles.index'), route('config.cargos.index'), url('/configuracion/servicios'),
-              url('/configuracion/vinculaciones'), url('/configuracion/publicidad'), url('/configuracion/cursos'), url('/configuracion/encuestas'),
-              url('/configuracion/eventos'), url('/configuracion/capacitaciones')];
-            $verMenuConfig = Auth::check() && \App\Support\GestorPermisos::rolPermitido(Auth::user(), ['Super Admin','Administrador','Operador'])
-              && (in_array(Auth::user()->role, ['Super Admin','Administrador','Operador'], true)
-                  || collect($menuConfigUrls)->contains(fn ($u) => \App\Support\GestorPermisos::puedeUrl(Auth::user(), $u)));
-          @endphp
-          @if($verMenuConfig)
+          <!-- Configuración submenu -->
+          @if($menuConfig)
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-cog"></i>
               <p>Configuración <i class="right fas fa-angle-left"></i></p>
             </a>
             <ul class="nav nav-treeview">
-              @puedeUrl(url('/configuracion/usuarios'))
-              <li class="nav-item"><a href="{{ url('/configuracion/usuarios') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión de Usuarios</p></a></li>
-              @endpuedeUrl
-              @puedeUrl(route('config.roles.index'))
-              <li class="nav-item"><a href="{{ route('config.roles.index') }}" class="nav-link {{ request()->routeIs('config.roles.*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Gestión de Roles</p></a></li>
-              @endpuedeUrl
-              @puedeUrl(route('config.cargos.index'))
-              <li class="nav-item"><a href="{{ route('config.cargos.index') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión de Cargos</p></a></li>
-              @endpuedeUrl
-              @puedeUrl(url('/configuracion/servicios'))
-              <li class="nav-item"><a href="{{ url('/configuracion/servicios') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión Servicios</p></a></li>
-              @endpuedeUrl
-              @puedeUrl(url('/configuracion/vinculaciones'))
-              <li class="nav-item"><a href="{{ url('/configuracion/vinculaciones') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión Vinculaciones</p></a></li>
-              @endpuedeUrl
-              	@puedeUrl(url('/configuracion/publicidad'))
-              	<li class="nav-item"><a href="{{ url('/configuracion/publicidad') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión de Publicidad</p></a></li>
-              	@endpuedeUrl
-              @puedeUrl(url('/configuracion/cursos'))
-              <li class="nav-item"><a href="{{ url('/configuracion/cursos') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión Cursos</p></a></li>
-              @endpuedeUrl
-              @puedeUrl(url('/configuracion/encuestas'))
-              <li class="nav-item"><a href="{{ url('/configuracion/encuestas') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión Encuestas</p></a></li>
-              @endpuedeUrl
-              @puedeUrl(url('/configuracion/eventos'))
-              <li class="nav-item"><a href="{{ url('/configuracion/eventos') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestión de Eventos</p></a></li>
-              @endpuedeUrl
-              @puedeUrl(url('/configuracion/capacitaciones'))
-              <li class="nav-item"><a href="{{ url('/configuracion/capacitaciones') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Gestion Capacitaciones</p></a></li>
-              @endpuedeUrl
-              @if(in_array(Auth::user()->role, ['Super Admin','Administrador']))
-              @puedeUrl(route('config.permisos.index'))
-              <li class="nav-item"><a href="{{ route('config.permisos.index') }}" class="nav-link {{ request()->routeIs('config.permisos.*') ? 'active' : '' }}"><i class="fas fa-key nav-icon"></i><p>Gestión de Permisos</p></a></li>
-              @endpuedeUrl
-              @endif
+              @foreach($menuConfig as $item)
+              <li class="nav-item"><a href="{{ $item['url'] }}" class="nav-link {{ !empty($item['activo']) ? 'active' : '' }}"><i class="{{ $item['icono'] ?? 'far fa-circle nav-icon' }}"></i><p>{{ $item['txt'] }}</p></a></li>
+              @endforeach
             </ul>
           </li>
           @endif
 
-          @if(Auth::check() && \App\Support\GestorPermisos::accede(Auth::user(), ['Super Admin'], 'otros.ciau1'))
+          <!-- Otros submenu -->
+          @if($menuOtros)
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-ellipsis-h"></i>
               <p>Otros <i class="right fas fa-angle-left"></i></p>
             </a>
             <ul class="nav nav-treeview">
-              <li class="nav-item"><a href="{{ route('otros.ciau1') }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>ciau1</p></a></li>
+              @foreach($menuOtros as $item)
+              <li class="nav-item"><a href="{{ $item['url'] }}" class="nav-link"><i class="far fa-circle nav-icon"></i><p>{{ $item['txt'] }}</p></a></li>
+              @endforeach
             </ul>
           </li>
           @endif

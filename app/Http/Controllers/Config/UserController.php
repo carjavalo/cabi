@@ -128,7 +128,7 @@ class UserController extends Controller
 
         // Prevent non-super-admins from assigning Super Admin role
         if (($data['role'] ?? '') === 'Super Admin' && (!Auth::check() || Auth::user()->role !== 'Super Admin')) {
-            return redirect()->back()->withInput()->with('error', 'No autorizado para asignar rol Super Admin.');
+            return redirect()->back()->withInput()->with('error', 'El rol seleccionado no es válido.');
         }
 
         // Solo se pueden asignar los roles configurados en Gestión de Permisos para el rol actual
@@ -169,7 +169,7 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         // Prevent non-super-admins from viewing/editing Super Admin users
         if ($user->role === 'Super Admin' && (!Auth::check() || Auth::user()->role !== 'Super Admin')) {
-            return redirect()->route('config.usuarios.index')->with('error', 'No autorizado para ver o editar este usuario.');
+            abort(404); // los usuarios Super Admin no existen para los demás roles
         }
         // Prevent Operador from viewing/editing Administrador users
         if ($user->role === 'Administrador' && Auth::check() && Auth::user()->role === 'Operador') {
@@ -200,7 +200,7 @@ class UserController extends Controller
 
         // Prevent non-super-admins from updating Super Admin users
         if ($user->role === 'Super Admin' && (!Auth::check() || Auth::user()->role !== 'Super Admin')) {
-            return redirect()->route('config.usuarios.index')->with('error', 'No autorizado para modificar este usuario.');
+            abort(404); // los usuarios Super Admin no existen para los demás roles
         }
 
         // Prevent Operador from updating Administrador users
@@ -255,7 +255,7 @@ class UserController extends Controller
         // Prevent non-super-admins from assigning Super Admin role
         if (!empty($data['role'])) {
             if ($data['role'] === 'Super Admin' && (!Auth::check() || Auth::user()->role !== 'Super Admin')) {
-                return redirect()->back()->withInput()->with('error', 'No autorizado para asignar rol Super Admin.');
+                return redirect()->back()->withInput()->with('error', 'El rol seleccionado no es válido.');
             }
             // Solo se pueden asignar los roles configurados en Gestión de Permisos (conservar el actual siempre es válido)
             if ($data['role'] !== $user->role && !in_array($data['role'], GestorPermisos::rolesAsignables($rolesValidos, Auth::user()->role ?? null), true)) {
@@ -278,7 +278,7 @@ class UserController extends Controller
 
         // Also protect Super Admin from deletion by non-super-admins
         if ($user->role === 'Super Admin' && (!Auth::check() || Auth::user()->role !== 'Super Admin')) {
-            return redirect()->route('config.usuarios.index')->with('error', 'No autorizado para eliminar este usuario.');
+            abort(404); // los usuarios Super Admin no existen para los demás roles
         }
 
         $user->delete();

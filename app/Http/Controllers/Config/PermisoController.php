@@ -51,7 +51,10 @@ class PermisoController extends Controller implements HasMiddleware
         $asignablesPorRol = DB::table('role_asignable')->get(['role_id', 'asignable_id'])->groupBy('role_id')
             ->map(fn ($g) => $g->pluck('asignable_id')->values());
 
-        $roles = Role::orderByDesc('es_sistema')->orderBy('id')->get()->map(fn ($r) => [
+        // El rol Super Admin solo es visible para otro Super Admin
+        $roles = Role::orderByDesc('es_sistema')->orderBy('id')
+            ->when(!GestorPermisos::esSuper(Auth::user()), fn ($q) => $q->where('nombre', '!=', 'Super Admin'))
+            ->get()->map(fn ($r) => [
             'id'         => $r->id,
             'nombre'     => $r->nombre,
             'descripcion'=> $r->descripcion,
@@ -87,6 +90,16 @@ class PermisoController extends Controller implements HasMiddleware
         return response()->json(['success' => true, 'message' => $msg, 'resultado' => $r] + $this->datos());
     }
 
+    /** Busca un rol; el Super Admin no existe para quien no sea Super Admin. */
+    private function rolVisible(int $id): Role
+    {
+        $role = Role::findOrFail($id);
+        if (GestorPermisos::rolOculto($role->nombre, Auth::user())) {
+            abort(404);
+        }
+        return $role;
+    }
+
     /** Asignar o quitar uno o varios permisos a un rol. */
     public function asignar(Request $request)
     {
@@ -97,12 +110,12 @@ class PermisoController extends Controller implements HasMiddleware
             'valor'         => ['required', 'boolean'],
         ]);
 
-        $role = Role::findOrFail($data['role_id']);
+        $role = $this->rolVisible($data['role_id']);
         if ($role->nombre === 'Super Admin') {
             return response()->json(['success' => false, 'message' => 'El rol Super Admin siempre tiene acceso total.'], 422);
         }
         if ($role->nombre === 'Administrador' && Auth::user()->role !== 'Super Admin') {
-            return response()->json(['success' => false, 'message' => 'Solo el Super Admin puede cambiar los permisos del rol Administrador.'], 403);
+            return response()->json(['success' => false, 'message' => 'No tiene autorización para cambiar los permisos del rol Administrador.'], 403);
         }
 
         $ids = array_unique($data['permiso_ids']);
@@ -131,12 +144,13 @@ class PermisoController extends Controller implements HasMiddleware
             'desde' => ['required', 'integer', 'exists:roles,id'],
             'hacia' => ['required', 'integer', 'exists:roles,id', 'different:desde'],
         ]);
-        $hacia = Role::findOrFail($data['hacia']);
+        $this->rolVisible($data['desde']);
+        $hacia = $this->rolVisible($data['hacia']);
         if ($hacia->nombre === 'Super Admin') {
             return response()->json(['success' => false, 'message' => 'El rol Super Admin siempre tiene acceso total.'], 422);
         }
         if ($hacia->nombre === 'Administrador' && Auth::user()->role !== 'Super Admin') {
-            return response()->json(['success' => false, 'message' => 'Solo el Super Admin puede cambiar los permisos del rol Administrador.'], 403);
+            return response()->json(['success' => false, 'message' => 'No tiene autorización para cambiar los permisos del rol Administrador.'], 403);
         }
         GestorPermisos::copiarPermisos($data['desde'], $hacia->id);
 
@@ -155,7 +169,7 @@ class PermisoController extends Controller implements HasMiddleware
             'asignables'     => ['nullable', 'array'],
             'asignables.*'   => ['integer', 'exists:roles,id'],
         ]);
-        $role = Role::findOrFail($data['role_id']);
+        $role = $this->rolVisible($data['role_id']);
         if ($error = GestorPermisos::guardarAsignables($role, $data['asignables'] ?? [], Auth::user()->role)) {
             return response()->json(['success' => false, 'message' => $error], 422);
         }
