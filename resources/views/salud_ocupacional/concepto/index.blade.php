@@ -744,22 +744,29 @@
                                     <div><div class="k">Edad</div><div class="v" id="rv-edad">—</div></div>
                                     <div><div class="k">Género</div><div class="v" id="rv-genero">—</div></div>
                                 </div>
-                                <div class="so-sec">Datos laborales</div>
+                                <div class="so-sec">Datos laborales y de afiliación</div>
                                 <div class="so-kv">
                                     <div><div class="k">Cargo</div><div class="v" id="rv-cargo">—</div></div>
                                     <div><div class="k">Servicio</div><div class="v" id="rv-servicio">—</div></div>
                                     <div><div class="k">EPS</div><div class="v" id="rv-eps">—</div></div>
+                                    <div><div class="k">AFP</div><div class="v" id="rv-afp">—</div></div>
                                     <div><div class="k">ARL</div><div class="v" id="rv-arl">—</div></div>
+                                    <div style="grid-column:1/-1;"><div class="k">Empleador</div><div class="v">{{ $empleador }} · NIT {{ $nit }}</div></div>
                                 </div>
+                                {{-- Igual que el certificado: solo estas secciones (sin historia clínica ni observaciones) --}}
+                                <div class="so-sec">Concepto emitido</div>
                                 <div class="so-cert-badge">
-                                    <div style="font-size:10.5px;color:var(--so-brand);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px;">Concepto emitido</div>
                                     <div style="font-size:19px;font-weight:800;color:var(--so-brand);" id="rv-concepto">—</div>
                                 </div>
-                                <div style="margin-bottom:8px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;">Observaciones del concepto</div><div class="v" id="rv-obs" style="font-size:14px;color:#3a3e56;white-space:pre-wrap;">—</div></div>
-                                <div style="margin-bottom:8px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;">Recomendaciones</div><div class="v" id="rv-recom" style="font-size:14px;color:#3a3e56;white-space:pre-wrap;">—</div></div>
-                                <div style="margin-bottom:8px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;">Restricciones</div><div class="v" id="rv-restr" style="font-size:14px;color:#3a3e56;white-space:pre-wrap;">—</div></div>
-                                <div style="margin-bottom:8px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;">Temporalidad de las restricciones</div><div class="v" id="rv-temporalidad" style="font-size:14px;color:#3a3e56;">—</div></div>
-                                <div style="border-top:1px solid var(--so-line);margin-top:16px;padding-top:16px;">
+                                <div class="so-sec">Recomendaciones médicas y compromisos</div>
+                                <div class="v" id="rv-recom" style="font-size:14px;color:#3a3e56;white-space:pre-wrap;margin-bottom:8px;">—</div>
+                                <div class="so-sec">Restricciones médicas ocupacionales</div>
+                                <div class="v" id="rv-restr" style="font-size:14px;color:#3a3e56;white-space:pre-wrap;">—</div>
+                                <div style="font-size:13.5px;color:#3a3e56;margin:8px 0;"><strong style="font-size:10.5px;color:#9297ae;text-transform:uppercase;letter-spacing:.05em;">Temporalidad:</strong> <span id="rv-temporalidad">—</span></div>
+                                <div class="so-sec">Recomendaciones para el área de SST</div>
+                                <div class="v" id="rv-sst" style="font-size:14px;color:#3a3e56;white-space:pre-wrap;margin-bottom:8px;">—</div>
+                                <div class="so-sec">Firma del médico</div>
+                                <div style="padding-top:4px;">
                                     <img id="rv-firma" alt="Firma" style="height:64px;object-fit:contain;display:none;">
                                     <div style="width:260px;border-top:1.5px solid var(--so-text);padding-top:6px;margin-top:4px;">
                                         <div style="font-weight:700;" id="rv-medico">—</div>
@@ -1870,6 +1877,7 @@
         setTxt('rv-cargo', $('#f-cargo').value);
         setTxt('rv-servicio', $('#f-servicio').value);
         setTxt('rv-eps', $('#f-eps').value);
+        setTxt('rv-afp', $('#f-afp').value);
         setTxt('rv-arl', $('#f-arl').value);
         const cc = $('input[name="concepto_resultado"]:checked');
         const ccEnf = $$('input[name^="concepto_enfasis["]:checked').map(i=>{
@@ -1877,9 +1885,9 @@
             return cfg && cfg.opciones[i.value] ? cfg.opciones[i.value][0] : '';
         }).filter(Boolean);
         setTxt('rv-concepto', (cc ? (CONCEPTOS[cc.value]||'') : '—') + (ccEnf.length ? ' · ' + ccEnf.join(' · ') : ''));
-        setTxt('rv-obs', $('[name="observaciones_concepto"]').value);
         setTxt('rv-recom', $('[name="recomendaciones"]').value);
         setTxt('rv-restr', $('[name="restricciones"]').value);
+        setTxt('rv-sst', $('[name="sst"]').value);
         const temporalidad = $('#f-temporalidad');
         setTxt('rv-temporalidad', temporalidad.value ? temporalidad.options[temporalidad.selectedIndex].text : '');
         setTxt('rv-medico', $('[name="medico"]').value);

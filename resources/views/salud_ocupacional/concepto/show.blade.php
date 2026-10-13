@@ -1,14 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Certificado · Concepto Médico')
+{{-- El título es el nombre sugerido al guardar el PDF desde la ventana de impresión --}}
+@section('title', 'Certificado concepto medico ' . ($c->identificacion ?: $c->id) . ' ' . optional($c->fecha_atencion)->format('Y-m-d'))
 @section('header', 'Concepto Médico Ocupacional')
 
 @php
     $dash = fn($v) => ($v!==null && trim((string)$v)!=='') ? $v : '—';
+    $noRegistra = fn($v) => ($v!==null && trim((string)$v)!=='') ? $v : 'No registra.';
     $sv = $c->signos_vitales ?? [];
-    $ex = $c->examen_sistemas ?? [];
-    $ap = $c->antecedentes_personales ?? [];
-    $hb = $c->habitos ?? [];
     // Secciones con varias filas (las consultas antiguas tienen un solo registro)
     $filas = [
         'Antecedentes ocupacionales' => [\App\Models\ConceptoMedico::filas($c->antecedentes_ocupacionales),
@@ -20,6 +19,10 @@
     ];
     $colores = ['ok'=>'#2e9e6b','warn'=>'#c98a1e','bad'=>'#c4453b'];
     $conceptoClase = $colores[$c->concepto_clase] ?? '#2e3a75';
+    // Historia clínica de la consulta: no hace parte del certificado
+    $hayHistoria = ($c->factores_riesgo && count($c->factores_riesgo)) || $c->motivo_consulta || $c->estado_salud
+        || collect($filas)->contains(fn ($f) => count($f[0])) || array_filter((array) $sv) || $c->diagnostico
+        || $c->observaciones_concepto || $c->documentos->count();
 @endphp
 
 @push('head')
@@ -32,21 +35,38 @@
     .cert-b{ padding:24px; }
     .sec{ font-family:'Courier New',monospace;font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--so-brand);font-weight:700;background:#eef0fb;padding:9px 13px;border-radius:8px;margin:20px 0 12px; }
     .kv{ display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px 22px; }
-    .kv .k{ font-size:10.5px;color:#9297ae;text-transform:uppercase;letter-spacing:.05em; }
+    .kv .k, .k{ font-size:10.5px;color:#9297ae;text-transform:uppercase;letter-spacing:.05em; }
     .kv .v{ font-size:14.5px;font-weight:600;color:#1f2440; }
     .tbl{ width:100%;border-collapse:collapse;font-size:13.5px; }
     .tbl th{ text-align:left;font-size:10.5px;color:#9297ae;text-transform:uppercase;letter-spacing:.05em;font-weight:600;padding:6px 8px;border-bottom:1.5px solid var(--so-line); }
     .tbl td{ padding:7px 8px;border-bottom:1px solid var(--so-line);color:#1f2440;vertical-align:top;white-space:pre-wrap; }
     .blk{ font-size:14px;color:#3a3e56;line-height:1.5;white-space:pre-wrap; }
-    .badge-c{ background:#eef0fb;border:1px solid #d6dbf0;border-radius:12px;padding:15px 18px;margin:14px 0; }
-    .toolbar{ max-width:920px;margin:0 auto 14px;display:flex;gap:10px;justify-content:flex-end; }
+    .badge-c{ background:#eef0fb;border:1px solid #d6dbf0;border-radius:12px;padding:15px 18px;margin:0 0 10px; }
+    .temp{ margin-top:8px;font-size:13.5px;color:#3a3e56; }
+    .temp .k{ font-weight:700; }
+    .firma{ padding-top:6px; }
+    .toolbar{ max-width:920px;margin:0 auto 14px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap; }
     .b{ display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:11px;font-weight:700;font-size:14.5px;cursor:pointer;border:none;text-decoration:none; }
     .b.prim{ background:var(--so-brand);color:#fff; } .b.ghost{ background:#fff;color:#4a4f66;border:1.5px solid #d5daea; }
+    .hist{ max-width:920px;margin:18px auto 0;background:#fff;border:1px solid var(--so-line);border-radius:14px;overflow:hidden; }
+    .hist summary{ cursor:pointer;padding:15px 22px;font-weight:700;color:var(--so-brand);display:flex;align-items:center;gap:9px;list-style:none; }
+    .hist summary::-webkit-details-marker{ display:none; }
+    .hist summary .nota{ font-weight:500;font-size:13px;color:var(--so-mut); }
+    .hist summary .fa-chevron-down{ margin-left:auto;transition:transform .2s; }
+    .hist[open] summary{ border-bottom:1px solid var(--so-line); }
+    .hist[open] summary .fa-chevron-down{ transform:rotate(180deg); }
     @media print{
-        .main-header,.main-sidebar,.main-footer,.content-header,.toolbar{ display:none !important; }
-        .content-wrapper{ margin:0 !important;background:#fff !important;padding:0 !important; }
+        /* Solo se imprime el certificado (la historia clínica nunca sale en el PDF) */
+        .main-header,.main-sidebar,.main-footer,.content-header,.toolbar,.no-print,.alert{ display:none !important; }
+        html,body,.wrapper,.content-wrapper{ background:#fff !important; }
+        .content-wrapper,.content,.content > .container-fluid{ margin:0 !important;padding:0 !important;min-height:0 !important; }
         .cert{ border:none;box-shadow:none;border-radius:0;max-width:none; }
-        @page{ margin:14mm; }
+        .cert-h,.sec,.badge-c{ -webkit-print-color-adjust:exact;print-color-adjust:exact; }
+        .cert-b{ padding:16px 14mm 14mm; }
+        .sec{ margin:14px 0 9px;break-after:avoid; }
+        .badge-c,.firma,.kv{ break-inside:avoid; }
+        /* Sin márgenes de página: el navegador no agrega encabezados/pies (URL, fecha) al PDF */
+        @page{ size:letter;margin:0; }
     }
 </style>
 @endpush
@@ -54,19 +74,20 @@
 @section('content')
 <div class="toolbar">
     <a href="{{ route('salud.concepto.index') }}" class="b ghost" data-permiso="salud.concepto.index salud.concepto.store"><i class="fas fa-plus"></i> Nuevo concepto</a>
-    <button onclick="window.print()" class="b prim"><i class="fas fa-print"></i> Imprimir / Guardar PDF</button>
+    <button type="button" onclick="window.print()" class="b prim" title="En la ventana de impresión elija «Guardar como PDF»"><i class="fas fa-file-pdf"></i> Imprimir / Guardar PDF</button>
 </div>
 
-<div class="cert">
+{{-- Certificado: únicamente la información que se entrega (sin historia clínica) --}}
+<div class="cert" id="certificado">
     <div class="cert-h">
         <div class="lg">HUV</div>
         <div style="flex:1;">
             <div style="font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.8;">Hospital Universitario del Valle · Evaristo García E.S.E</div>
-            <div style="font-size:18px;font-weight:800;">Concepto Médico Ocupacional</div>
+            <div style="font-size:18px;font-weight:800;">Certificado de Concepto Médico Ocupacional</div>
         </div>
         <div style="text-align:right;font-size:12px;opacity:.9;">
-            {{ optional($c->fecha_atencion)->format('d/m/Y') }} · {{ $c->hora_atencion ? \Carbon\Carbon::parse($c->hora_atencion)->format('h:i A') : '' }}<br>
-            <span style="opacity:.75;">{{ $c->tipo_label }}@if($c->enfasis_label) · Énfasis: {{ $c->enfasis_label }}@endif · {{ $dash($c->lugar_atencion) }}</span>
+            {{ optional($c->fecha_atencion)->format('d/m/Y') }}<br>
+            <span style="opacity:.8;">Evaluación: {{ $c->tipo_label }}</span>
         </div>
     </div>
     <div class="cert-b">
@@ -89,8 +110,56 @@
             <div style="grid-column:1/-1;"><div class="k">Empleador</div><div class="v">{{ $dash($c->empleador) }} · NIT {{ $dash($c->nit) }}</div></div>
         </div>
 
+        <div class="sec">Concepto emitido</div>
+        <div class="badge-c">
+            <div style="font-size:20px;font-weight:800;color:{{ $conceptoClase }};">{{ $c->concepto_label }}</div>
+        </div>
+        @foreach($c->conceptos_enfasis_lista as [$titulo, $lb, $clase])
+        <div class="badge-c">
+            <div style="font-size:10.5px;color:var(--so-brand);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px;">{{ $titulo }}</div>
+            <div style="font-size:17px;font-weight:800;color:{{ $colores[$clase] ?? '#2e3a75' }};">{{ $lb }}</div>
+        </div>
+        @endforeach
+
+        <div class="sec">Recomendaciones médicas y compromisos</div>
+        <div class="blk">{{ $noRegistra($c->recomendaciones) }}</div>
+
+        <div class="sec">Restricciones médicas ocupacionales</div>
+        <div class="blk">{{ $noRegistra($c->restricciones) }}</div>
+        @if($c->temporalidad_label)
+        <div class="temp"><span class="k">Temporalidad:</span> {{ $c->temporalidad_label }}@if($c->restricciones_hasta) · vigentes hasta el {{ $c->restricciones_hasta->format('d/m/Y') }}@endif</div>
+        @endif
+
+        <div class="sec">Recomendaciones para el área de SST</div>
+        <div class="blk">{{ $noRegistra($c->sst) }}</div>
+
+        <div class="sec">Firma del médico</div>
+        <div class="firma">
+            @if($c->firma && strlen($c->firma) > 200)
+            <img src="{{ $c->firma }}" alt="Firma del médico" style="height:70px;max-width:280px;object-fit:contain;display:block;margin-bottom:2px;">
+            @else
+            <div style="height:56px;"></div>
+            @endif
+            <div style="width:280px;border-top:1.5px solid #1f2440;padding-top:6px;">
+                <div style="font-weight:700;">{{ $dash($c->medico) }}</div>
+                <div style="font-size:12.5px;color:var(--so-mut);">{{ $dash($c->registro) }}</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{{-- Historia clínica de la consulta: registro del médico. No hace parte del certificado ni se imprime. --}}
+@if($hayHistoria)
+<details class="hist no-print">
+    <summary>
+        <i class="fas fa-notes-medical"></i> Historia clínica de esta consulta
+        <span class="nota">· no hace parte del certificado ni del PDF</span>
+        <i class="fas fa-chevron-down"></i>
+    </summary>
+    <div class="cert-b">
         @if($c->factores_riesgo && count($c->factores_riesgo))
-        <div class="sec">Factores de riesgo ocupacional</div>
+        <div class="sec" style="margin-top:0;">Factores de riesgo ocupacional</div>
         <div class="blk">{{ implode(' · ', $c->factores_riesgo) }}</div>
         @endif
 
@@ -130,30 +199,10 @@
         <div class="blk">{{ $c->diagnostico }}</div>
         @endif
 
-        <div class="badge-c">
-            <div style="font-size:10.5px;color:var(--so-brand);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px;">Concepto emitido</div>
-            <div style="font-size:20px;font-weight:800;color:{{ $conceptoClase }};">{{ $c->concepto_label }}</div>
-        </div>
-
-        @foreach($c->conceptos_enfasis_lista as [$titulo, $lb, $clase])
-        <div class="badge-c">
-            <div style="font-size:10.5px;color:var(--so-brand);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px;">Concepto médico ocupacional · {{ $titulo }}</div>
-            <div style="font-size:17px;font-weight:800;color:{{ $colores[$clase] ?? '#2e3a75' }};">{{ $lb }}</div>
-        </div>
-        @endforeach
-
         @if($c->observaciones_concepto)
-        <div style="margin-bottom:12px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Observaciones del concepto</div><div class="blk">{{ $c->observaciones_concepto }}</div></div>
+        <div class="sec">Observaciones del concepto</div>
+        <div class="blk">{{ $c->observaciones_concepto }}</div>
         @endif
-
-        @foreach(['recomendaciones'=>'Recomendaciones médicas y compromisos','restricciones'=>'Restricciones médicas ocupacionales','sst'=>'Recomendaciones para el área de SST'] as $k=>$lb)
-            @if($c->{$k})
-            <div style="margin-bottom:12px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">{{ $lb }}</div><div class="blk">{{ $c->{$k} }}</div></div>
-            @endif
-            @if($k === 'restricciones' && $c->temporalidad_label)
-            <div style="margin-bottom:12px;"><div class="k" style="font-size:10.5px;color:#9297ae;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Temporalidad de las restricciones</div><div class="blk">{{ $c->temporalidad_label }}@if($c->restricciones_hasta) · vigentes hasta el {{ $c->restricciones_hasta->format('d/m/Y') }}@endif</div></div>
-            @endif
-        @endforeach
 
         @if($c->documentos->count())
         <div class="sec">Documentos de la EPS adjuntos</div>
@@ -163,17 +212,7 @@
             @endforeach
         </ul>
         @endif
-
-        <div style="border-top:1px solid var(--so-line);margin-top:22px;padding-top:18px;">
-            @if($c->firma && strlen($c->firma) > 200)
-            <img src="{{ $c->firma }}" alt="Firma" style="height:70px;object-fit:contain;display:block;margin-bottom:2px;">
-            @endif
-            <div style="width:280px;border-top:1.5px solid #1f2440;padding-top:6px;">
-                <div style="font-weight:700;">{{ $dash($c->medico) }}</div>
-                <div style="font-size:12.5px;color:var(--so-mut);">{{ $dash($c->registro) }}</div>
-            </div>
-        </div>
-
     </div>
-</div>
+</details>
+@endif
 @endsection
