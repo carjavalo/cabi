@@ -181,7 +181,7 @@
             $gpEsInstructor = $gpUser && $gpUser->role === 'Instructor GYM';
 
             $menuGym = $gpVer([
-              ['url' => url('/bienestar/gym/inscripcion'), 'txt' => 'Inscripción', 'si' => !$gpEsInstructor],
+              ['url' => url('/bienestar/gym/inscripcion'), 'txt' => 'Inscripción', 'si' => !$gpEsInstructor && \App\Support\GestorPermisos::puede($gpUser, 'menu.gym.inscripcion')],
               ['url' => url('/bienestar/gym/agenda'), 'txt' => 'Agenda tu Horario'],
               ['url' => url('/bienestar/listados'), 'txt' => 'Listado'],
             ]);

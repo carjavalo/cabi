@@ -35,6 +35,16 @@ class GestorPermisos
 
     private const ROL_TOTAL = 'Super Admin';
 
+    /** Opciones del menú que llevan a páginas públicas; se controlan con un permiso propio. */
+    public const PERMISOS_MENU = [
+        'menu.gym.inscripcion' => [
+            'nombre'      => 'Ver opción "Inscripción" en el menú',
+            'modulo'      => 'Bienestar › GYM',
+            'descripcion' => 'Muestra la opción Inscripción del GYM en el menú (la página de inscripción es pública).',
+            'uri'         => '/bienestar/gym/inscripcion',
+        ],
+    ];
+
     private static ?bool $tablasOk = null;
     private static array $memo = [];
 
@@ -229,6 +239,19 @@ class GestorPermisos
             if ($faltantes->isNotEmpty()) {
                 $huerfanos = Permiso::where('origen', 'ruta')->whereIn('clave', $faltantes)->where('huerfano', false)->update(['huerfano' => true]);
             }
+
+            // Opciones del menú que abren páginas públicas (sin ruta controlable): permiso propio para poder ocultarlas por rol
+            foreach (self::PERMISOS_MENU as $clave => $d) {
+                if (Permiso::where('clave', $clave)->exists()) {
+                    continue;
+                }
+                $p = Permiso::create($d + ['clave' => $clave, 'tipo' => 'vista', 'metodo' => 'GET', 'origen' => 'manual', 'activo' => true, 'nuevo' => true, 'editado' => true]);
+                $filas = array_map(fn ($rid) => ['permiso_id' => $p->id, 'role_id' => $rid, 'created_at' => $now, 'updated_at' => $now], $roles);
+                if ($filas) {
+                    DB::table('permiso_role')->insertOrIgnore($filas);
+                }
+                $nuevos++;
+            }
         });
 
         self::sembrarAsignables();
@@ -397,11 +420,29 @@ class GestorPermisos
             return true;
         }
         try {
-            $route = Route::getRoutes()->match(\Illuminate\Http\Request::create($url, 'GET'));
+            $route = Route::getRoutes()->match(\Illuminate\Http\Request::create(self::rutaRelativa($url), 'GET'));
             return self::puedeRuta($user, $route);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            return false; // la URL no corresponde a ninguna vista del aplicativo: no se muestra
         } catch (\Throwable $e) {
+            report($e);
             return true;
         }
+    }
+
+    /**
+     * Ruta de la URL relativa a la raíz del aplicativo. Si el aplicativo está publicado en una
+     * subcarpeta (p. ej. http://localhost/CABI/public), url() incluye esa subcarpeta y hay que
+     * quitarla para encontrar la ruta de Laravel; si no, ninguna opción del menú se reconoce.
+     */
+    private static function rutaRelativa(string $url): string
+    {
+        $path = parse_url($url, PHP_URL_PATH) ?: '/';
+        $base = rtrim(app('request')->getBaseUrl(), '/');
+        if ($base !== '' && ($path === $base || str_starts_with($path, $base . '/'))) {
+            $path = substr($path, strlen($base));
+        }
+        return '/' . ltrim($path, '/');
     }
 
     // ------------------------------------------------------------------
