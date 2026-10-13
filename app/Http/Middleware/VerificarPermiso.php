@@ -20,7 +20,7 @@ class VerificarPermiso
 
         $user = Auth::user();
         if ($user && !GestorPermisos::puedeRuta($user, $request->route())) {
-            $mensaje = 'Su rol no tiene permiso para usar esta función. Solicítelo al administrador.';
+            $mensaje = 'Su perfil no cuenta con autorización para realizar esta acción. Si la necesita, solicítela al administrador del sistema.';
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['success' => false, 'message' => $mensaje], 403);
             }
