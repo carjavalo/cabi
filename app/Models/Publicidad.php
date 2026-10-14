@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Archivos;
 use Illuminate\Database\Eloquent\Model;
 
 class Publicidad extends Model
@@ -23,24 +24,12 @@ class Publicidad extends Model
     ];
 
     /**
-     * Accessor: always return an absolute URL for the banner.
-     * Strips any hardcoded host (e.g. http://192.168.x.x:port/) and
-     * rebuilds using the current APP_URL so it works in any environment.
+     * Accessor: enlace de la imagen del banner. Las nuevas están en el almacenamiento (S3,
+     * con enlace temporal); las antiguas en public/img/publicidad se siguen mostrando.
+     * Para la referencia guardada en la base use getRawOriginal('banner').
      */
     public function getBannerAttribute($value)
     {
-        if (empty($value)) {
-            return $value;
-        }
-
-        // If it's already a full URL, extract only the relative path
-        if (preg_match('#^https?://#i', $value)) {
-            // Remove scheme + host + optional port + leading slash
-            $relative = preg_replace('#^https?://[^/]+/?#i', '', $value);
-        } else {
-            $relative = ltrim($value, '/');
-        }
-
-        return asset($relative);
+        return empty($value) ? $value : Archivos::url($value);
     }
 }

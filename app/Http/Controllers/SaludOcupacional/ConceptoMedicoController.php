@@ -14,6 +14,8 @@ use App\Models\Cargo;
 use App\Models\Eps;
 use App\Models\Servicio;
 use App\Models\Vinculacion;
+use App\Support\Archivos;
+use App\Support\GestorPermisos;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -107,6 +109,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
      */
     public function diagnostico()
     {
+        abort_unless(GestorPermisos::esSuper(Auth::user()), 403);
         $out = [];
         $out['php']       = PHP_VERSION;
         $out['app_env']   = config('app.env');
@@ -147,6 +150,21 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             $out['migraciones_del_modulo'] = 'ERROR: ' . $e->getMessage();
         }
 
+        // Almacenamiento de archivos (Amazon S3)
+        $out['s3_driver_instalado'] = class_exists(\League\Flysystem\AwsS3V3\AwsS3V3Adapter::class) ? 'sí' : 'NO (ejecute composer install)';
+        $out['almacenamiento'] = Archivos::s3Configurado()
+            ? 'S3 · bucket ' . config('filesystems.disks.s3.bucket') . ' · carpeta ' . config('filesystems.disks.s3.root')
+            : 'local (faltan las credenciales de AWS en .env)';
+        if (Archivos::s3Configurado()) {
+            try {
+                \Illuminate\Support\Facades\Storage::disk('s3')->put('.prueba-conexion.txt', 'ok');
+                \Illuminate\Support\Facades\Storage::disk('s3')->delete('.prueba-conexion.txt');
+                $out['s3_conexion'] = 'ok (escritura y borrado)';
+            } catch (\Throwable $e) {
+                $out['s3_conexion'] = 'ERROR: ' . $e->getMessage();
+            }
+        }
+
         return response()->json($out, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
@@ -157,6 +175,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
      */
     public function migrar()
     {
+        abort_unless(GestorPermisos::esSuper(Auth::user()), 403);
         $res = [];
 
         try {
@@ -184,6 +203,22 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
 
         $res['listo'] = 'Vuelve a abrir /salud-ocupacional/concepto';
         return response()->json($res, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
+     * Migra a Amazon S3 los archivos guardados en el servidor (solo Super Admin), para hostings sin terminal.
+     * Equivale a "php artisan archivos:migrar-s3". ?simular=1 solo muestra lo que se migraría;
+     * ?eliminar_locales=1 borra del servidor lo ya copiado y verificado. Se puede repetir sin duplicar.
+     */
+    public function migrarArchivos(Request $request)
+    {
+        abort_unless(GestorPermisos::esSuper(Auth::user()), 403);
+        @set_time_limit(0);
+        Artisan::call('archivos:migrar-s3', array_filter([
+            '--simular'         => $request->boolean('simular'),
+            '--eliminar-locales' => $request->boolean('eliminar_locales'),
+        ]));
+        return response(Artisan::output(), 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
 
     /**
@@ -361,10 +396,11 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             'observaciones_concepto' => ['nullable', 'string', 'max:5000'],
             'restricciones_temporalidad' => ['nullable', 'string', Rule::in(array_map('strval', array_keys(ConceptoMedico::TEMPORALIDADES)))],
             'agenda_cita_id'     => ['nullable', 'integer'],
-            'documentos.*'       => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,gif,webp', 'max:30720'],
+            // Cualquier formato (imágenes, PDF, Word, Excel…), excepto ejecutables y páginas web
+            'documentos.*'       => ['nullable', 'file', 'max:30720', Archivos::reglaFormatoPermitido()],
         ], [
             'documentos.*.max'   => 'Cada documento adjunto puede pesar máximo 30 MB.',
-            'documentos.*.mimes' => 'Los documentos adjuntos deben ser PDF o imágenes.',
+            'documentos.*.uploaded' => 'No fue posible subir uno de los documentos adjuntos. Verifique que no supere 30 MB.',
             'restricciones_temporalidad.in' => 'La temporalidad de las restricciones debe ser de 1 a 12 meses o indefinida.',
         ]);
 
@@ -485,26 +521,51 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             ])->save();
         }
 
-        // Documentos adjuntos de la EPS
+        // Documentos adjuntos (cualquier formato). Se guardan en el almacenamiento (S3) con la
+        // cédula y el nombre del paciente; si alguno falla, el concepto ya quedó guardado y se avisa.
+        $noGuardados = [];
         if ($request->hasFile('documentos')) {
             foreach ($request->file('documentos') as $file) {
                 if (!$file->isValid()) {
+                    $noGuardados[] = $file->getClientOriginalName();
                     continue;
                 }
-                $ruta = $file->store('conceptos/' . $concepto->id, 'public');
-                ConceptoDocumento::create([
-                    'concepto_medico_id' => $concepto->id,
-                    'nombre_original'    => $file->getClientOriginalName(),
-                    'ruta'               => $ruta,
-                    'mime'               => $file->getClientMimeType(),
-                    'tamano'             => $file->getSize(),
-                ]);
+                try {
+                    [$carpeta, $nombre] = ConceptoDocumento::ubicacion($concepto, $file->getClientOriginalName());
+                    ConceptoDocumento::create([
+                        'concepto_medico_id' => $concepto->id,
+                        'nombre_original'    => mb_substr($file->getClientOriginalName(), 0, 255),
+                        'ruta'               => Archivos::guardar($file, $carpeta, $nombre),
+                        'mime'               => mb_substr(Archivos::mime($file), 0, 100),
+                        'tamano'             => $file->getSize(),
+                    ]);
+                } catch (\Throwable $e) {
+                    report($e);
+                    $noGuardados[] = $file->getClientOriginalName();
+                }
             }
         }
 
-        return redirect()
+        $respuesta = redirect()
             ->route('salud.concepto.show', $concepto->id)
             ->with('success', 'Concepto médico ocupacional guardado correctamente.');
+        if ($noGuardados) {
+            $respuesta->with('error', 'El concepto se guardó, pero no fue posible guardar estos documentos adjuntos: '
+                . implode(', ', $noGuardados) . '. Verifique la conexión con el almacenamiento de archivos.');
+        }
+        return $respuesta;
+    }
+
+    /**
+     * Abre un documento adjunto de un concepto: exige el permiso de ver conceptos y redirige
+     * al archivo (en S3, con un enlace temporal firmado; los documentos no son públicos).
+     */
+    public function documento(ConceptoDocumento $documento)
+    {
+        abort_unless(GestorPermisos::puede(Auth::user(), 'salud.concepto.show'), 403);
+        $url = $documento->urlArchivo();
+        abort_unless($url, 404, 'No fue posible abrir el documento.');
+        return redirect()->away($url);
     }
 
     /**

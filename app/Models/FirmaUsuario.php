@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Support\Archivos;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
@@ -49,13 +51,25 @@ class FirmaUsuario extends Model
         }
     }
 
-    /** Imagen de la firma registrada del usuario (data URL), o null si no tiene. */
+    /**
+     * Imagen de la firma registrada del usuario (data URL, lista para el certificado), o null si no tiene.
+     * La columna "imagen" guarda el data URL o, con S3, la referencia del archivo (ver App\Support\Archivos).
+     */
     public static function imagenDe(?int $userId): ?string
     {
         if (!$userId || !self::asegurarTabla()) {
             return null;
         }
-        return static::where('user_id', $userId)->value('imagen');
+        $imagen = static::where('user_id', $userId)->value('imagen');
+        if (!$imagen || str_starts_with($imagen, 'data:')) {
+            return $imagen ?: null;
+        }
+        // Archivo en el almacenamiento: se convierte a data URL (en caché 10 minutos)
+        return Cache::remember('firma-usuario.' . md5($imagen), 600, function () use ($imagen) {
+            $bytes = Archivos::contenido($imagen);
+            $mime = strtolower(pathinfo($imagen, PATHINFO_EXTENSION)) === 'jpg' ? 'image/jpeg' : 'image/png';
+            return $bytes ? 'data:' . $mime . ';base64,' . base64_encode($bytes) : null;
+        });
     }
 
     /**
@@ -110,20 +124,58 @@ class FirmaUsuario extends Model
         return 'data:' . $m[1] . ';base64,' . base64_encode($binario);
     }
 
-    /** @param array{imagen:string, archivo_nombre:?string, archivo_tipo:?string} $firma */
+    /**
+     * Guarda la firma. Con S3 configurado queda como archivo en
+     * talentoHumanoHUV/firmas/{cédula}_{nombre}_firma_{fecha y hora}.png; si no, en la base (data URL).
+     *
+     * @param array{imagen:string, archivo_nombre:?string, archivo_tipo:?string} $firma  imagen = data URL
+     */
     public static function guardar(int $userId, array $firma): bool
     {
         if (!self::asegurarTabla()) {
             return false;
         }
+        $anterior = static::where('user_id', $userId)->value('imagen');
+        try {
+            if (Archivos::s3Configurado()) {
+                $firma['imagen'] = self::guardarArchivo($userId, $firma['imagen']);
+            }
+        } catch (\Throwable $e) {
+            report($e);
+            return false;
+        }
         static::updateOrCreate(['user_id' => $userId], $firma);
+        if ($anterior && $anterior !== $firma['imagen']) {
+            Archivos::eliminar($anterior);
+        }
         return true;
     }
 
     public static function quitar(int $userId): void
     {
         if (self::asegurarTabla()) {
+            Archivos::eliminar(static::where('user_id', $userId)->value('imagen'));
             static::where('user_id', $userId)->delete();
         }
+    }
+
+    /**
+     * Sube la imagen (data URL) al almacenamiento S3 y devuelve su referencia:
+     * firmas/{cédula}_{nombre}_firma_{fecha y hora de carga}.png
+     */
+    public static function guardarArchivo(int $userId, string $dataUrl, ?\DateTimeInterface $fechaCarga = null): string
+    {
+        $bytes = Archivos::contenido($dataUrl);
+        if (!$bytes) {
+            throw new \RuntimeException('La imagen de la firma no es válida.');
+        }
+        $esJpg = str_starts_with($dataUrl, 'data:image/jpeg');
+        $usuario = User::find($userId);
+        $persona = Archivos::nombrePersona($usuario?->identificacion,
+            trim(($usuario->name ?? '') . ' ' . ($usuario->apellido1 ?? '') . ' ' . ($usuario->apellido2 ?? '')));
+
+        $fecha = \Illuminate\Support\Carbon::instance($fechaCarga ?? now())->format('Y-m-d_H-i-s');
+
+        return Archivos::guardarContenido($bytes, 'firmas', $persona . '_firma_' . $fecha, $esJpg ? 'jpg' : 'png', $esJpg ? 'image/jpeg' : 'image/png', 's3');
     }
 }

@@ -326,6 +326,7 @@ class UserController extends Controller
             abort(404); // los usuarios Super Admin no existen para los demás roles
         }
 
+        FirmaUsuario::quitar($user->id);   // también borra el archivo de la firma en el almacenamiento
         $user->delete();
         return redirect()->route('config.usuarios.index')->with('success','Usuario eliminado.');
     }

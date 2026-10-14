@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Config;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Publicidad;
-use Illuminate\Support\Facades\Storage;
+use App\Support\Archivos;
 
 class PublicidadController extends Controller
 {
@@ -37,12 +37,12 @@ class PublicidadController extends Controller
         ]);
 
         if ($request->hasFile('imagen')) {
-            $file = $request->file('imagen');
-            $folder = public_path('img/publicidad');
-            if (!is_dir($folder)) mkdir($folder, 0755, true);
-            $name = time() . '_' . preg_replace('/[^A-Za-z0-9\-_\\.]/', '', $file->getClientOriginalName());
-            $file->move($folder, $name);
-            $data['banner'] = 'img/publicidad/'.$name;
+            try {
+                $data['banner'] = $this->guardarImagen($request, $data['titulo'] ?? null);
+            } catch (\Throwable $e) {
+                report($e);
+                return response()->json(['success' => false, 'message' => 'No fue posible guardar la imagen. Verifique la conexión con el almacenamiento de archivos.'], 500);
+            }
         }
 
         // map possible fields
@@ -88,13 +88,15 @@ class PublicidadController extends Controller
             'imagen' => 'nullable|file|image|max:5120',
         ]);
 
+        // Referencia guardada en la base (el accessor "banner" devuelve un enlace, no la referencia)
+        $bannerAnterior = $item->getRawOriginal('banner');
         if ($request->hasFile('imagen')) {
-            $file = $request->file('imagen');
-            $folder = public_path('img/publicidad');
-            if (!is_dir($folder)) mkdir($folder, 0755, true);
-            $name = time() . '_' . preg_replace('/[^A-Za-z0-9\-_\.]/', '', $file->getClientOriginalName());
-            $file->move($folder, $name);
-                $data['banner'] = 'img/publicidad/'.$name;
+            try {
+                $data['banner'] = $this->guardarImagen($request, $data['titulo'] ?? $item->titulo);
+            } catch (\Throwable $e) {
+                report($e);
+                return response()->json(['success' => false, 'message' => 'No fue posible guardar la imagen. Verifique la conexión con el almacenamiento de archivos.'], 500);
+            }
         }
 
         $payload = array_filter([
@@ -104,7 +106,7 @@ class PublicidadController extends Controller
             'link' => $data['link'] ?? $item->link,
             'seccion_titulo' => $data['seccion_titulo'] ?? $item->seccion_titulo,
             'seccion_subtitulo' => $data['seccion_subtitulo'] ?? $item->seccion_subtitulo,
-            'banner' => $data['banner'] ?? $item->banner,
+            'banner' => $data['banner'] ?? $bannerAnterior,
             'prioridad' => $data['prioridad'] ?? $item->prioridad,
             'fecha_inicio' => $data['fecha_inicio'] ?? $item->fecha_inicio,
             'fecha_fin' => $data['fecha_fin'] ?? $item->fecha_fin,
@@ -112,24 +114,27 @@ class PublicidadController extends Controller
         ]);
 
         $item->update($payload);
+        // La imagen reemplazada ya no se usa
+        if (!empty($data['banner']) && $bannerAnterior && $bannerAnterior !== $data['banner']) {
+            Archivos::eliminar($bannerAnterior);
+        }
         return response()->json(['success' => true, 'item' => $item]);
     }
 
     public function destroy($id)
     {
         $item = Publicidad::findOrFail($id);
-        // opcional: borrar archivo físico si está en public/img/publicidad
-        try {
-            $raw = $item->getRawOriginal('banner');
-            if ($raw) {
-                // Strip any absolute URL prefix to get relative path
-                $relative = preg_replace('#^https?://[^/]+/?#i', '', $raw);
-                $relative = ltrim($relative, '/');
-                $full = public_path($relative);
-                if (file_exists($full)) @unlink($full);
-            }
-        } catch (\Throwable $e) { /* ignore */ }
+        $banner = $item->getRawOriginal('banner');
         $item->delete();
+        Archivos::eliminar($banner);
         return response()->json(['success' => true]);
+    }
+
+    /** Guarda la imagen en el almacenamiento (S3): talentoHumanoHUV/publicidad/publicidad_{título}_{fecha}.{ext} */
+    private function guardarImagen(Request $request, ?string $titulo): string
+    {
+        $archivo = $request->file('imagen');
+        $nombre = 'publicidad_' . ($titulo ?: pathinfo($archivo->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . now()->format('Y-m-d_His');
+        return Archivos::guardar($archivo, 'publicidad', $nombre);
     }
 }

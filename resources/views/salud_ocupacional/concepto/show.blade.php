@@ -130,10 +130,11 @@
         @endif
 
         @if($c->documentos->count())
-        <div class="sec">Documentos de la EPS adjuntos</div>
+        <div class="sec">Documentos adjuntos</div>
         <ul style="font-size:14px;color:#3a3e56;">
             @foreach($c->documentos as $doc)
-            <li><a href="{{ $doc->url }}" target="_blank">{{ $doc->nombre_original }}</a></li>
+            <li><a href="{{ $doc->url }}" target="_blank" rel="noopener">{{ $doc->nombre_original }}</a>
+                <span style="color:var(--so-mut);font-size:12.5px;">@if($doc->created_at) · cargado el {{ $doc->created_at->format('d/m/Y h:i A') }}@endif @if($doc->tamano) · {{ number_format($doc->tamano / 1048576, 1) }} MB @endif</span></li>
             @endforeach
         </ul>
         @endif

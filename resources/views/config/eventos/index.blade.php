@@ -1237,7 +1237,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const imgText = document.getElementById('imagenActualText');
                 if (evento.imagen && imgText) {
-                    imgText.textContent = 'Imagen actual: ' + evento.imagen.split('/').pop();
+                    imgText.textContent = 'Imagen actual: ' + decodeURIComponent(String(evento.imagen).split('?')[0].split('/').pop());
                 }
                 
                 if(typeof initSeccionInscritos === 'function') { initSeccionInscritos(evento); } $('#modalEvento').modal('show');

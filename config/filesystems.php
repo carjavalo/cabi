@@ -47,6 +47,9 @@ return [
             'report' => false,
         ],
 
+        // Almacenamiento de archivos del aplicativo (ver App\Support\Archivos).
+        // Todo queda dentro de la carpeta "talentoHumanoHUV" del bucket y es privado:
+        // los archivos se abren con enlaces temporales firmados.
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
@@ -56,8 +59,10 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
-            'throw' => false,
-            'report' => false,
+            'root' => env('AWS_ROOT', 'talentoHumanoHUV'),
+            'visibility' => 'private',
+            'throw' => true,
+            'report' => true,
         ],
 
     ],

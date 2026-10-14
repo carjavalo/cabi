@@ -87,6 +87,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/paciente/{user}', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'updatePaciente'])->name('paciente.update');
         Route::get('/diagnostico', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'diagnostico'])->name('diagnostico');
         Route::get('/migrar', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'migrar'])->name('migrar');
+        // Migra a Amazon S3 los archivos guardados en el servidor (solo Super Admin; ?simular=1)
+        Route::get('/migrar-archivos', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'migrarArchivos'])->name('migrar-archivos');
+        // Abre un documento adjunto (valida el permiso y redirige al archivo en el almacenamiento)
+        Route::get('/documento/{documento}', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'documento'])->name('documento');
         Route::get('/{concepto}', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'show'])->name('show');
     });
 

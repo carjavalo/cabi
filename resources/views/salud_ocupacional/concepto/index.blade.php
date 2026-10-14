@@ -507,8 +507,8 @@
                         </div>
 
                         <div class="so-sec" style="margin-top:26px;">Documentos de la EPS</div>
-                        <p class="sub" style="margin-bottom:12px;">Adjunta exámenes, órdenes o incapacidades. Solo <strong style="color:var(--so-brand)">PDF o imágenes</strong>, hasta <strong style="color:var(--so-brand)">30 MB</strong> por archivo.</p>
-                        <input type="file" id="f-docs" name="documentos[]" multiple accept="image/*,application/pdf" style="display:none;">
+                        <p class="sub" style="margin-bottom:12px;">Adjunta exámenes, órdenes o incapacidades: <strong style="color:var(--so-brand)">imágenes, PDF, Word, Excel</strong> u otros documentos, hasta <strong style="color:var(--so-brand)">30 MB</strong> por archivo. Se guardan con la cédula, el nombre del paciente y la fecha y hora de carga: cada carga se conserva aparte.</p>
+                        <input type="file" id="f-docs" name="documentos[]" multiple style="display:none;">
                         <button type="button" class="so-attach" id="so-attach-btn"><i class="fas fa-paperclip"></i> Adjuntar documentos</button>
                         <div id="so-doc-list" style="margin-top:12px;"></div>
                     </section>
@@ -1779,30 +1779,46 @@
     $('#f-docs').addEventListener('change', ()=>{
         const list = $('#f-docs').files;
         const MAX_DOC = 30 * 1024 * 1024;   // 30 MB por archivo
-        const grandes = [];
+        const grandes = [], bloqueados = [];
         attachedFiles = [];
         for(const f of list){
             if(f.size > MAX_DOC){ grandes.push(f.name+' ('+fmtSize(f.size)+')'); continue; }
+            if(DOC_BLOQUEADAS.includes(extDe(f.name))){ bloqueados.push(f.name); continue; }
             const isImg = f.type.startsWith('image/');
             const isPdf = f.type==='application/pdf';
             attachedFiles.push({file:f, url:URL.createObjectURL(f), isImg, isPdf, name:f.name, size:f.size});
         }
-        if(grandes.length){
+        if(grandes.length || bloqueados.length){
             // Deja en el input solo los archivos permitidos
             const dt = new DataTransfer();
             attachedFiles.forEach(a=> dt.items.add(a.file));
             $('#f-docs').files = dt.files;
-            Swal.fire({icon:'warning',title:'Archivo muy pesado',html:'Superan el máximo de 30 MB y no se adjuntaron:<br><b>'+grandes.map(esc).join('<br>')+'</b>'});
+            Swal.fire({icon:'warning',title:'Algunos archivos no se adjuntaron',html:
+                (grandes.length ? 'Superan el máximo de 30 MB:<br><b>'+grandes.map(esc).join('<br>')+'</b><br>' : '')
+                + (bloqueados.length ? 'No se permiten programas ni páginas web:<br><b>'+bloqueados.map(esc).join('<br>')+'</b>' : '')});
         }
         renderDocs();
     });
     function fmtSize(b){ if(b<1024)return b+' B'; if(b<1048576)return (b/1024).toFixed(0)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
+    // Formatos no permitidos (los mismos que rechaza el servidor: App\Support\Archivos)
+    const DOC_BLOQUEADAS = @json(\App\Support\Archivos::EXTENSIONES_BLOQUEADAS);
+    function extDe(nombre){ const p = String(nombre).toLowerCase().split('.'); return p.length > 1 ? p.pop() : ''; }
+    function iconoDoc(a){
+        const e = extDe(a.name);
+        if(a.isPdf) return 'file-pdf';
+        if(a.isImg) return 'file-image';
+        if(['doc','docx','odt','rtf'].includes(e)) return 'file-word';
+        if(['xls','xlsx','xlsm','ods','csv'].includes(e)) return 'file-excel';
+        if(['ppt','pptx','odp'].includes(e)) return 'file-powerpoint';
+        if(['zip','rar','7z'].includes(e)) return 'file-archive';
+        return 'file-alt';
+    }
     function renderDocs(){
         const box = $('#so-doc-list');
         box.innerHTML = attachedFiles.map((a,i)=>`
             <div class="so-doc">
-                <span class="ic"><i class="fas fa-file-${a.isPdf?'pdf':(a.isImg?'image':'alt')}"></i></span>
-                <div style="flex:1;min-width:0;"><div class="nm">${a.name}</div><div class="mt">${fmtSize(a.size)}</div></div>
+                <span class="ic"><i class="fas fa-${iconoDoc(a)}"></i></span>
+                <div style="flex:1;min-width:0;"><div class="nm">${esc(a.name)}</div><div class="mt">${fmtSize(a.size)}</div></div>
                 <button type="button" class="rm" data-i="${i}">Quitar</button>
             </div>`).join('');
         $$('.so-doc .rm', box).forEach(btn=> btn.addEventListener('click', ()=> removeDoc(+btn.dataset.i)));
@@ -1822,9 +1838,10 @@
     $('#so-view-docs').addEventListener('click', ()=>{
         const v = $('#docsViewer');
         v.innerHTML = attachedFiles.map(a=>{
-            if(a.isImg) return `<div style="margin-bottom:14px;"><div style="font-weight:700;margin-bottom:6px;">${a.name}</div><img src="${a.url}" style="max-width:100%;border-radius:8px;"></div>`;
-            if(a.isPdf) return `<div style="margin-bottom:14px;"><div style="font-weight:700;margin-bottom:6px;">${a.name}</div><iframe src="${a.url}" style="width:100%;height:70vh;border:none;border-radius:8px;background:#fff;"></iframe></div>`;
-            return `<div style="margin-bottom:14px;">${a.name} — <a href="${a.url}" target="_blank">abrir</a></div>`;
+            if(a.isImg) return `<div style="margin-bottom:14px;"><div style="font-weight:700;margin-bottom:6px;">${esc(a.name)}</div><img src="${a.url}" style="max-width:100%;border-radius:8px;"></div>`;
+            if(a.isPdf) return `<div style="margin-bottom:14px;"><div style="font-weight:700;margin-bottom:6px;">${esc(a.name)}</div><iframe src="${a.url}" style="width:100%;height:70vh;border:none;border-radius:8px;background:#fff;"></iframe></div>`;
+            // Word, Excel y otros: el navegador no los muestra; se pueden descargar para revisarlos
+            return `<div style="margin-bottom:14px;padding:12px 14px;background:#fff;border-radius:8px;"><i class="fas fa-${iconoDoc(a)}" style="color:var(--so-brand);"></i> <strong>${esc(a.name)}</strong> · ${fmtSize(a.size)} — <a href="${a.url}" download="${esc(a.name)}">descargar para revisar</a></div>`;
         }).join('');
         window.jQuery && window.jQuery('#docsModal').modal('show');
     });

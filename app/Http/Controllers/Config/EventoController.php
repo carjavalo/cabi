@@ -7,8 +7,8 @@ use App\Models\Evento;
 use App\Models\EventoDia;
 use App\Models\EventoFranja;
 use App\Models\EventoInscripcion;
+use App\Support\Archivos;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class EventoController extends Controller
 {
@@ -48,12 +48,12 @@ class EventoController extends Controller
         }
 
         if ($request->hasFile('imagen')) {
-            $file = $request->file('imagen');
-            $folder = public_path('img/eventos');
-            if (!is_dir($folder)) mkdir($folder, 0755, true);
-            $name = time() . '_' . preg_replace('/[^A-Za-z0-9\-_\\.]/', '', $file->getClientOriginalName());
-            $file->move($folder, $name);
-            $data['imagen'] = url('img/eventos/'.$name);
+            try {
+                $data['imagen'] = $this->guardarImagen($request, $data['titulo']);
+            } catch (\Throwable $e) {
+                report($e);
+                return response()->json(['success' => false, 'message' => 'No fue posible guardar la imagen. Verifique la conexión con el almacenamiento de archivos.'], 500);
+            }
         }
 
         $data['created_by'] = auth()->id() ?? null;
@@ -120,16 +120,23 @@ class EventoController extends Controller
             $data['franjas_horarias'] = json_decode($data['franjas_horarias'], true);
         }
 
+        $imagenAnterior = $evento->getRawOriginal('imagen');
         if ($request->hasFile('imagen')) {
-            $file = $request->file('imagen');
-            $folder = public_path('img/eventos');
-            if (!is_dir($folder)) mkdir($folder, 0755, true);
-            $name = time() . '_' . preg_replace('/[^A-Za-z0-9\-_\\.]/', '', $file->getClientOriginalName());
-            $file->move($folder, $name);
-            $data['imagen'] = url('img/eventos/'.$name);
+            try {
+                $data['imagen'] = $this->guardarImagen($request, $data['titulo']);
+            } catch (\Throwable $e) {
+                report($e);
+                return response()->json(['success' => false, 'message' => 'No fue posible guardar la imagen. Verifique la conexión con el almacenamiento de archivos.'], 500);
+            }
+        } else {
+            unset($data['imagen']);   // sin imagen nueva se conserva la actual
         }
 
         $evento->update($data);
+        // La imagen reemplazada ya no se usa
+        if (!empty($data['imagen']) && $imagenAnterior && $imagenAnterior !== $data['imagen']) {
+            Archivos::eliminar($imagenAnterior);
+        }
 
         // Actualizar dias relacionados
         $evento->eventoDias()->delete();
@@ -182,8 +189,18 @@ class EventoController extends Controller
             return response()->json(['success' => false, 'message' => 'No autorizado para eliminar.'], 403);
         }
         $evento = Evento::findOrFail($id);
+        $imagen = $evento->getRawOriginal('imagen');
         $evento->delete();
+        Archivos::eliminar($imagen);
         return response()->json(['success' => true]);
+    }
+
+    /** Guarda la imagen en el almacenamiento (S3): talentoHumanoHUV/eventos/evento_{título}_{fecha}.{ext} */
+    private function guardarImagen(Request $request, ?string $titulo): string
+    {
+        $archivo = $request->file('imagen');
+        $nombre = 'evento_' . ($titulo ?: pathinfo($archivo->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . now()->format('Y-m-d_His');
+        return Archivos::guardar($archivo, 'eventos', $nombre);
     }
 
     public function inscripcion($id)

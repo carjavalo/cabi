@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 document.getElementById('modalPublicidadTitleText').textContent = 'Editar Publicidad';
                 
                 if(item.banner) {
-                    document.getElementById('imagenActualText').textContent = 'Imagen actual: ' + item.banner.split('/').pop();
+                    document.getElementById('imagenActualText').textContent = 'Imagen actual: ' + decodeURIComponent(item.banner.split('?')[0].split('/').pop());
                 } else {
                     document.getElementById('imagenActualText').textContent = '';
                 }

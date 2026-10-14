@@ -598,6 +598,7 @@ class GestorPermisos
         'data' => 'Consultar datos de la tabla', 'buscar' => 'Buscar', 'diagnostico' => 'Diagnóstico',
         'migrar' => 'Ejecutar migraciones', 'edit_user' => 'Ver formulario de edición', 'update_user' => 'Actualizar registro',
         'index_user' => 'Ver listado',
+        'documento' => 'Abrir documento adjunto', 'migrar-archivos' => 'Migrar archivos a Amazon S3',
     ];
 
     private static function palabra(string $seg): string
