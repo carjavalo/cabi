@@ -129,7 +129,7 @@
 
     <div class="ml-auto nav-welcome">
       @guest
-        <div class="navbar-text text-white" style="line-height:1">Bienvenido a CABI</div>
+        <div class="navbar-text text-white" style="line-height:1">Bienvenido a Talentohuv</div>
         <div style="line-height:1">
           <a href="{{ url('/login') }}" class="text-white mr-2">Iniciar sesión</a>
           <a href="{{ url('/register') }}" class="text-white">Registrarse</a>
@@ -141,7 +141,7 @@
           $apellido2 = Auth::user()->apellido2 ?? '';
           $fullName = trim($firstName . ' ' . $apellido1 . ' ' . $apellido2);
         @endphp
-        <div class="navbar-text text-white" style="line-height:1">Bienvenido a CABI</div>
+        <div class="navbar-text text-white" style="line-height:1">Bienvenido a Talentohuv</div>
         <div class="text-white d-flex align-items-center" style="line-height:1">
           <span class="d-none d-sm-inline">{{ $fullName }}</span>
           <button type="button" class="btn btn-link text-white p-0 ml-2" data-toggle="modal" data-target="#logoutModal">Cerrar sesión</button>
@@ -158,8 +158,8 @@
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
     <a href="/" class="brand-link" style="display:flex;align-items:center;">
-      <div style="width:40px;height:40px;background:#fff;color:var(--brand);font-weight:700;border-radius:6px;display:flex;align-items:center;justify-content:center;margin:6px">C</div>
-      <span class="brand-text font-weight-light" style="margin-left:6px">CABI</span>
+      <div style="width:40px;height:40px;background:#fff;color:var(--brand);font-weight:700;border-radius:6px;display:flex;align-items:center;justify-content:center;margin:6px">T</div>
+      <span class="brand-text font-weight-light" style="margin-left:6px">Talentohuv</span>
     </a>
 
     <!-- Sidebar -->
