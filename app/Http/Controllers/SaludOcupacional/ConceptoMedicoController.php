@@ -428,7 +428,7 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         // Concepto por énfasis: solo para los énfasis seleccionados y con opciones válidas
         $conceptoEnfasis = [];
         foreach ((array) ($validated['concepto_enfasis'] ?? []) as $enf => $op) {
-            if (in_array($enf, (array) ($validated['enfasis'] ?? []), true)
+            if (is_string($op) && in_array($enf, (array) ($validated['enfasis'] ?? []), true)
                 && isset(ConceptoMedico::CONCEPTOS_ENFASIS[$enf]['opciones'][$op])) {
                 $conceptoEnfasis[$enf] = $op;
             }
@@ -449,12 +449,18 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         $concepto->paciente_nombre = $user
             ? trim($user->name . ' ' . ($user->apellido1 ?? '') . ' ' . ($user->apellido2 ?? ''))
             : $request->input('paciente_nombre');
-        $concepto->edad   = $request->input('edad');
-        $concepto->genero = $request->input('genero');
+        // La edad llega de un campo de texto: solo se guarda si es un número válido
+        $edad = filter_var($request->input('edad'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 150]]);
+        $concepto->edad   = $edad === false ? null : $edad;
+        $concepto->genero = $this->recortar($request->input('genero'), 5);
 
         // Datos laborales / afiliación (por visita)
-        foreach (['cargo_inicio', 'servicio', 'empleador', 'nit', 'eps', 'afp', 'arl'] as $campo) {
+        foreach (['cargo_inicio', 'servicio', 'empleador'] as $campo) {
             $concepto->{$campo} = $request->input($campo);
+        }
+        // Columnas de longitud fija: un valor más largo haría fallar el guardado (modo estricto de MySQL)
+        foreach (['nit' => 40, 'eps' => 120, 'afp' => 120, 'arl' => 120] as $campo => $max) {
+            $concepto->{$campo} = $this->recortar($request->input($campo), $max);
         }
 
         // Lo diligenciado en el paso 3 actualiza los datos del trabajador, para
@@ -467,9 +473,6 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
                 $user->{$colUser} = mb_substr($valor, 0, $max);
             }
         }
-        if ($user->isDirty()) {
-            $user->save();
-        }
 
         // Campos de texto simples de la historia clínica
         foreach ([
@@ -481,6 +484,8 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         ] as $campo) {
             $concepto->{$campo} = $request->input($campo);
         }
+        $concepto->epp_usa               = $this->recortar($concepto->epp_usa, 5);
+        $concepto->restricciones_previas = $this->recortar($concepto->restricciones_previas, 5);
 
         if (Schema::hasColumn('conceptos_medicos', 'concepto_enfasis')) {
             $concepto->concepto_enfasis       = $conceptoEnfasis ?: null;
@@ -503,7 +508,24 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
         $concepto->examen_sistemas            = $this->decodeJsonField($request->input('examen_sistemas'));
 
         $concepto->created_by = Auth::id();
-        $concepto->save();
+
+        // Si la base de datos rechaza algún dato, se registra el detalle en el log y se
+        // devuelve al formulario con un aviso, en vez de mostrar un error 500.
+        try {
+            DB::transaction(function () use ($user, $concepto) {
+                if ($user->isDirty()) {
+                    $user->save();
+                }
+                $concepto->save();
+            });
+        } catch (\Illuminate\Database\QueryException $e) {
+            report($e);
+            return redirect()->back()->withInput()->with(
+                'error',
+                'No fue posible guardar el concepto médico: la base de datos rechazó uno de los datos diligenciados ('
+                    . Str::limit($e->errorInfo[2] ?? $e->getMessage(), 200) . '). Informe a soporte.'
+            );
+        }
 
         // La cita de la agenda queda atendida y enlazada a esta consulta. Si no se
         // seleccionó desde la agenda, se enlaza la cita pendiente de hoy del paciente.
@@ -764,6 +786,13 @@ class ConceptoMedicoController extends Controller implements HasMiddleware
             return json_last_error() === JSON_ERROR_NONE ? $decoded : null;
         }
         return null;
+    }
+
+    /** Recorta un texto a la longitud de su columna (null si queda vacío). */
+    private function recortar($valor, int $max): ?string
+    {
+        $valor = trim((string) $valor);
+        return $valor === '' ? null : mb_substr($valor, 0, $max);
     }
 
     private function safeList(\Closure $fn)
