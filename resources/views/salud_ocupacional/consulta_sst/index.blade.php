@@ -113,6 +113,10 @@
     .cs-mini{ display:flex;gap:6px;margin-top:4px;flex-wrap:wrap; }
     .cs-mini span{ font-size:10.5px;font-weight:700;color:var(--so-mut);background:var(--so-soft);border-radius:6px;padding:1px 6px;white-space:nowrap; }
     .cs-mini span.vig{ color:#92611a;background:#fbf3e4; }
+    .cs-mini span.ven{ color:#8a8fa3;background:#f1f1f4; }
+    .cs-mini span.pronto{ color:var(--so-bad);background:#fbebe9; }
+    .cs-hasta{ display:inline-flex;align-items:center;gap:7px;margin-top:8px;padding:6px 11px;border-radius:9px;background:#fbf3e4;color:#92611a;font-size:12.5px;font-weight:700; }
+    .cs-hasta.ven{ background:#f1f1f4;color:#6b7088; }
     .cs-med{ font-size:12.5px;color:#4a4f66;max-width:170px; }
     .cs-acts{ display:flex;gap:4px;justify-content:flex-end; }
     .cs-act{ width:32px;height:32px;border-radius:9px;border:none;background:transparent;color:var(--so-brand);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s,color .12s,transform .12s; }
@@ -420,6 +424,7 @@
                                 <option value="">Sin temporalidad</option>
                                 @foreach($temporalidades as $k => $v)<option value="{{ $k }}">{{ $v }}</option>@endforeach
                             </select>
+                            <div id="eTempHasta" class="cs-hasta" style="display:none;"></div>
                         </div>
                     </div>
                     <label class="so-lbl" for="eSst" style="margin-top:12px;">Recomendaciones para el área de SST</label>
@@ -500,6 +505,20 @@
         var p = String(n || '').trim().split(/\s+/);
         return ((p[0] || '')[0] || '?').toUpperCase() + ((p[1] || '')[0] || '').toUpperCase();
     }
+    /** "faltan 181 días", "vencen hoy", "vencieron hace 12 días" */
+    function diasRestantes(d) {
+        if (d == null) return '';
+        if (d === 0) return 'vencen hoy';
+        if (d < 0) return 'vencieron hace ' + (-d) + (d === -1 ? ' día' : ' días');
+        return 'falta' + (d === 1 ? ' 1 día' : 'n ' + d + ' días');
+    }
+    /** Chip de la tabla: hasta cuándo van las restricciones (vencidas en gris, próximas a vencer en rojo). */
+    function chipRestricciones(f) {
+        var d = f.restricciones_dias;
+        if (d < 0) return '<span class="ven" title="' + esc(diasRestantes(d)) + '"><i class="fas fa-history"></i> Restricciones vencidas el ' + esc(f.restricciones_hasta) + '</span>';
+        return '<span class="' + (d <= 30 ? 'pronto' : 'vig') + '" title="' + esc(diasRestantes(d)) + '"><i class="far fa-clock"></i> Restricciones hasta '
+            + esc(f.restricciones_hasta) + ' · ' + esc(diasRestantes(d)) + '</span>';
+    }
     function color(n) { var h = 0; String(n).split('').forEach(function (c) { h = (h * 31 + c.charCodeAt(0)) >>> 0; }); return COLORES[h % COLORES.length]; }
 
     // ─── Carga de datos ───
@@ -543,7 +562,7 @@
             var clase = f.anulado ? 'anul' : (f.clase || 'none');
             var mini = [];
             f.conceptos_enfasis.forEach(function (e) { mini.push('<span title="' + esc(e.titulo) + '">' + esc(e.etiqueta) + '</span>'); });
-            if (f.restricciones_hasta) mini.push('<span class="vig"><i class="far fa-clock"></i> Restricciones hasta ' + esc(f.restricciones_hasta) + '</span>');
+            if (f.restricciones_hasta) mini.push(chipRestricciones(f));
             if (f.restricciones_indefinidas) mini.push('<span class="vig"><i class="fas fa-infinity"></i> Restricciones indefinidas</span>');
             if (f.correcciones) mini.push('<span title="Corregido"><i class="fas fa-history"></i> ' + f.correcciones + ' corrección' + (f.correcciones > 1 ? 'es' : '') + '</span>');
             if (f.documentos) mini.push('<span><i class="fas fa-paperclip"></i> ' + f.documentos + '</span>');
@@ -828,7 +847,8 @@
             h += '<div class="cs-box"><h6><i class="fas fa-notes-medical"></i> Recomendaciones médicas y compromisos</h6>' + txt(c.recomendaciones) + '</div>';
             h += '<div class="cs-box"><h6><i class="fas fa-hand-paper"></i> Restricciones médicas ocupacionales</h6>' + txt(c.restricciones)
                 + (c.temporalidad_label ? '<div style="margin-top:8px;font-size:13px;"><span class="cs-pill warn"><i class="far fa-clock"></i><span>' + esc(c.temporalidad_label)
-                + (c.restricciones_hasta ? ' · vigentes hasta el ' + esc(c.restricciones_hasta) : '') + '</span></span></div>' : '') + '</div>';
+                + (c.restricciones_hasta ? ' · ' + esc(f.restricciones_dias < 0 ? 'vencieron el ' : 'vigentes hasta el ') + esc(c.restricciones_hasta) + ' (' + esc(diasRestantes(f.restricciones_dias)) + ')' : '')
+                + '</span></span></div>' : '') + '</div>';
             h += '<div class="cs-box"><h6><i class="fas fa-hard-hat"></i> Recomendaciones para el área de SST</h6>' + txt(c.sst) + '</div>';
             if (!vacio(c.observaciones_concepto)) h += '<div class="cs-box"><h6><i class="far fa-comment-dots"></i> Observaciones del concepto</h6>' + txt(c.observaciones_concepto) + '</div>';
             if (!vacio(c.diagnostico)) h += '<div class="cs-box"><h6><i class="fas fa-file-prescription"></i> Diagnóstico</h6>' + txt(c.diagnostico) + '</div>';
@@ -905,12 +925,41 @@
             $('#eRec').value = c.recomendaciones || '';
             $('#eRes').value = c.restricciones || '';
             $('#eTemp').value = c.restricciones_temporalidad || '';
+            pintarHastaEdicion();
             $('#eSst').value = c.sst || '';
             $('#eObs').value = c.observaciones_concepto || '';
             $('#eMotivo').value = '';
             window.jQuery('#mEditar').modal('show');
         }).catch(function (e) { Swal.fire({ icon: 'error', title: 'No se pudo abrir', text: e.message }); });
     }
+    // Fecha hasta la que van las restricciones: fecha de la atención + los meses de la temporalidad
+    function hastaRestricciones(fechaIso, valor) {
+        var meses = parseInt(valor, 10);
+        if (!meses || !fechaIso) return null;
+        var p = fechaIso.split('-').map(Number), destino = new Date(p[0], p[1] - 1 + meses, 1);
+        var ultimoDia = new Date(destino.getFullYear(), destino.getMonth() + 1, 0).getDate();
+        destino.setDate(Math.min(p[2], ultimoDia));   // 31 ene + 1 mes = 28/29 feb
+        return destino;
+    }
+    function pintarHastaEdicion() {
+        var caja = $('#eTempHasta'), v = $('#eTemp').value;
+        if (!editando || !v) { caja.style.display = 'none'; return; }
+        var html, vencida = false;
+        if (v === 'indefinido') {
+            html = '<i class="fas fa-infinity"></i> Sin fecha de terminación (indefinidas)';
+        } else {
+            var d = hastaRestricciones(editando.fila.fecha_iso, v), hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+            var dias = Math.round((d - hoy) / 86400000);
+            vencida = dias < 0;
+            html = '<i class="far fa-calendar-check"></i> ' + (vencida ? 'Vencieron el ' : 'Vigentes hasta el ')
+                + d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' · ' + diasRestantes(dias);
+        }
+        caja.className = 'cs-hasta' + (vencida ? ' ven' : '');
+        caja.innerHTML = html;
+        caja.style.display = 'inline-flex';
+    }
+    $('#eTemp').addEventListener('change', pintarHastaEdicion);
+
     $('#eTipo').addEventListener('change', function () {
         var marcado = $('#eOps input:checked');
         pintarOpciones(this.value, marcado ? marcado.value : null);

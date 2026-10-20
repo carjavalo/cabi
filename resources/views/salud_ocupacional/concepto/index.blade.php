@@ -76,6 +76,8 @@
     .so-rep-del:hover{ background:#b42318;color:#fff;border-color:#b42318; }
     .so-rep-row .wide{ grid-column:1/-1; }
 
+    /* Fecha hasta la que rigen las restricciones (paso 6) */
+    .so-temp-hasta{ align-items:center;gap:7px;margin-top:8px;padding:6px 12px;border-radius:9px;background:#fbf3e4;color:#92611a;font-size:13px;font-weight:700; }
     .so-lbl{ display:block;font-size:11.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--so-brand);
         margin-bottom:6px;font-family:'Courier New',monospace; }
     .so-lbl.mut{ color:var(--so-mut); }
@@ -691,6 +693,8 @@
                                 <option value="{{ $k }}">{{ $t }}</option>
                                 @endforeach
                             </select>
+                            {{-- Fecha hasta la que rigen las restricciones (se calcula desde la fecha de hoy, que es la de la atención) --}}
+                            <div id="f-temp-hasta" class="so-temp-hasta" style="display:none;"></div>
                         </div>
                         <div style="margin-top:16px;">
                             <label class="so-lbl">Recomendaciones para el área de SST</label>
@@ -1354,8 +1358,33 @@
             const f = n.querySelector('.so-prev-fecha'); if(f) f.textContent = h ? ((h.fecha||'') + (h.tipo ? ' · '+h.tipo : '')) : '';
         });
         aplicarConcepto();
+        pintarHastaRestricciones();
     }
     aplicarConcepto();
+
+    // Fecha hasta la que van las restricciones: fecha de la atención (hoy) + los meses elegidos
+    function hastaRestricciones(valor){
+        const meses = parseInt(valor, 10);
+        if(!meses) return null;
+        const hoy = new Date(), destino = new Date(hoy.getFullYear(), hoy.getMonth() + meses, 1);
+        const ultimoDia = new Date(destino.getFullYear(), destino.getMonth() + 1, 0).getDate();
+        destino.setDate(Math.min(hoy.getDate(), ultimoDia));   // 31 ene + 1 mes = 28/29 feb
+        return destino;
+    }
+    function textoHastaRestricciones(valor){
+        if(valor === 'indefinido') return 'Sin fecha de terminación (indefinidas)';
+        const d = hastaRestricciones(valor);
+        return d ? 'Vigentes hasta el ' + d.toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric' }) : '';
+    }
+    function pintarHastaRestricciones(){
+        const sel = $('#f-temporalidad'), caja = $('#f-temp-hasta');
+        if(!sel || !caja) return;
+        const txt = textoHastaRestricciones(sel.value);
+        caja.style.display = txt ? 'inline-flex' : 'none';
+        caja.innerHTML = txt ? '<i class="far fa-calendar-check"></i> ' + txt : '';
+    }
+    $('#f-temporalidad').addEventListener('change', pintarHastaRestricciones);
+    pintarHastaRestricciones();
 
     function clearPatientFields(){
         renderPatientCard(null);
@@ -1906,7 +1935,9 @@
         setTxt('rv-restr', $('[name="restricciones"]').value);
         setTxt('rv-sst', $('[name="sst"]').value);
         const temporalidad = $('#f-temporalidad');
-        setTxt('rv-temporalidad', temporalidad.value ? temporalidad.options[temporalidad.selectedIndex].text : '');
+        setTxt('rv-temporalidad', temporalidad.value
+            ? temporalidad.options[temporalidad.selectedIndex].text + ' · ' + textoHastaRestricciones(temporalidad.value).toLowerCase()
+            : '');
         setTxt('rv-medico', $('[name="medico"]').value);
         setTxt('rv-registro', $('[name="registro"]').value);
         const firma = $('#f-firma').value;

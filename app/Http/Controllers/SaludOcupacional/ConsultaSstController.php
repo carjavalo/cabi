@@ -490,6 +490,8 @@ class ConsultaSstController extends Controller implements HasMiddleware
             'clase'          => $c->concepto_clase,
             'conceptos_enfasis' => array_map(fn ($e) => ['titulo' => $e[0], 'etiqueta' => $e[1], 'clase' => $e[2]], $c->conceptos_enfasis_lista),
             'restricciones_hasta' => optional($c->restricciones_hasta)->format('d/m/Y'),
+            // Días que faltan para que terminen las restricciones (negativo = ya vencieron)
+            'restricciones_dias' => $c->restricciones_hasta ? (int) today()->diffInDays($c->restricciones_hasta, false) : null,
             'restricciones_indefinidas' => $c->restricciones_temporalidad === 'indefinido',
             'medico'         => $c->medico,
             'documentos'     => (int) ($c->documentos_count ?? 0),
