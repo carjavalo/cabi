@@ -313,8 +313,8 @@
                     </button>
                     <div class="dropdown-menu">
                         <h6 class="dropdown-header">Se exporta con los filtros aplicados</h6>
-                        <button type="button" class="dropdown-item" data-exportar="todo"><i class="fas fa-layer-group"></i><span>Información y estadísticas<small>Listado de conceptos + indicadores y gráficos</small></span></button>
-                        <button type="button" class="dropdown-item" data-exportar="estadisticas"><i class="fas fa-chart-pie"></i><span>Solo estadísticas<small>Indicadores, distribuciones y gráficos</small></span></button>
+                        <button type="button" class="dropdown-item" data-exportar="todo"><i class="fas fa-layer-group"></i><span>Información y estadísticas<small>Listado de conceptos + indicadores y distribuciones</small></span></button>
+                        <button type="button" class="dropdown-item" data-exportar="estadisticas"><i class="fas fa-chart-pie"></i><span>Solo estadísticas<small>Indicadores y distribuciones con barras</small></span></button>
                         <button type="button" class="dropdown-item" data-exportar="listado"><i class="fas fa-table"></i><span>Solo información<small>Listado detallado de los conceptos</small></span></button>
                     </div>
                 </div>
@@ -702,12 +702,29 @@
             var boton = $('.cs-exp .so-btn');
             boton.classList.add('cargando');
             boton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando Excel…';
-            toast('info', 'Generando el archivo de Excel…');
-            window.location.href = URL_EXPORTAR + '?' + params.toString();
-            setTimeout(function () {
-                boton.classList.remove('cargando');
-                boton.innerHTML = '<i class="fas fa-file-excel"></i> Exportar a Excel <i class="fas fa-caret-down" style="opacity:.8"></i>';
-            }, 3500);
+            fetch(URL_EXPORTAR + '?' + params.toString(), { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) {
+                    var tipo = r.headers.get('Content-Type') || '';
+                    if (!r.ok || tipo.indexOf('spreadsheetml') === -1) {
+                        return r.json().catch(function () { return {}; }).then(function (j) {
+                            throw new Error(j.message || 'El servidor no pudo generar el archivo (código ' + r.status + ').');
+                        });
+                    }
+                    var nombre = ((r.headers.get('Content-Disposition') || '').match(/filename="?([^";]+)"?/) || [])[1] || 'consulta_sst.xlsx';
+                    return r.blob().then(function (b) {
+                        var a = document.createElement('a');
+                        a.href = URL.createObjectURL(b);
+                        a.download = nombre;
+                        document.body.appendChild(a); a.click(); a.remove();
+                        setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+                        toast('success', 'Archivo de Excel descargado');
+                    });
+                })
+                .catch(function (err) { Swal.fire({ icon: 'error', title: 'No se pudo exportar', text: err.message }); })
+                .finally(function () {
+                    boton.classList.remove('cargando');
+                    boton.innerHTML = '<i class="fas fa-file-excel"></i> Exportar a Excel <i class="fas fa-caret-down" style="opacity:.8"></i>';
+                });
         });
     });
     $('#selVer').addEventListener('click', function () { if (seleccion) ver(seleccion); });

@@ -13,6 +13,7 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 /**
@@ -277,39 +278,62 @@ class ConsultaSstController extends Controller implements HasMiddleware
      * Exporta a Excel (.xlsx) la información y/o las estadísticas de los conceptos,
      * con los mismos filtros que tiene la tabla en pantalla.
      * contenido: todo (estadísticas + listado) | estadisticas | listado
+     *
+     * El archivo se arma completo antes de enviarlo: si algo falla se informa el motivo
+     * (y queda en el log) en vez de mostrar un error 500.
      */
     public function exportar(Request $request)
     {
         abort_unless(Schema::hasTable('conceptos_medicos'), 404);
         @set_time_limit(300);
+        @ini_set('memory_limit', '512M');
 
         $contenido = in_array($request->query('contenido'), ['estadisticas', 'listado'], true) ? $request->query('contenido') : 'todo';
         $conAnulacion = Schema::hasColumn('conceptos_medicos', 'anulado');
+        // Solo las columnas necesarias y existentes (la firma guarda imágenes y no se exporta)
+        $columnas = fn (array $cols) => array_values(array_filter($cols, fn ($c) => Schema::hasColumn('conceptos_medicos', $c)));
 
-        $excel = new ConsultaSstExcel($this->filtrosAplicados($request), Auth::user());
+        try {
+            $excel = new ConsultaSstExcel($this->filtrosAplicados($request), Auth::user());
 
-        if ($contenido !== 'listado') {
-            // Estadísticas del rango filtrado (vigentes), igual que los indicadores de la pantalla
-            $base = $this->filtrar(ConceptoMedico::query(), $request);
-            $vigentes = (clone $base)->when($conAnulacion, fn ($q) => $q->where('anulado', false))
-                ->get(['id', 'user_id', 'identificacion', 'fecha_atencion', 'tipo_atencion', 'enfasis', 'concepto_resultado',
-                       'concepto_enfasis', 'restricciones_temporalidad', 'cargo_inicio', 'servicio', 'medico']);
-            $anulados = $conAnulacion ? (clone $base)->where('anulado', true)->count() : 0;
-            $excel->estadisticas($vigentes, $anulados);
-        }
-
-        if ($contenido !== 'estadisticas') {
-            $query = $this->listado($request)->with('user:id,name,apellido1,apellido2');
-            if (Schema::hasTable('concepto_correcciones')) {
-                $query->withCount(['correcciones' => fn ($k) => $k->reorder()]);
+            if ($contenido !== 'listado') {
+                // Estadísticas del rango filtrado (vigentes), igual que los indicadores de la pantalla
+                $base = $this->filtrar(ConceptoMedico::query(), $request);
+                $vigentes = (clone $base)->when($conAnulacion, fn ($q) => $q->where('anulado', false))
+                    ->get($columnas(['id', 'user_id', 'identificacion', 'fecha_atencion', 'tipo_atencion', 'enfasis', 'concepto_resultado',
+                        'concepto_enfasis', 'restricciones_temporalidad', 'cargo_inicio', 'servicio', 'medico']));
+                $anulados = $conAnulacion ? (clone $base)->where('anulado', true)->count() : 0;
+                $excel->estadisticas($vigentes, $anulados);
             }
-            $excel->listado($query);
+
+            if ($contenido !== 'estadisticas') {
+                $query = $this->listado($request)
+                    ->select($columnas(['id', 'user_id', 'identificacion', 'fecha_atencion', 'hora_atencion', 'paciente_nombre', 'edad', 'genero',
+                        'cargo_inicio', 'servicio', 'eps', 'afp', 'arl', 'tipo_atencion', 'enfasis', 'concepto_resultado', 'concepto_enfasis',
+                        'recomendaciones', 'restricciones', 'restricciones_temporalidad', 'sst', 'observaciones_concepto', 'medico', 'registro',
+                        'anulado', 'motivo_anulacion']))
+                    ->with('user:id,name,apellido1,apellido2');
+                if (Schema::hasTable('concepto_correcciones')) {
+                    $query->withCount(['correcciones' => fn ($k) => $k->reorder()]);
+                }
+                $excel->listado($query);
+            }
+
+            $archivo = $excel->contenido();
+        } catch (\Throwable $e) {
+            report($e);
+            $mensaje = 'No fue posible generar el archivo de Excel: ' . Str::limit($e->getMessage(), 250);
+            return $request->expectsJson() || $request->ajax()
+                ? response()->json(['ok' => false, 'message' => $mensaje], 500)
+                : redirect()->route('salud.consulta-sst.index')->with('error', $mensaje);
         }
 
         $nombre = 'consulta_sst_' . ($contenido === 'todo' ? '' : $contenido . '_') . now()->format('Y-m-d_His') . '.xlsx';
-        return response()->streamDownload(fn () => $excel->guardar('php://output'), $nombre, [
-            'Content-Type'  => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Cache-Control' => 'max-age=0, no-cache, no-store',
+        return response($archivo, 200, [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $nombre . '"',
+            'Content-Length'      => strlen($archivo),
+            'Cache-Control'       => 'max-age=0, no-cache, no-store',
         ]);
     }
 
