@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\SaludOcupacional\Concerns\TrabajadoresPlanta;
 use App\Models\ConceptoCorreccion;
 use App\Models\ConceptoMedico;
+use App\Support\ConsultaSstExcel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -62,28 +63,11 @@ class ConsultaSstController extends Controller implements HasMiddleware
         }
 
         $conAnulacion = Schema::hasColumn('conceptos_medicos', 'anulado');
-        $base = $this->filtrar(ConceptoMedico::query(), $request);
 
         // Indicadores del rango filtrado (sin el filtro de estado ni de resultado)
-        $resumen = $this->resumen(clone $base, $conAnulacion);
+        $resumen = $this->resumen($this->filtrar(ConceptoMedico::query(), $request), $conAnulacion);
 
-        $query = clone $base;
-        if ($conAnulacion) {
-            $estado = $request->query('estado', 'vigentes');
-            if ($estado === 'vigentes') {
-                $query->where('anulado', false);
-            } elseif ($estado === 'anulados') {
-                $query->where('anulado', true);
-            }
-        }
-        if ($resultado = $request->query('resultado')) {
-            $claves = $this->clavesPorClase($resultado);
-            $claves ? $query->whereIn('concepto_resultado', $claves) : $query->whereRaw('1 = 0');
-        }
-
-        $orden = self::ORDENABLES[$request->query('orden', 'fecha')] ?? 'fecha_atencion';
-        $dir = $request->query('dir') === 'asc' ? 'asc' : 'desc';
-        $query->orderBy($orden, $dir)->orderBy('id', $dir);
+        $query = $this->listado($request);
 
         $porPagina = min(max((int) $request->query('por_pagina', 10), 5), 100);
         $total = (clone $query)->count();
@@ -289,7 +273,96 @@ class ConsultaSstController extends Controller implements HasMiddleware
         return view('salud_ocupacional.concepto.certificado', ['c' => $concepto]);
     }
 
+    /**
+     * Exporta a Excel (.xlsx) la información y/o las estadísticas de los conceptos,
+     * con los mismos filtros que tiene la tabla en pantalla.
+     * contenido: todo (estadísticas + listado) | estadisticas | listado
+     */
+    public function exportar(Request $request)
+    {
+        abort_unless(Schema::hasTable('conceptos_medicos'), 404);
+        @set_time_limit(300);
+
+        $contenido = in_array($request->query('contenido'), ['estadisticas', 'listado'], true) ? $request->query('contenido') : 'todo';
+        $conAnulacion = Schema::hasColumn('conceptos_medicos', 'anulado');
+
+        $excel = new ConsultaSstExcel($this->filtrosAplicados($request), Auth::user());
+
+        if ($contenido !== 'listado') {
+            // Estadísticas del rango filtrado (vigentes), igual que los indicadores de la pantalla
+            $base = $this->filtrar(ConceptoMedico::query(), $request);
+            $vigentes = (clone $base)->when($conAnulacion, fn ($q) => $q->where('anulado', false))
+                ->get(['id', 'user_id', 'identificacion', 'fecha_atencion', 'tipo_atencion', 'enfasis', 'concepto_resultado',
+                       'concepto_enfasis', 'restricciones_temporalidad', 'cargo_inicio', 'servicio', 'medico']);
+            $anulados = $conAnulacion ? (clone $base)->where('anulado', true)->count() : 0;
+            $excel->estadisticas($vigentes, $anulados);
+        }
+
+        if ($contenido !== 'estadisticas') {
+            $query = $this->listado($request)->with('user:id,name,apellido1,apellido2');
+            if (Schema::hasTable('concepto_correcciones')) {
+                $query->withCount(['correcciones' => fn ($k) => $k->reorder()]);
+            }
+            $excel->listado($query);
+        }
+
+        $nombre = 'consulta_sst_' . ($contenido === 'todo' ? '' : $contenido . '_') . now()->format('Y-m-d_His') . '.xlsx';
+        return response()->streamDownload(fn () => $excel->guardar('php://output'), $nombre, [
+            'Content-Type'  => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0, no-cache, no-store',
+        ]);
+    }
+
     // ─────────────────────────── Helpers ───────────────────────────
+
+    /** Consulta de la tabla: filtros + estado (vigentes/anulados/todos) + resultado + orden. */
+    private function listado(Request $request): Builder
+    {
+        $query = $this->filtrar(ConceptoMedico::query(), $request);
+
+        if (Schema::hasColumn('conceptos_medicos', 'anulado')) {
+            $estado = $request->query('estado', 'vigentes');
+            if ($estado === 'vigentes') {
+                $query->where('anulado', false);
+            } elseif ($estado === 'anulados') {
+                $query->where('anulado', true);
+            }
+        }
+        if ($resultado = $request->query('resultado')) {
+            $claves = $this->clavesPorClase($resultado);
+            $claves ? $query->whereIn('concepto_resultado', $claves) : $query->whereRaw('1 = 0');
+        }
+
+        $orden = self::ORDENABLES[$request->query('orden', 'fecha')] ?? 'fecha_atencion';
+        $dir = $request->query('dir') === 'asc' ? 'asc' : 'desc';
+        return $query->orderBy($orden, $dir)->orderBy('id', $dir);
+    }
+
+    /** Descripción legible de los filtros, para el encabezado del Excel. */
+    private function filtrosAplicados(Request $request): array
+    {
+        $out = [];
+        if ($q = trim((string) $request->query('q', ''))) {
+            $out['Búsqueda'] = $q;
+        }
+        $desde = $this->fecha($request->query('desde'));
+        $hasta = $this->fecha($request->query('hasta'));
+        $fmt = fn ($f) => \Carbon\Carbon::parse($f)->format('d/m/Y');
+        $out['Periodo'] = match (true) {
+            $desde && $hasta => 'Del ' . $fmt($desde) . ' al ' . $fmt($hasta),
+            (bool) $desde    => 'Desde el ' . $fmt($desde),
+            (bool) $hasta    => 'Hasta el ' . $fmt($hasta),
+            default          => 'Todos los registros',
+        };
+        if (($tipo = $request->query('tipo')) && isset(ConceptoMedico::TIPOS[$tipo])) {
+            $out['Tipo de evaluación'] = ConceptoMedico::TIPOS[$tipo];
+        }
+        $out['Estado'] = ['vigentes' => 'Vigentes', 'anulados' => 'Anulados', 'todos' => 'Todos'][$request->query('estado', 'vigentes')] ?? 'Vigentes';
+        if ($r = ['ok' => 'Aptos', 'warn' => 'Con restricciones', 'bad' => 'No aptos'][$request->query('resultado', '')] ?? null) {
+            $out['Resultado'] = $r;
+        }
+        return $out;
+    }
 
     private function filtrar(Builder $query, Request $request): Builder
     {

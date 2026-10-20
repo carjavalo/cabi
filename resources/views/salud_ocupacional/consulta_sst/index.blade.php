@@ -71,6 +71,15 @@
     .cs-sel{ display:none;align-items:center;gap:10px;background:var(--so-bg);border:1px solid #d6dbf0;border-radius:11px;padding:5px 6px 5px 12px;font-size:13px; }
     .cs-sel.on{ display:flex;animation:csIn .2s ease; }
     .cs-sel .so-btn{ height:32px;padding:0 12px;font-size:12.5px; }
+    .so-btn.xls{ height:34px;padding:0 13px;font-size:12.5px;background:#1d6f42;color:#fff;box-shadow:0 8px 18px -12px rgba(29,111,66,.9); }
+    .so-btn.xls:hover{ background:#175935; }
+    .so-btn.xls.cargando{ opacity:.7;pointer-events:none; }
+    .cs-exp .dropdown-menu{ border:1px solid var(--so-line);border-radius:12px;box-shadow:0 16px 34px -18px rgba(20,25,60,.45);padding:6px;min-width:290px; }
+    .cs-exp .dropdown-header{ font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--so-mut);padding:6px 10px; }
+    .cs-exp .dropdown-item{ display:flex;gap:11px;align-items:flex-start;border-radius:9px;padding:8px 10px;font-weight:700;font-size:13px;color:var(--so-text);white-space:normal; }
+    .cs-exp .dropdown-item i{ width:18px;margin-top:2px;color:#1d6f42; }
+    .cs-exp .dropdown-item small{ display:block;font-weight:400;color:var(--so-mut);font-size:11.5px; }
+    .cs-exp .dropdown-item:hover{ background:#eef7f1; }
     .cs-table-wrap{ overflow-x:auto; }
     table.cs-table{ width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px; }
     .cs-table thead th{ background:var(--so-soft);color:var(--so-brand);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;padding:11px 12px;white-space:nowrap;border-bottom:1.5px solid var(--so-line);user-select:none; }
@@ -296,7 +305,20 @@
     {{-- Tabla --}}
     <div class="so-card">
         <div class="cs-bar">
-            <div class="info" id="info">Cargando conceptos…</div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <div class="info" id="info">Cargando conceptos…</div>
+                <div class="dropdown cs-exp" data-permiso="salud.consulta-sst.exportar">
+                    <button type="button" class="so-btn xls" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Exporta con los filtros aplicados">
+                        <i class="fas fa-file-excel"></i> Exportar a Excel <i class="fas fa-caret-down" style="opacity:.8"></i>
+                    </button>
+                    <div class="dropdown-menu">
+                        <h6 class="dropdown-header">Se exporta con los filtros aplicados</h6>
+                        <button type="button" class="dropdown-item" data-exportar="todo"><i class="fas fa-layer-group"></i><span>Información y estadísticas<small>Listado de conceptos + indicadores y gráficos</small></span></button>
+                        <button type="button" class="dropdown-item" data-exportar="estadisticas"><i class="fas fa-chart-pie"></i><span>Solo estadísticas<small>Indicadores, distribuciones y gráficos</small></span></button>
+                        <button type="button" class="dropdown-item" data-exportar="listado"><i class="fas fa-table"></i><span>Solo información<small>Listado detallado de los conceptos</small></span></button>
+                    </div>
+                </div>
+            </div>
             <div class="cs-sel" id="barSel">
                 <span><i class="fas fa-check-circle" style="color:var(--so-brand)"></i> Seleccionado: <strong id="selTxt"></strong></span>
                 <button type="button" class="so-btn ghost" id="selVer" data-permiso="salud.consulta-sst.show"><i class="fas fa-eye"></i> Ver</button>
@@ -428,6 +450,7 @@
     'use strict';
     var URL_DATOS = @json(route('salud.consulta-sst.data'));
     var URL_BASE = @json(url('salud-ocupacional/consulta-sst'));
+    var URL_EXPORTAR = @json(route('salud.consulta-sst.exportar'));
     var CSRF = document.querySelector('meta[name="csrf-token"]').content;
     var TIPOS = @json($tipos);
     var CONCEPTOS = @json($conceptos);
@@ -670,6 +693,23 @@
         if (tr && !e.target.closest('button') && CABI.puede('salud.consulta-sst.show')) ver(+tr.dataset.id);
     });
     $('#selImp').addEventListener('click', function () { if (seleccion) imprimir(seleccion); });
+
+    // ─── Exportar a Excel (con los mismos filtros de la tabla) ───
+    $$('[data-exportar]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            var params = new URLSearchParams({ contenido: b.dataset.exportar });
+            ['q', 'desde', 'hasta', 'tipo', 'estado', 'resultado', 'orden', 'dir'].forEach(function (k) { if (S[k]) params.set(k, S[k]); });
+            var boton = $('.cs-exp .so-btn');
+            boton.classList.add('cargando');
+            boton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando Excel…';
+            toast('info', 'Generando el archivo de Excel…');
+            window.location.href = URL_EXPORTAR + '?' + params.toString();
+            setTimeout(function () {
+                boton.classList.remove('cargando');
+                boton.innerHTML = '<i class="fas fa-file-excel"></i> Exportar a Excel <i class="fas fa-caret-down" style="opacity:.8"></i>';
+            }, 3500);
+        });
+    });
     $('#selVer').addEventListener('click', function () { if (seleccion) ver(seleccion); });
 
     function fila(id) { return filas.find(function (f) { return f.id === id; }); }

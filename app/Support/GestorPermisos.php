@@ -602,6 +602,7 @@ class GestorPermisos
         'documento' => 'Abrir documento adjunto', 'migrar-archivos' => 'Migrar archivos a Amazon S3',
         'corregir' => 'Editar (corregir) concepto',
         'anular' => 'Eliminar (anular) concepto', 'imprimir' => 'Imprimir concepto',
+        'exportar' => 'Exportar a Excel (información y estadísticas)',
     ];
 
     private static function palabra(string $seg): string

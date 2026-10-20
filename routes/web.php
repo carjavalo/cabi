@@ -100,6 +100,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->controller(\App\Http\Controllers\SaludOcupacional\ConsultaSstController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/datos', 'datos')->name('data');
+            Route::get('/exportar', 'exportar')->name('exportar');
             Route::get('/{concepto}', 'show')->whereNumber('concepto')->name('show');
             Route::put('/{concepto}', 'corregir')->whereNumber('concepto')->name('corregir');
             Route::delete('/{concepto}', 'anular')->whereNumber('concepto')->name('anular');
