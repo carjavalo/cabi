@@ -194,6 +194,10 @@
               ['url' => route('salud.agenda.index'), 'txt' => 'Agenda Medica', 'activo' => request()->routeIs('salud.agenda.*')],
               ['url' => route('salud.concepto.index'), 'txt' => 'Concepto Medico', 'activo' => request()->routeIs('salud.concepto.*')],
             ]);
+            // Opciones que van después de "Historia Clinica"
+            $menuSaludFin = $gpVer([
+              ['url' => route('salud.consulta-sst.index'), 'txt' => 'Consulta SST', 'icono' => 'fas fa-search-plus nav-icon', 'activo' => request()->routeIs('salud.consulta-sst.*')],
+            ]);
             $menuConfig = $gpVer([
               ['url' => url('/configuracion/usuarios'), 'txt' => 'Gestión de Usuarios', 'activo' => request()->is('configuracion/usuarios*')],
               ['url' => route('config.roles.index'), 'txt' => 'Gestión de Roles', 'activo' => request()->routeIs('config.roles.*')],
@@ -243,7 +247,7 @@
           @endif
 
           <!-- Salud Ocupacional submenu -->
-          @if($menuSalud)
+          @if($menuSalud || $menuSaludFin)
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-briefcase-medical"></i>
@@ -254,6 +258,9 @@
               <li class="nav-item"><a href="{{ $item['url'] }}" class="nav-link {{ !empty($item['activo']) ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>{{ $item['txt'] }}</p></a></li>
               @endforeach
               <li class="nav-item"><a href="#" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Historia Clinica</p></a></li>
+              @foreach($menuSaludFin as $item)
+              <li class="nav-item"><a href="{{ $item['url'] }}" class="nav-link {{ !empty($item['activo']) ? 'active' : '' }}"><i class="{{ $item['icono'] ?? 'far fa-circle nav-icon' }}"></i><p>{{ $item['txt'] }}</p></a></li>
+              @endforeach
             </ul>
           </li>
           @endif

@@ -94,6 +94,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{concepto}', [\App\Http\Controllers\SaludOcupacional\ConceptoMedicoController::class, 'show'])->name('show');
     });
 
+    // ─── Salud Ocupacional · Consulta SST (listado de conceptos realizados) ───
+    // Cada acción es una ruta propia: se asigna por rol en Configuración › Gestión de Permisos.
+    Route::prefix('salud-ocupacional/consulta-sst')->name('salud.consulta-sst.')
+        ->controller(\App\Http\Controllers\SaludOcupacional\ConsultaSstController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/datos', 'datos')->name('data');
+            Route::get('/{concepto}', 'show')->whereNumber('concepto')->name('show');
+            Route::put('/{concepto}', 'corregir')->whereNumber('concepto')->name('corregir');
+            Route::delete('/{concepto}', 'anular')->whereNumber('concepto')->name('anular');
+            Route::get('/{concepto}/imprimir', 'imprimir')->whereNumber('concepto')->name('imprimir');
+        });
+
     // ─── Salud Ocupacional · Catálogos de afiliación (EPS / AFP / ARL) ───
     // CRUD dinámico consumido por los botones "+" del paso 3 del concepto médico.
     Route::prefix('salud-ocupacional/entidades')->name('salud.entidades.')->group(function () {

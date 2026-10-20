@@ -5,6 +5,11 @@
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
         -webkit-box-decoration-break:clone;box-decoration-break:clone; }
     .doc *{ box-sizing:border-box; }
+    .doc{ position:relative; }
+    /* Concepto anulado (Consulta SST) */
+    .doc-anulado{ position:absolute;top:42%;left:50%;transform:translate(-50%,-50%) rotate(-28deg);font-size:96pt;font-weight:900;letter-spacing:.08em;
+        color:rgba(196,69,59,.16);border:8px solid rgba(196,69,59,.16);padding:0 8mm;pointer-events:none;z-index:2; }
+    .doc-anulado-nota{ margin-bottom:3mm;padding:2mm 3mm;border:1px solid #c4453b;color:#c4453b;font-weight:700;font-size:9pt; }
     .doc-h{ display:flex;align-items:center;justify-content:space-between;gap:8mm;padding-bottom:3mm;border-bottom:2px solid #2e3a75; }
     .doc-logo{ width:66mm;max-width:45%;height:auto;display:block; }
     .doc-h-der{ text-align:right; }

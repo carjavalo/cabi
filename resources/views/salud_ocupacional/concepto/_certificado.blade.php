@@ -11,6 +11,11 @@
     $colgroup = '<colgroup><col style="width:17%"><col style="width:16.33%"><col style="width:17%"><col style="width:16.33%"><col style="width:17%"><col style="width:16.34%"></colgroup>';
 @endphp
 <article class="doc">
+    @if($c->anulado)
+    {{-- Concepto anulado desde Consulta SST: no es válido como certificado --}}
+    <div class="doc-anulado" aria-hidden="true">ANULADO</div>
+    <div class="doc-anulado-nota">Concepto anulado el {{ optional($c->anulado_at)->format('d/m/Y') }}. Motivo: {{ $c->motivo_anulacion }}</div>
+    @endif
     <header class="doc-h">
         <img class="doc-logo" src="{{ asset('img/huv-h.png') }}" alt="Hospital Universitario del Valle Evaristo García E.S.E.">
         <div class="doc-h-der">

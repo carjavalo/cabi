@@ -589,6 +589,7 @@ class GestorPermisos
         'recaudo' => 'Recaudo', 'bienestar' => 'Bienestar', 'inscritos' => 'Inscritos', 'otros' => 'Otros',
         'entidades' => 'Entidades de Afiliación', 'listados' => 'Listados', 'asistencia' => 'Asistencia',
         'observaciones' => 'Observaciones', 'test-email-diagnostico' => 'Diagnóstico de Correo',
+        'consulta-sst' => 'Consulta SST',
     ];
 
     private const ACCIONES = [
@@ -599,6 +600,8 @@ class GestorPermisos
         'migrar' => 'Ejecutar migraciones', 'edit_user' => 'Ver formulario de edición', 'update_user' => 'Actualizar registro',
         'index_user' => 'Ver listado',
         'documento' => 'Abrir documento adjunto', 'migrar-archivos' => 'Migrar archivos a Amazon S3',
+        'corregir' => 'Editar (corregir) concepto',
+        'anular' => 'Eliminar (anular) concepto', 'imprimir' => 'Imprimir concepto',
     ];
 
     private static function palabra(string $seg): string

@@ -95,14 +95,30 @@ class ConceptoMedico extends Model
     }
 
     /**
+     * Campos del concepto que se pueden corregir desde Consulta SST (con auditoría
+     * en concepto_correcciones). La historia clínica no se modifica nunca.
+     */
+    public const CAMPOS_CORREGIBLES = [
+        'tipo_atencion', 'concepto_resultado', 'concepto_enfasis', 'observaciones_concepto',
+        'recomendaciones', 'restricciones', 'restricciones_temporalidad', 'sst',
+    ];
+
+    /** Campos de la anulación (el "eliminar" de Consulta SST: el registro se conserva). */
+    public const CAMPOS_ANULACION = ['anulado', 'anulado_at', 'anulado_por', 'motivo_anulacion'];
+
+    /**
      * Cada consulta es un registro clínico histórico: una vez guardada no se
-     * modifica ni se elimina (se usa para estadísticas y revisiones futuras).
-     * Los cambios del médico se guardan siempre como una consulta nueva.
+     * elimina (se usa para estadísticas y revisiones futuras) y su historia
+     * clínica no se modifica. Solo se permite corregir los campos del concepto
+     * (CAMPOS_CORREGIBLES, con auditoría) y anularla (CAMPOS_ANULACION).
      */
     protected static function booted(): void
     {
-        static::updating(function () {
-            throw new \LogicException('Un concepto médico guardado no se puede modificar; registre una nueva consulta.');
+        static::updating(function (self $c) {
+            $permitidos = array_merge(self::CAMPOS_CORREGIBLES, self::CAMPOS_ANULACION, ['updated_at']);
+            if (array_diff(array_keys($c->getDirty()), $permitidos)) {
+                throw new \LogicException('Un concepto médico guardado no se puede modificar; registre una nueva consulta.');
+            }
         });
         static::deleting(function () {
             throw new \LogicException('Un concepto médico guardado no se puede eliminar.');
@@ -123,6 +139,8 @@ class ConceptoMedico extends Model
             'habitos'                     => 'array',
             'signos_vitales'              => 'array',
             'examen_sistemas'             => 'array',
+            'anulado'                     => 'boolean',
+            'anulado_at'                  => 'datetime',
         ];
     }
 
@@ -284,5 +302,15 @@ class ConceptoMedico extends Model
     public function documentos()
     {
         return $this->hasMany(ConceptoDocumento::class);
+    }
+
+    public function correcciones()
+    {
+        return $this->hasMany(ConceptoCorreccion::class)->latest();
+    }
+
+    public function anuladoPor()
+    {
+        return $this->belongsTo(User::class, 'anulado_por');
     }
 }
