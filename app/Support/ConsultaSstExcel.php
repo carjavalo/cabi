@@ -54,6 +54,9 @@ class ConsultaSstExcel
         $hoy = today();
         $conRestricciones = $vigentes->filter(fn ($c) => $c->restricciones_temporalidad === 'indefinido'
             || ($c->restricciones_hasta && $c->restricciones_hasta->gte($hoy)))->count();
+        $porVencer = $vigentes->filter(fn ($c) => $c->restricciones_hasta
+            && $c->restricciones_hasta->gte($hoy) && $c->restricciones_hasta->lte($hoy->copy()->addDays(30)))->count();
+        $vencidas = $vigentes->filter(fn ($c) => $c->restricciones_hasta && $c->restricciones_hasta->lt($hoy))->count();
         $pacientes = $vigentes->map(fn ($c) => $c->user_id ?: 'id:' . $c->identificacion)->unique()->count();
 
         $fila = $this->tabla($h, $fila, 'Indicadores generales', ['Indicador', 'Cantidad', '%'], [
@@ -64,6 +67,8 @@ class ConsultaSstExcel
             ['Sin concepto registrado', $porClase['sin'] ?? 0, $this->pct($porClase['sin'] ?? 0, $total)],
             ['Pacientes atendidos (únicos)', $pacientes, null],
             ['Con restricciones vigentes a hoy', $conRestricciones, $this->pct($conRestricciones, $total)],
+            ['Restricciones que vencen en los próximos 30 días', $porVencer, $this->pct($porVencer, $total), 'bad'],
+            ['Restricciones ya vencidas', $vencidas, $this->pct($vencidas, $total)],
             ['Conceptos anulados (no incluidos en los totales)', $anulados, null],
         ], false);
 
@@ -142,60 +147,67 @@ class ConsultaSstExcel
         $h = $this->libro->hoja('Conceptos');
         $h->horizontal()->ajustarAncho();
 
+        // clave => [título, ancho, estilo propio de la columna]
+        $centro = ['h' => 'center'];
         $cols = [
-            ['N.º', 9], ['Fecha', 11], ['Hora', 9], ['Paciente', 30], ['Identificación', 16], ['Edad', 8], ['Género', 11],
-            ['Cargo', 24], ['Servicio', 22], ['EPS', 18], ['AFP', 16], ['ARL', 16], ['Tipo de evaluación', 15], ['Énfasis', 24],
-            ['Concepto emitido', 30], ['Resultado', 16], ['Concepto por énfasis', 32], ['Recomendaciones médicas', 45],
-            ['Restricciones médicas', 40], ['Temporalidad', 14], ['Restricciones vigentes hasta', 14], ['Recomendaciones SST', 45],
-            ['Observaciones del concepto', 35], ['Médico', 24], ['Registro médico', 16], ['Estado', 10],
-            ['Motivo de anulación', 30], ['Correcciones', 12],
+            'id' => ['N.º', 9, $centro + ['fmt' => '000000']], 'fecha' => ['Fecha', 11, $centro + ['fmt' => 'dd/mm/yyyy']],
+            'hora' => ['Hora', 9, $centro], 'paciente' => ['Paciente', 30, []], 'identificacion' => ['Identificación', 16, []],
+            'edad' => ['Edad', 8, $centro], 'genero' => ['Género', 11, []], 'cargo' => ['Cargo', 24, []], 'servicio' => ['Servicio', 22, []],
+            'eps' => ['EPS', 18, []], 'afp' => ['AFP', 16, []], 'arl' => ['ARL', 16, []], 'tipo' => ['Tipo de evaluación', 15, []],
+            'enfasis' => ['Énfasis', 24, []], 'concepto' => ['Concepto emitido', 30, []], 'resultado' => ['Resultado', 16, []],
+            'concepto_enfasis' => ['Concepto por énfasis', 32, []], 'recomendaciones' => ['Recomendaciones médicas', 45, []],
+            'restricciones' => ['Restricciones médicas', 40, []], 'temporalidad' => ['Temporalidad', 14, []],
+            'hasta' => ['Restricciones vigentes hasta', 16, $centro + ['fmt' => 'dd/mm/yyyy']],
+            'restr_estado' => ['Estado de las restricciones', 46, []],
+            'restr_dias' => ['Días restantes', 11, $centro + ['fmt' => '0;[Red]-0']],
+            'sst' => ['Recomendaciones SST', 45, []], 'observaciones' => ['Observaciones del concepto', 35, []],
+            'medico' => ['Médico', 24, []], 'registro' => ['Registro médico', 16, []], 'estado' => ['Estado', 10, $centro],
+            'motivo' => ['Motivo de anulación', 30, []], 'correcciones' => ['Correcciones', 12, $centro],
         ];
-        $ultima = XlsxLigero::letraColumna(count($cols));
+        $letras = array_combine(array_keys($cols), array_map([XlsxLigero::class, 'letraColumna'], range(1, count($cols))));
+        $ultima = end($letras);
         $cab = $this->encabezado($h, 'Listado de conceptos médicos ocupacionales', $ultima);
 
-        foreach ($cols as $i => [$titulo, $ancho]) {
-            $col = XlsxLigero::letraColumna($i + 1);
-            $h->valor($col . $cab, $titulo, $this->estiloCabecera());
-            $h->ancho($col, $ancho);
+        foreach ($cols as $clave => [$titulo, $ancho]) {
+            $h->valor($letras[$clave] . $cab, $titulo, $this->estiloCabecera());
+            $h->ancho($letras[$clave], $ancho);
         }
         $h->alto($cab, 30);
 
-        // Estilos por tipo de columna: texto, centrado, fecha, número de certificado
         $base = ['border' => 'all', 'borderColor' => self::LINEA, 'v' => 'top', 'wrap' => true];
-        $centradas = ['A' => ['fmt' => '000000'], 'B' => ['fmt' => 'dd/mm/yyyy'], 'C' => [], 'F' => [], 'U' => ['fmt' => 'dd/mm/yyyy'], 'Z' => [], 'AB' => []];
         $generos = ['F' => 'Femenino', 'M' => 'Masculino', 'O' => 'Otro'];
+        $hoy = today();
 
         $fila = $cab + 1;
-        $query->chunk(500, function ($conceptos) use ($h, &$fila, $generos, $base, $centradas) {
+        $query->chunk(500, function ($conceptos) use ($h, &$fila, $generos, $base, $cols, $letras, $hoy) {
             foreach ($conceptos as $c) {
                 $paciente = $c->paciente_nombre ?: ($c->user ? trim($c->user->name . ' ' . ($c->user->apellido1 ?? '') . ' ' . ($c->user->apellido2 ?? '')) : '');
+                [$restrTexto, $restrDias, $restrColor] = $this->estadoRestricciones($c, $hoy);
                 $valores = [
-                    (int) $c->id, $c->fecha_atencion, $c->hora_atencion ? substr((string) $c->hora_atencion, 0, 5) : null,
-                    $paciente, (string) $c->identificacion, $c->edad !== null ? (int) $c->edad : null, $generos[$c->genero ?? ''] ?? $c->genero,
-                    $c->cargo_inicio, $c->servicio, $c->eps, $c->afp, $c->arl, $c->tipo_label, $c->enfasis_label,
-                    $c->concepto_label, self::CLASES[$c->concepto_clase][0] ?? '',
-                    implode(' · ', array_map(fn ($e) => $e[0] . ': ' . $e[1], $c->conceptos_enfasis_lista)),
-                    $c->recomendaciones, $c->restricciones, $c->temporalidad_label, $c->restricciones_hasta,
-                    $c->sst, $c->observaciones_concepto, $c->medico, $c->registro,
-                    $c->anulado ? 'Anulado' : 'Vigente', $c->motivo_anulacion, (int) ($c->correcciones_count ?? 0),
+                    'id' => (int) $c->id, 'fecha' => $c->fecha_atencion, 'hora' => $c->hora_atencion ? substr((string) $c->hora_atencion, 0, 5) : null,
+                    'paciente' => $paciente, 'identificacion' => (string) $c->identificacion, 'edad' => $c->edad !== null ? (int) $c->edad : null,
+                    'genero' => $generos[$c->genero ?? ''] ?? $c->genero, 'cargo' => $c->cargo_inicio, 'servicio' => $c->servicio,
+                    'eps' => $c->eps, 'afp' => $c->afp, 'arl' => $c->arl, 'tipo' => $c->tipo_label, 'enfasis' => $c->enfasis_label,
+                    'concepto' => $c->concepto_label, 'resultado' => self::CLASES[$c->concepto_clase][0] ?? '',
+                    'concepto_enfasis' => implode(' · ', array_map(fn ($e) => $e[0] . ': ' . $e[1], $c->conceptos_enfasis_lista)),
+                    'recomendaciones' => $c->recomendaciones, 'restricciones' => $c->restricciones, 'temporalidad' => $c->temporalidad_label,
+                    'hasta' => $c->restricciones_hasta, 'restr_estado' => $restrTexto, 'restr_dias' => $restrDias,
+                    'sst' => $c->sst, 'observaciones' => $c->observaciones_concepto, 'medico' => $c->medico, 'registro' => $c->registro,
+                    'estado' => $c->anulado ? 'Anulado' : 'Vigente', 'motivo' => $c->motivo_anulacion, 'correcciones' => (int) ($c->correcciones_count ?? 0),
                 ];
                 $color = self::CLASES[$c->concepto_clase] ?? null;
-                foreach ($valores as $i => $v) {
-                    $col = XlsxLigero::letraColumna($i + 1);
-                    $e = $base;
-                    if (isset($centradas[$col])) {
-                        $e = $centradas[$col] + ['h' => 'center'] + $e;
+                foreach ($valores as $clave => $v) {
+                    $e = $cols[$clave][2] + $base;
+                    if ($color && in_array($clave, ['concepto', 'resultado'], true)) {
+                        $e += ['fill' => $color[1], 'color' => $color[2], 'bold' => $clave === 'resultado'];
                     }
-                    if ($color && ($col === 'O' || $col === 'P')) {
-                        $e += ['fill' => $color[1], 'color' => $color[2], 'bold' => $col === 'P'];
+                    if ($restrColor && $clave === 'restr_estado') {
+                        $e += ['fill' => $restrColor[0], 'color' => $restrColor[1], 'bold' => true];
                     }
                     if ($c->anulado) {
-                        $e = ['color' => '9AA0B5'] + $e;
-                        if ($col === 'Z') {
-                            $e = ['color' => 'C4453B', 'bold' => true] + $e;
-                        }
+                        $e = ($clave === 'estado' ? ['color' => 'C4453B', 'bold' => true] : ['color' => '9AA0B5']) + $e;
                     }
-                    $h->valor($col . $fila, $v, $e);
+                    $h->valor($letras[$clave] . $fila, $v, $e);
                 }
                 $fila++;
             }
@@ -286,6 +298,29 @@ class ConsultaSstExcel
         }
 
         return $fila + 1;
+    }
+
+    /**
+     * Estado de las restricciones, con el mismo texto y colores de la tabla en pantalla:
+     * [texto, días que faltan (negativo = vencidas), [relleno, color] | null].
+     */
+    private function estadoRestricciones(ConceptoMedico $c, \Carbon\CarbonInterface $hoy): array
+    {
+        if ($c->restricciones_temporalidad === 'indefinido') {
+            return ['Restricciones indefinidas (sin fecha de terminación)', null, ['FBF3E4', '92611A']];
+        }
+        $hasta = $c->restricciones_hasta;
+        if (!$hasta) {
+            return [null, null, null];
+        }
+        $dias = (int) $hoy->diffInDays($hasta, false);
+        $fecha = $hasta->format('d/m/Y');
+        return match (true) {
+            $dias < 0   => ['Restricciones vencidas el ' . $fecha . ' · hace ' . -$dias . ($dias === -1 ? ' día' : ' días'), $dias, ['F1F1F4', '6B7088']],
+            $dias === 0 => ['Restricciones hasta ' . $fecha . ' · vencen hoy', 0, ['FBEBE9', 'C4453B']],
+            default     => ['Restricciones hasta ' . $fecha . ' · falta' . ($dias === 1 ? ' 1 día' : 'n ' . $dias . ' días'), $dias,
+                            $dias <= 30 ? ['FBEBE9', 'C4453B'] : ['FBF3E4', '92611A']],
+        };
     }
 
     private function estiloCabecera(): array
